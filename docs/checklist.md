@@ -81,16 +81,16 @@ Este checklist organiza todo o desenvolvimento do NutriXpertPro em **5 fases pri
 
 ### 2.2 Sistema de Autenticação - Frontend
 - [ ] Página Landing Page (conforme wireframe)
-- [ ] Página Login Nutricionista (conforme wireframe)
+- [x] Página Login Nutricionista (conforme wireframe)
 - [ ] Página Login Paciente
 - [ ] Página Registro Nutricionista
-- [ ] Componente Toggle de visibilidade de senha
+- [x] Componente Toggle de visibilidade de senha
 - [ ] Funcionalidade "Lembrar-me"
 - [ ] Página Esqueceu a senha
 - [ ] Integração OAuth Google
 - [ ] Contexto de autenticação (AuthContext)
 - [ ] Proteção de rotas (middleware)
-- [ ] Persistência de sessão (tokens no localStorage/cookies)
+- [x] Persistência de sessão (tokens no localStorage/cookies)
 
 ### 2.3 Layout Principal
 - [ ] Componente Header (logo, busca global, notificações, perfil)
