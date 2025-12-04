@@ -11,8 +11,7 @@ pytz==2025.2
 tzdata==2025.2
 
 # Django Apps
-django-browser-reload==1.21.0
-django-tailwind==4.2.0
+
 
 # DRF
 djangorestframework==3.15.1
