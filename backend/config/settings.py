@@ -74,7 +74,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'nutrixpert_db',
         'USER': 'root',
-        'PASSWORD': 'wFHXxrSN0JE%ifjtWU@M',  # Senha correta
+        'PASSWORD': 'NutriXpert2024',
         'HOST': 'localhost',
         'PORT': '3306',
     }

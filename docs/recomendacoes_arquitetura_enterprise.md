@@ -58,6 +58,8 @@
 - TypeScript 5+           // Type safety
 - Vite (dev) / Vercel (deploy)
 
+> **⚠️ ATENÇÃO:** O Vite mencionado acima é o **bundler** usado pelo Next.js para desenvolvimento local, **NÃO** é o pacote `django-vite`. A arquitetura recomendada é **Django como API REST pura (headless)** + **Next.js como frontend completamente separado**. Não use django-vite para integrar React com templates Django.
+
 // State Management
 - Zustand                 // Simples, performático
 - React Query v5          // Cache, sync servidor

@@ -1,0 +1,465 @@
+# ✅ CHECKLIST DE DESENVOLVIMENTO
+## NutriXpertPro SPA - Ordem Cronológica
+
+**Versão:** 1.1 (Atualizado com status atual)  
+**Data:** 04/12/2025  
+**Baseado em:** recomendacoes_arquitetura_enterprise.md, prd_product_requirements.md, api_specification.md, wireframes.md
+
+---
+
+## 📋 SUMÁRIO EXECUTIVO
+
+Este checklist organiza todo o desenvolvimento do NutriXpertPro em **5 fases principais**, seguindo a ordem lógica de dependências e prioridades definidas nos documentos de especificação.
+
+> **⚠️ STATUS ATUAL:** O backend está ~80% implementado com models, serializers e views. O foco principal agora é a migração para API REST pura e construção do frontend SPA.
+
+**Estimativa Restante:** 4-6 meses (foco em frontend e polimento)
+
+---
+
+## 🏗️ FASE 1: FUNDAÇÃO (2-3 meses)
+
+### 1.1 Setup do Ambiente de Desenvolvimento
+- [x] Configurar repositório Git
+- [x] Setup MariaDB/MySQL com configurações de desenvolvimento
+- [ ] Configurar Docker Compose para ambiente local
+- [ ] Configurar Redis para cache e sessions
+- [x] Criar documentação inicial
+
+### 1.2 Backend - Estrutura Base Django
+- [x] Inicializar projeto Django 5.2
+- [x] Configurar Django REST Framework 3.14+
+- [ ] Configurar drf-spectacular para documentação OpenAPI/Swagger
+- [x] Configurar django-cors-headers para CORS
+- [x] Configurar SimpleJWT para autenticação JWT
+- [ ] Configurar django-filter para filtros avançados
+- [ ] Configurar django-redis para cache
+- [x] Criar estrutura de apps: `users`, `patients`, `diets`, `appointments`, `anamnesis`, `evaluations`, `messages`, `notifications`, `lab_exams`, `payments`
+
+### 1.3 Frontend - Estrutura Base Next.js
+- [x] Inicializar projeto Next.js 14+ com TypeScript 5+
+- [x] Configurar Tailwind CSS 3.4+
+- [x] Instalar e configurar Shadcn/UI
+- [x] Configurar Zustand para state management
+- [x] Configurar React Query v5 para data fetching
+- [x] Configurar Zod para validações
+- [x] Configurar React Hook Form 7+
+- [x] Setup Axios como cliente HTTP
+- [x] Criar estrutura Atomic Design: `atoms/`, `molecules/`, `organisms/`, `templates/`, `pages/`
+
+### 1.4 Design System
+- [x] Criar arquivo `design-system/tokens.ts` (cores, tipografia, espaçamentos, sombras)
+- [x] Definir tema primário (Dinâmico: Monochrome/Teal/Blue/Violet/Pink + Dark/Light)
+- [x] Configurar variáveis CSS no Tailwind
+- [x] Criar componentes base: Button, Input, Badge, Avatar, Card
+- [x] Documentar design system (Showcase interativo em /design)
+
+### 1.5 CI/CD Pipeline
+- [ ] Configurar GitHub Actions ou GitLab CI
+- [ ] Etapa 1: Lint (ESLint + Prettier)
+- [ ] Etapa 2: Type check (TypeScript)
+- [ ] Etapa 3: Unit tests
+- [ ] Etapa 4: Build
+- [ ] Configurar Husky + lint-staged para pre-commit hooks
+- [ ] Setup ambiente de staging
+
+---
+
+## 🔐 FASE 2: AUTENTICAÇÃO & CORE (2-3 meses)
+
+### 2.1 Sistema de Autenticação - Backend
+- [x] Modelo User customizado (nutricionista, paciente, admin)
+- [x] API `POST /api/token/` - Obter par de tokens JWT
+- [x] API `POST /api/token/refresh/` - Renovar access token
+- [x] API `POST /api/token/verify/` - Verificar token
+- [ ] API `POST /api/v1/auth/register/nutritionist/` - Registro de nutricionista (converter de Django form para API REST)
+- [ ] API `POST /api/v1/auth/google/` - OAuth Google
+- [ ] API `POST /api/v1/auth/logout/` - Invalidar token (blacklist)
+- [ ] API `POST /api/v1/auth/password-reset/` - Solicitar reset de senha
+- [ ] API `POST /api/v1/auth/password-reset/confirm/` - Confirmar nova senha
+- [ ] Configurar rate limiting (5 tentativas/minuto para auth)
+
+### 2.2 Sistema de Autenticação - Frontend
+- [ ] Página Landing Page (conforme wireframe)
+- [ ] Página Login Nutricionista (conforme wireframe)
+- [ ] Página Login Paciente
+- [ ] Página Registro Nutricionista
+- [ ] Componente Toggle de visibilidade de senha
+- [ ] Funcionalidade "Lembrar-me"
+- [ ] Página Esqueceu a senha
+- [ ] Integração OAuth Google
+- [ ] Contexto de autenticação (AuthContext)
+- [ ] Proteção de rotas (middleware)
+- [ ] Persistência de sessão (tokens no localStorage/cookies)
+
+### 2.3 Layout Principal
+- [ ] Componente Header (logo, busca global, notificações, perfil)
+- [ ] Componente Sidebar (navegação com ícones)
+- [ ] Layout Dashboard (header + sidebar + main content)
+- [ ] Layout Auth (centralizado, sem sidebar)
+- [ ] Responsividade: sidebar colapsável em mobile
+
+### 2.4 Dashboard Nutricionista - Backend
+- [ ] API `GET /api/v1/dashboard/stats/` - Estatísticas do dashboard
+- [ ] API `GET /api/v1/appointments/today/` - Agenda do dia (criar endpoint específico)
+- [ ] API `GET /api/v1/patients/featured/` - Paciente em foco
+
+### 2.5 Dashboard Nutricionista - Frontend
+- [ ] Componente StatCard (4 cards: pacientes, consultas, dietas, rating)
+- [ ] Componente saudação dinâmica (Bom dia/tarde/noite)
+- [ ] Componente Agenda do Dia (lista de consultas)
+- [ ] Componente Paciente em Foco
+- [ ] Página Dashboard completa (conforme wireframe)
+
+### 2.6 Perfil do Usuário - Backend
+- [ ] API `GET /api/v1/users/me/` - Dados do usuário autenticado
+- [ ] API `PATCH /api/v1/users/me/` - Atualizar perfil
+- [ ] API `POST /api/v1/users/me/change-password/` - Trocar senha
+
+### 2.7 Perfil do Usuário - Frontend
+- [ ] Página de Perfil/Configurações
+- [ ] Upload de foto de perfil
+- [ ] Configurações de notificações
+
+---
+
+## 👥 FASE 3: MÓDULOS PRINCIPAIS (2-3 meses)
+
+### 3.1 Gestão de Pacientes - Backend
+- [x] Modelo PatientProfile com campos completos
+- [x] Views de CRUD (Django tradicional - converter para API REST)
+- [ ] API `GET /api/v1/patients/` - Listar pacientes (paginação, busca, filtros)
+- [ ] API `POST /api/v1/patients/` - Criar paciente
+- [ ] API `GET /api/v1/patients/{id}/` - Detalhes do paciente
+- [ ] API `PATCH /api/v1/patients/{id}/` - Atualizar paciente
+- [ ] API `DELETE /api/v1/patients/{id}/` - Deletar paciente (soft delete)
+- [ ] API `GET /api/v1/patients/{id}/compare-photos/` - Comparar fotos antes/depois
+
+### 3.2 Gestão de Pacientes - Frontend
+- [ ] Página Lista de Pacientes (grid de cards, busca, paginação)
+- [ ] Componente PatientCard
+- [ ] Modal/Página Criar Paciente (formulário multi-seção)
+- [ ] Validações de formulário (email único, telefone BR, data nascimento)
+- [ ] Página Detalhes do Paciente - Vista Dashboard
+  - [ ] Seção de fotos (3 ângulos: frente, lateral, costas)
+  - [ ] 5 cards de métricas (peso, gordura, músculo, IMC, abdômen)
+  - [ ] Gráfico evolução corporal (Recharts - linha)
+  - [ ] Gráfico radar composição
+- [ ] Página Detalhes do Paciente - Vista Timeline
+- [ ] Página Comparar Fotos (side-by-side)
+- [ ] Página Editar Paciente
+
+### 3.3 Avaliações Físicas - Backend
+- [x] Modelo Evaluation (peso, altura, gordura, massa magra, circunferências)
+- [x] Modelo EvaluationPhoto (frente, lado, costas)
+- [ ] API `POST /api/v1/evaluations/` - Criar avaliação (multipart/form-data)
+- [ ] API `GET /api/v1/patients/{id}/evaluations/` - Histórico de avaliações
+- [ ] API `GET /api/v1/evaluations/{id}/` - Detalhes de 1 avaliação
+- [ ] Cálculo automático de IMC
+- [ ] Storage para fotos (configurar django-storages + S3/CloudFlare R2)
+
+### 3.4 Avaliações Físicas - Frontend
+- [ ] Modal/Página Criar Avaliação (formulário com upload de fotos)
+- [ ] Componente de upload de múltiplas fotos
+- [ ] Histórico de avaliações na página do paciente
+- [ ] Visualização de fotos em modal (galeria)
+
+### 3.5 Anamnese - Backend
+- [x] Modelo Anamnesis com 7 seções completas (~50 campos)
+- [x] Serializer já existe
+- [ ] API `GET /api/v1/anamnesis/` - Listar anamneses
+- [ ] API `POST /api/v1/anamnesis/` - Criar anamnese
+- [ ] API `PATCH /api/v1/anamnesis/{id}/` - Atualizar (salvar rascunho)
+- [ ] API `GET /api/v1/anamnesis/{id}/` - Carregar anamnese
+- [ ] Auto-save a cada 30 segundos
+
+### 3.6 Anamnese - Frontend
+- [ ] Página Lista de Anamneses
+- [ ] Componente Wizard multi-etapa (7 seções conforme modelo)
+  - [ ] Seção 1: Identificação
+  - [ ] Seção 2: Rotina
+  - [ ] Seção 3: Nutrição e Hábitos
+  - [ ] Seção 4: Histórico de Saúde
+  - [ ] Seção 5: Objetivos
+  - [ ] Seção 6: Medidas
+  - [ ] Seção 7: Fotos
+- [ ] Barra de progresso visual (usar `get_progresso()`)
+- [ ] Navegação entre seções
+- [ ] Validação por seção
+- [ ] Auto-save com indicador visual
+
+### 3.7 Calendário/Agendamento - Backend
+- [x] Modelo Appointment (paciente, data, notas)
+- [ ] Adicionar campos: duration, type (presencial/online), status, meeting_link
+- [ ] API `GET /api/v1/appointments/` - Listar consultas (filtros: data, paciente, status)
+- [ ] API `POST /api/v1/appointments/` - Criar consulta
+- [ ] API `GET /api/v1/appointments/{id}/` - Detalhes da consulta
+- [ ] API `PATCH /api/v1/appointments/{id}/` - Atualizar/reagendar
+- [ ] API `PATCH /api/v1/appointments/{id}/status/` - Mudar status
+- [ ] Validação de conflito de horário (double-booking)
+- [ ] Workflow de estados: Agendada → Confirmada → Concluída/Cancelada/Faltou
+
+### 3.8 Calendário/Agendamento - Frontend
+- [ ] Página Calendário com 3 vistas (conforme wireframe)
+  - [ ] Vista Mês (grid 7x5 com indicadores)
+  - [ ] Vista Semana (timeline hora a hora)
+  - [ ] Vista Dia (lista expandida)
+- [ ] Componente de navegação de datas (hoje, anterior, próximo)
+- [ ] Modal Criar Consulta
+  - [ ] Select de paciente com busca
+  - [ ] Date picker
+  - [ ] Time picker com horários disponíveis
+  - [ ] Select de duração (30/45/60/90 min)
+  - [ ] Select de tipo (Presencial/Online)
+  - [ ] Campo para link de meeting
+- [ ] Cards de consultas com ações (detalhes, editar, cancelar)
+- [ ] Badges de status coloridos
+
+---
+
+## 🍽️ FASE 4: EDITOR DE DIETAS & INTEGRAÇÕES (2-3 meses)
+
+### 4.1 Banco de Alimentos - Backend
+- [x] Modelo AlimentoTACO (tabela TACO)
+- [x] Modelo AlimentoTBCA (tabela TBCA - USP)
+- [x] Modelo AlimentoUSDA (USDA FoodData Central)
+- [ ] Importar dados das tabelas (verificar se já foi feito)
+- [ ] API `GET /api/v1/foods/` - Buscar alimentos (autocomplete, filtros por categoria)
+- [ ] API `POST /api/v1/foods/` - Criar alimento customizado
+- [ ] Indexação para busca rápida (já existe Index no modelo)
+
+### 4.2 Editor de Dietas - Backend
+- [x] Modelo Diet com meals em JSON
+- [x] Validadores de schema JSON para meals e substitutions
+- [ ] API `GET /api/v1/diets/` - Listar dietas
+- [ ] API `POST /api/v1/diets/` - Criar dieta
+- [ ] API `GET /api/v1/diets/{id}/` - Detalhes da dieta
+- [ ] API `PATCH /api/v1/diets/{id}/` - Atualizar dieta
+- [ ] API `POST /api/v1/diets/{id}/generate-pdf/` - Gerar PDF
+- [ ] API `GET /api/v1/diet-templates/` - Templates pré-definidos
+- [ ] Cálculos automáticos de macros por refeição e total diário
+- [ ] Geração de PDF profissional (weasyprint ou similar)
+
+### 4.3 Editor de Dietas - Frontend
+- [ ] Página Editor de Dietas com 5 abas (conforme wireframe)
+  - [ ] Aba Contexto do Paciente
+    - [ ] Dados básicos do paciente
+    - [ ] Objetivo
+    - [ ] Restrições alimentares (badges coloridos da anamnese)
+    - [ ] Alergias
+  - [ ] Aba Análise Nutricional
+    - [ ] TMB calculada
+    - [ ] GET sugerido
+    - [ ] Macros recomendados
+  - [ ] Aba Histórico
+    - [ ] Dietas anteriores
+    - [ ] O que funcionou/não funcionou
+  - [ ] Aba Dieta (editor principal)
+    - [ ] 6 seções de refeições
+    - [ ] Busca e adição de alimentos
+    - [ ] Cálculos automáticos por refeição
+    - [ ] Resumo diário com barras de progresso
+  - [ ] Aba Preview PDF
+- [ ] Modal de Busca de Alimentos
+  - [ ] Autocomplete
+  - [ ] Filtros por categoria
+  - [ ] Informações nutricionais
+  - [ ] Ajuste de quantidade
+- [ ] Componente Template Selector
+  - [ ] Low-Carb 1800cal
+  - [ ] Keto 1500cal
+  - [ ] Mediterrânea 2000cal
+  - [ ] Vegetariana 1700cal
+  - [ ] Hipertrofia 2500cal
+- [ ] Funcionalidade salvar rascunho
+- [ ] Funcionalidade gerar e baixar PDF
+
+### 4.4 Mensagens/Chat - Backend
+- [x] Modelo Conversation (participantes)
+- [x] Modelo Message (conversa, remetente, conteúdo, timestamp, is_read)
+- [x] Serializers já existem
+- [ ] API `GET /api/v1/conversations/` - Listar conversas
+- [ ] API `GET /api/v1/conversations/{id}/messages/` - Listar mensagens
+- [ ] API `POST /api/v1/conversations/{id}/messages/` - Enviar mensagem
+- [ ] WebSocket `/ws/chat/{conversation_id}/` - Chat real-time (Django Channels)
+
+### 4.5 Mensagens/Chat - Frontend
+- [ ] Página Inbox (2 colunas: conversas | mensagens)
+- [ ] Lista de conversas com busca e status online/offline
+- [ ] Thread de mensagens (bubbles)
+- [ ] Input de texto com envio
+- [ ] Indicador de mensagens não lidas
+- [ ] Conexão WebSocket para real-time
+- [ ] Notificação de nova mensagem
+
+### 4.6 Exames Laboratoriais - Backend
+- [x] Modelo LabExam (paciente, nome, data, arquivo, notas)
+- [ ] API `POST /api/v1/lab-exams/` - Upload de exame (multipart/form-data)
+- [ ] API `GET /api/v1/patients/{id}/lab-exams/` - Histórico de exames
+
+### 4.7 Exames Laboratoriais - Frontend
+- [ ] Modal Upload de Exame
+  - [ ] Select de paciente
+  - [ ] Select de tipo de exame
+  - [ ] Date picker
+  - [ ] Upload de PDF
+- [ ] Lista de exames na página do paciente
+- [ ] Download de PDF
+
+### 4.8 Notificações - Backend
+- [x] Modelo Notification (usuário, tipo, mensagem, is_read)
+- [x] Serializers já existem
+- [ ] API `GET /api/v1/notifications/` - Listar notificações
+- [ ] API `PATCH /api/v1/notifications/{id}/mark-read/` - Marcar como lida
+- [ ] API `POST /api/v1/notifications/settings/` - Configurar preferências
+- [ ] Celery tasks para notificações automáticas
+  - [ ] Consulta em 1 hora
+  - [ ] Dieta a vencer em 7 dias
+  - [ ] Nova mensagem
+
+### 4.9 Notificações - Frontend
+- [ ] Componente Badge no sino (header)
+- [ ] Dropdown de notificações
+- [ ] Página de configurações de notificações
+- [ ] Push notifications (PWA)
+
+### 4.10 Busca Global
+- [ ] API `GET /api/v1/search/?q={query}` - Busca em pacientes, dietas, consultas
+- [ ] Componente SearchBar com autocomplete
+- [ ] Resultados agrupados por tipo
+- [ ] Navegação por teclado (↑↓ Enter)
+- [ ] Highlight de termos
+
+### 4.11 Integração Google Calendar
+- [ ] Configurar OAuth Google Calendar API
+- [ ] API `POST /api/v1/integrations/google-calendar/sync/` - Sincronização
+- [ ] Exportar consultas para Google Calendar
+- [ ] Importar eventos do Google Calendar
+
+---
+
+## 🚀 FASE 5: ENTERPRISE & POLISH (2-3 meses)
+
+### 5.1 Dashboard do Paciente
+- [ ] API `GET /api/v1/dashboard/patient/` - Dashboard simplificado
+- [ ] Página Dashboard Paciente
+  - [ ] Progresso de metas
+  - [ ] Próxima consulta
+  - [ ] Plano alimentar atual
+  - [ ] Gráfico de evolução
+
+### 5.2 2FA (Two-Factor Auth)
+- [ ] API `POST /api/v1/auth/2fa/enable/` - Habilitar 2FA
+- [ ] Geração de QR code para TOTP
+- [ ] Verificação de código no login
+- [ ] Página de configuração 2FA
+
+### 5.3 IA Insights (Básico)
+- [ ] API `GET /api/v1/patients/{id}/ai-insights/` - Sugestões automáticas
+- [ ] Algoritmo de análise de progresso
+- [ ] Componente de exibição de insights
+- [ ] Exemplos: "Gordura reduzindo consistentemente", "Músculo estagnado"
+
+### 5.4 Performance & Otimização
+- [ ] Implementar lazy loading de rotas (Next.js dynamic imports)
+- [ ] Configurar cache Redis para queries frequentes
+- [ ] Otimizar imagens (Next.js Image component, WebP)
+- [ ] Implementar paginação em todas as listas
+- [ ] Configurar CDN para assets estáticos
+- [ ] Profiling com django-silk (dev only)
+
+### 5.5 Testes
+- [x] Estrutura de testes existe (users/tests.py, diets/tests.py, notifications/tests.py)
+- [ ] Aumentar cobertura de testes backend (pytest, coverage > 80%)
+- [ ] Unit tests frontend (Vitest)
+- [ ] Integration tests (React Testing Library)
+- [ ] E2E tests jornadas críticas (Playwright)
+  - [ ] Login completo
+  - [ ] Criar paciente
+  - [ ] Criar dieta
+  - [ ] Agendar consulta
+
+### 5.6 Segurança
+- [x] Configurações de segurança em produção (HTTPS, HSTS, XSS, CSRF)
+- [ ] Revisar rate limiting em todas as APIs
+- [ ] Implementar audit logs para ações críticas
+- [ ] Criptografia de dados sensíveis (LGPD)
+
+### 5.7 Acessibilidade
+- [ ] Navegação por teclado em todos os componentes
+- [ ] Atributos ARIA corretos
+- [ ] Contraste mínimo 4.5:1
+- [ ] Screen reader support
+- [ ] Validação WCAG 2.1 AA
+
+### 5.8 PWA (Progressive Web App)
+- [ ] Configurar Service Workers
+- [ ] Manifest.json para instalação
+- [ ] Cache offline (dados de leitura)
+- [ ] Push notifications
+- [ ] Ícones e splash screens
+
+### 5.9 Deploy Produção
+- [ ] Configurar ambiente de produção
+- [ ] Setup frontend (Vercel ou Netlify)
+- [ ] Setup backend (Railway, Fly.io, ou AWS)
+- [ ] Configurar banco de dados managed (PlanetScale, AWS RDS)
+- [ ] Configurar backups automáticos
+- [ ] Configurar Sentry para error tracking
+- [ ] Configurar monitoring (uptime, APM)
+
+### 5.10 Documentação Final
+- [ ] README.md atualizado
+- [ ] ARCHITECTURE.md (decisões arquiteturais)
+- [ ] API.md ou Swagger UI configurado (drf-spectacular)
+- [ ] DEPLOYMENT.md (guia de deploy)
+- [ ] CONTRIBUTING.md
+
+---
+
+## 📊 RESUMO DO STATUS ATUAL
+
+### ✅ O QUE JÁ ESTÁ PRONTO (Backend):
+
+| Módulo | Models | Serializers | APIs REST | Views Django |
+|--------|--------|-------------|-----------|--------------|
+| Users | ✅ | - | ✅ JWT | ✅ Login/Register |
+| Patients | ✅ | ✅ | ⚠️ Parcial | ✅ CRUD |
+| Diets | ✅ (3 tabelas alimentos) | - | ⚠️ Parcial | ✅ |
+| Appointments | ✅ | - | ❌ | ✅ |
+| Anamnesis | ✅ (7 seções) | ✅ | ⚠️ Parcial | ✅ |
+| Evaluations | ✅ + Photos | - | ❌ | ✅ |
+| Messages | ✅ | ✅ | ⚠️ Parcial | - |
+| Notifications | ✅ | ✅ | ⚠️ Parcial | - |
+| Lab Exams | ✅ | - | ❌ | ✅ |
+
+### 🔄 PRÓXIMOS PASSOS RECOMENDADOS:
+
+1. **Decisão Frontend:** Manter Vite ou migrar para Next.js?
+2. **Completar APIs REST:** Converter views Django tradicionais para APIs REST
+3. **Começar Frontend SPA:** Criar estrutura base e design system
+4. **Integrar Frontend + Backend:** Conectar via APIs REST com JWT
+
+---
+
+## 📋 FORA DO ESCOPO (V1)
+
+Os seguintes itens estão explicitamente fora do escopo da V1:
+
+- ❌ Pagamentos integrados (Stripe/Mercado Pago) - app existe mas não prioritário
+- ❌ Videochamada nativa
+- ❌ Integração com wearables (Fitbit, Apple Health)
+- ❌ App mobile nativo (React Native)
+- ❌ Multi-tenancy (clínicas)
+- ❌ RBAC avançado (permissões granulares)
+- ❌ API pública
+- ❌ Marketplace de templates
+- ❌ Internacionalização (i18n)
+- ❌ Drag & Drop para reagendamento
+
+---
+
+**Criado por:** Análise AI  
+**Data:** 04/12/2025  
+**Última Atualização:** 04/12/2025 (v1.1 - adicionado status atual)  
+**Próxima Revisão:** Após conclusão de cada fase

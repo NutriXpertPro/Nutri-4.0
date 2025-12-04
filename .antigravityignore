@@ -1,0 +1,2 @@
+# Permitir acesso aos docs mesmo estando no .gitignore
+!docs/
