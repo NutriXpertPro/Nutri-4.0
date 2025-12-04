@@ -63,3 +63,6 @@ Thumbs.db
 *.bak
 *.tmp
 coverage/
+
+# Documentação local (não versionar)
+docs/
