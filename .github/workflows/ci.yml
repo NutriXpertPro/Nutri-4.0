@@ -13,6 +13,20 @@ jobs:
       run:
         working-directory: ./backend
 
+    services:
+      mariadb:
+        image: mariadb:10.11
+        env:
+          MYSQL_ROOT_PASSWORD: testpassword
+          MYSQL_DATABASE: nutri_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
     steps:
     - uses: actions/checkout@v4
     
@@ -21,6 +35,12 @@ jobs:
       with:
         python-version: '3.12'
         cache: 'pip'
+        cache-dependency-path: backend/requirements.txt
+        
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libmariadb-dev gcc
         
     - name: Install Dependencies
       run: |
@@ -29,10 +49,12 @@ jobs:
         
     - name: Run Tests
       env:
-        SECRET_KEY: 'django-insecure-test-key'
+        SECRET_KEY: 'django-insecure-test-key-for-ci'
         DEBUG: 'True'
-        DATABASE_URL: 'sqlite:///db.sqlite3' # Use SQLite for CI tests to avoid MariaDB service overhead if possible, or use service container
+        DATABASE_URL: 'mysql://root:testpassword@127.0.0.1:3306/nutri_test'
+        REDIS_URL: ''
       run: |
+        python manage.py migrate --run-syncdb
         python manage.py test
 
   frontend-check:
@@ -56,10 +78,6 @@ jobs:
       
     - name: Lint (ESLint)
       run: npm run lint
-      
-    # Prettier check (if script exists, otherwise skip or add script)
-    # - name: Check Formatting (Prettier)
-    #   run: npx prettier --check .
       
     - name: Type Check (TypeScript)
       run: npx tsc --noEmit
