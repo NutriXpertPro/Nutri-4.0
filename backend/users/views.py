@@ -43,7 +43,26 @@ def nutricionista_register_view(request):
     """
     API endpoint para registro de nutricionista.
     """
-    return Response({"message": "Registro via API em construção"}, status=status.HTTP_501_NOT_IMPLEMENTED)
+    from .serializers import NutritionistRegistrationSerializer
+    
+    serializer = NutritionistRegistrationSerializer(data=request.data)
+    if serializer.is_valid():
+        user = serializer.save()
+        refresh = RefreshToken.for_user(user)
+        return Response({
+            "message": "Nutricionista registrado com sucesso",
+            "user": {
+                "id": user.id,
+                "name": user.name,
+                "email": user.email,
+                "user_type": user.user_type
+            },
+            "tokens": {
+                "refresh": str(refresh),
+                "access": str(refresh.access_token),
+            }
+        }, status=status.HTTP_201_CREATED)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['POST'])
 @permission_classes([AllowAny])

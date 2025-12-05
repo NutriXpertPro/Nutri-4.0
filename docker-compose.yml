@@ -1,0 +1,53 @@
+services:
+  db:
+    image: mariadb:10.11
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: NutriXpert2024
+      MYSQL_DATABASE: nutri_xpert_dev
+      MYSQL_USER: nutri_user
+      MYSQL_PASSWORD: nutri_password
+    ports:
+      - "3307:3306" # Mapped to 3307 to avoid conflict with local DB
+    volumes:
+      - db_data:/var/lib/mysql
+
+  redis:
+    image: redis:alpine
+    restart: always
+    ports:
+      - "6379:6379"
+
+  backend:
+    build: ./backend
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - ./backend:/app
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+      - redis
+    environment:
+      - DEBUG=True
+      - SECRET_KEY=django-insecure-docker-dev-key
+      - DATABASE_URL=mysql://nutri_user:nutri_password@db:3306/nutri_xpert_dev
+      - REDIS_URL=redis://redis:6379/1
+    stdin_open: true # docker run -i
+    tty: true        # docker run -t
+
+  frontend:
+    build: ./frontend
+    command: npm run dev
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1
+    depends_on:
+      - backend
+
+volumes:
+  db_data:

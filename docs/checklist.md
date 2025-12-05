@@ -22,18 +22,18 @@ Este checklist organiza todo o desenvolvimento do NutriXpertPro em **5 fases pri
 ### 1.1 Setup do Ambiente de Desenvolvimento
 - [x] Configurar repositório Git
 - [x] Setup MariaDB/MySQL com configurações de desenvolvimento
-- [ ] Configurar Docker Compose para ambiente local
-- [ ] Configurar Redis para cache e sessions
+- [x] Configurar Docker Compose para ambiente local
+- [x] Configurar Redis para cache e sessions
 - [x] Criar documentação inicial
 
 ### 1.2 Backend - Estrutura Base Django
 - [x] Inicializar projeto Django 5.2
 - [x] Configurar Django REST Framework 3.14+
-- [ ] Configurar drf-spectacular para documentação OpenAPI/Swagger
+- [x] Configurar drf-spectacular para documentação OpenAPI/Swagger
 - [x] Configurar django-cors-headers para CORS
 - [x] Configurar SimpleJWT para autenticação JWT
-- [ ] Configurar django-filter para filtros avançados
-- [ ] Configurar django-redis para cache
+- [x] Configurar django-filter para filtros avançados
+- [x] Configurar django-redis para cache
 - [x] Criar estrutura de apps: `users`, `patients`, `diets`, `appointments`, `anamnesis`, `evaluations`, `messages`, `notifications`, `lab_exams`, `payments`
 
 ### 1.3 Frontend - Estrutura Base Next.js
@@ -55,11 +55,11 @@ Este checklist organiza todo o desenvolvimento do NutriXpertPro em **5 fases pri
 - [x] Documentar design system (Showcase interativo em /design)
 
 ### 1.5 CI/CD Pipeline
-- [ ] Configurar GitHub Actions ou GitLab CI
-- [ ] Etapa 1: Lint (ESLint + Prettier)
-- [ ] Etapa 2: Type check (TypeScript)
-- [ ] Etapa 3: Unit tests
-- [ ] Etapa 4: Build
+- [x] Configurar GitHub Actions ou GitLab CI
+- [x] Etapa 1: Lint (ESLint + Prettier)
+- [x] Etapa 2: Type check (TypeScript)
+- [x] Etapa 3: Unit tests
+- [x] Etapa 4: Build
 - [ ] Configurar Husky + lint-staged para pre-commit hooks
 - [ ] Setup ambiente de staging
 
@@ -72,7 +72,7 @@ Este checklist organiza todo o desenvolvimento do NutriXpertPro em **5 fases pri
 - [x] API `POST /api/token/` - Obter par de tokens JWT
 - [x] API `POST /api/token/refresh/` - Renovar access token
 - [x] API `POST /api/token/verify/` - Verificar token
-- [ ] API `POST /api/v1/auth/register/nutritionist/` - Registro de nutricionista (converter de Django form para API REST)
+- [x] API `POST /api/v1/auth/register/nutritionist/` - Registro de nutricionista (converter de Django form para API REST)
 - [ ] API `POST /api/v1/auth/google/` - OAuth Google
 - [ ] API `POST /api/v1/auth/logout/` - Invalidar token (blacklist)
 - [ ] API `POST /api/v1/auth/password-reset/` - Solicitar reset de senha

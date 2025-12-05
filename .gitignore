@@ -38,7 +38,7 @@ yarn-error.log*
 out/
 
 # IDEs
-.vscode/
+
 .idea/
 *.swp
 *.swo

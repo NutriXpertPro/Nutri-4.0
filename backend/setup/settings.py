@@ -34,9 +34,50 @@ DEBUG = config('DEBUG', default=False, cast=bool)
 print(f"DEBUG mode is: {DEBUG}")
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='127.0.0.1,localhost', cast=Csv)
 
-INSTALLED_APPS = ['django.contrib.admin','django.contrib.auth','django.contrib.contenttypes','django.contrib.sessions','django.contrib.messages','django.contrib.staticfiles','rest_framework','rest_framework_simplejwt','setup','users.apps.UsersConfig','patients.apps.PatientsConfig','diets.apps.DietsConfig','anamnesis.apps.AnamnesisConfig','evaluations.apps.EvaluationsConfig','appointments.apps.AppointmentsConfig','payments.apps.PaymentsConfig','notifications.apps.NotificationsConfig','messages.apps.MessagesConfig','lab_exams.apps.LabExamsConfig']
+INSTALLED_APPS = [
+    'django.contrib.admin',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',
+    'corsheaders',  # CORS
+    'rest_framework',
+    'rest_framework_simplejwt',
+    'drf_spectacular',  # Documentation
+    'django_filters',   # Filters
+    'setup',
+    'users.apps.UsersConfig',
+    'patients.apps.PatientsConfig',
+    'diets.apps.DietsConfig',
+    'anamnesis.apps.AnamnesisConfig',
+    'evaluations.apps.EvaluationsConfig',
+    'appointments.apps.AppointmentsConfig',
+    'payments.apps.PaymentsConfig',
+    'notifications.apps.NotificationsConfig',
+    'messages.apps.MessagesConfig',
+    'lab_exams.apps.LabExamsConfig'
+]
 
-MIDDLEWARE = ['django.middleware.security.SecurityMiddleware','whitenoise.middleware.WhiteNoiseMiddleware','django.contrib.sessions.middleware.SessionMiddleware','django.middleware.locale.LocaleMiddleware','django.middleware.common.CommonMiddleware','django.middleware.csrf.CsrfViewMiddleware','django.contrib.auth.middleware.AuthenticationMiddleware','django.contrib.messages.middleware.MessageMiddleware','django.middleware.clickjacking.XFrameOptionsMiddleware']
+MIDDLEWARE = [
+    'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
+    'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware',  # CORS Middleware (must be before CommonMiddleware)
+    'django.middleware.locale.LocaleMiddleware',
+    'django.middleware.common.CommonMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django.contrib.messages.middleware.MessageMiddleware',
+    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+]
+
+# CORS Configuration
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+]
+CORS_ALLOW_CREDENTIALS = True
 
 ROOT_URLCONF = 'setup.urls'
 
@@ -48,6 +89,17 @@ DATABASE_URL_FROM_ENV = config('DATABASE_URL',default='mysql://root:password@loc
 if DATABASE_URL_FROM_ENV.startswith('mysql+pymysql://'):
     DATABASE_URL_FROM_ENV = DATABASE_URL_FROM_ENV.replace('mysql+pymysql://','mysql://',1)
 DATABASES = {'default':dj_database_url.parse(DATABASE_URL_FROM_ENV)}
+
+# Redis Cache
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": config('REDIS_URL', default='redis://localhost:6379/1'),
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+        }
+    }
+}
 
 AUTH_PASSWORD_VALIDATORS = [{'NAME':'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',},{'NAME':'django.contrib.auth.password_validation.MinimumLengthValidator',},{'NAME':'django.contrib.auth.password_validation.CommonPasswordValidator',},{'NAME':'django.contrib.auth.password_validation.NumericPasswordValidator',}]
 
@@ -68,7 +120,20 @@ AUTH_USER_MODEL = 'users.User'
 
 INTERNAL_IPS = ['127.0.0.1']
 
-REST_FRAMEWORK = {'DEFAULT_AUTHENTICATION_CLASSES':('rest_framework_simplejwt.authentication.JWTAuthentication',)}
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+    'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend'],
+}
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'NutriXpertPro API',
+    'DESCRIPTION': 'API para gestão nutricional enterprise',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+}
 
 SIMPLE_JWT = {'ACCESS_TOKEN_LIFETIME':timedelta(minutes=5),'REFRESH_TOKEN_LIFETIME':timedelta(days=1),'ROTATE_REFRESH_TOKENS':True,'BLACKLIST_AFTER_ROTATION':True,'UPDATE_LAST_LOGIN':False,'ALGORITHM':'HS256','SIGNING_KEY':SECRET_KEY,'AUTH_HEADER_TYPES':('Bearer',),'USER_ID_FIELD':'id','USER_ID_CLAIM':'user_id','AUTH_TOKEN_CLASSES':('rest_framework_simplejwt.tokens.AccessToken',),'TOKEN_TYPE_CLAIM':'token_type','JTI_CLAIM':'jti',}
 
