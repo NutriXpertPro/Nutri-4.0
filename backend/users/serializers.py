@@ -28,3 +28,6 @@ class NutritionistRegistrationSerializer(serializers.ModelSerializer):
             gender=validated_data.get('gender')
         )
         return user
+
+class GoogleLoginSerializer(serializers.Serializer):
+    id_token = serializers.CharField(required=True)

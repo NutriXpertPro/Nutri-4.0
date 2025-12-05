@@ -30,6 +30,7 @@ except Exception as e:
     Csv = lambda x: x.split(',')
 
 SECRET_KEY = config('SECRET_KEY', default='dev-secret-key-CHANGE-IN-PRODUCTION-!!!')
+GOOGLE_OAUTH2_CLIENT_ID = config('GOOGLE_OAUTH2_CLIENT_ID', default='')
 DEBUG = config('DEBUG', default=False, cast=bool)
 print(f"DEBUG mode is: {DEBUG}")
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='127.0.0.1,localhost', cast=Csv)
