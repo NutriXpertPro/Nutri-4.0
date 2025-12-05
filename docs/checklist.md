@@ -60,7 +60,7 @@ Este checklist organiza todo o desenvolvimento do NutriXpertPro em **5 fases pri
 - [x] Etapa 2: Type check (TypeScript)
 - [x] Etapa 3: Unit tests
 - [x] Etapa 4: Build
-- [ ] Configurar Husky + lint-staged para pre-commit hooks
+- [x] Configurar Husky + lint-staged para pre-commit hooks
 - [ ] Setup ambiente de staging
 
 ---
@@ -73,7 +73,7 @@ Este checklist organiza todo o desenvolvimento do NutriXpertPro em **5 fases pri
 - [x] API `POST /api/token/refresh/` - Renovar access token
 - [x] API `POST /api/token/verify/` - Verificar token
 - [x] API `POST /api/v1/auth/register/nutritionist/` - Registro de nutricionista (converter de Django form para API REST)
-- [ ] API `POST /api/v1/auth/google/` - OAuth Google
+- [x] API `POST /api/v1/auth/google/` - OAuth Google
 - [ ] API `POST /api/v1/auth/logout/` - Invalidar token (blacklist)
 - [ ] API `POST /api/v1/auth/password-reset/` - Solicitar reset de senha
 - [ ] API `POST /api/v1/auth/password-reset/confirm/` - Confirmar nova senha
