@@ -77,7 +77,7 @@ Este checklist organiza todo o desenvolvimento do NutriXpertPro em **5 fases pri
 - [x] API `POST /api/v1/auth/logout/` - Invalidar token (blacklist)
 - [x] API `POST /api/v1/auth/password-reset/` - Solicitar reset de senha
 - [x] API `POST /api/v1/auth/password-reset/confirm/` - Confirmar nova senha
-- [ ] Configurar rate limiting (5 tentativas/minuto para auth)
+- [x] Configurar rate limiting (5 tentativas/minuto para auth)
 
 ### 2.2 Sistema de Autenticação - Frontend
 - [ ] Página Landing Page (conforme wireframe)

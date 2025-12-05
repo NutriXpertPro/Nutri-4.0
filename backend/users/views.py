@@ -1,4 +1,5 @@
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, permission_classes, throttle_classes
+from .throttles import AuthRateThrottle
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
@@ -34,9 +35,11 @@ def dashboard_view(request):
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
+@throttle_classes([AuthRateThrottle])
 def nutricionista_login_view(request):
     """
     API endpoint para login de nutricionista.
+    Rate limit: 5 tentativas por minuto (scope: auth).
     """
     email = request.data.get("email")
     password = request.data.get("password")
@@ -52,9 +55,11 @@ def nutricionista_login_view(request):
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
+@throttle_classes([AuthRateThrottle])
 def nutricionista_register_view(request):
     """
     API endpoint para registro de nutricionista.
+    Rate limit: 5 tentativas por minuto (scope: auth).
     """
     serializer = NutritionistRegistrationSerializer(data=request.data)
     if serializer.is_valid():
