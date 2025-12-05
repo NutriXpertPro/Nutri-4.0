@@ -13,5 +13,9 @@ urlpatterns = [
     path("patient-dashboard/", views.patient_dashboard_view, name="patient_dashboard"),
     path("resources/", views.resources_view, name="resources"),
     path("settings/", views.settings_view, name="settings"),
-    path("logout/", views.logout_view, name="logout"),
+    
+    # Class-Based Views for Auth
+    path("logout/", views.LogoutView.as_view(), name="logout"),
+    path("auth/password-reset/", views.PasswordResetView.as_view(), name="password_reset"),
+    path("auth/password-reset/confirm/<uidb64>/<token>/", views.PasswordResetConfirmView.as_view(), name="password_reset_confirm"),
 ]

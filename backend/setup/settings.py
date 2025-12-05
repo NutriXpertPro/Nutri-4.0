@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     'corsheaders',  # CORS
     'rest_framework',
     'rest_framework_simplejwt',
+    'rest_framework_simplejwt.token_blacklist',
     'drf_spectacular',  # Documentation
     'django_filters',   # Filters
     'setup',

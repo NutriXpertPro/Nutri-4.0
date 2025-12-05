@@ -1,9 +1,22 @@
 from rest_framework.decorators import api_view, permission_classes
+from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework import status
 from django.contrib.auth import get_user_model, authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
+from django.contrib.auth.tokens import default_token_generator
+from django.core.mail import send_mail
+from django.conf import settings
+from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+from django.utils.encoding import force_bytes, force_str
+from .serializers import (
+    NutritionistRegistrationSerializer, 
+    GoogleLoginSerializer,
+    LogoutSerializer,
+    PasswordResetSerializer,
+    PasswordResetConfirmSerializer
+)
 
 User = get_user_model()
 
@@ -43,8 +56,6 @@ def nutricionista_register_view(request):
     """
     API endpoint para registro de nutricionista.
     """
-    from .serializers import NutritionistRegistrationSerializer
-    
     serializer = NutritionistRegistrationSerializer(data=request.data)
     if serializer.is_valid():
         user = serializer.save()
@@ -95,9 +106,69 @@ def settings_view(request):
 def patient_dashboard_view(request):
     return Response({"message": "Patient Dashboard API"})
 
-@api_view(['POST'])
-def logout_view(request):
-    return Response({"message": "Logout realizado (client-side deve descartar token)"})
+class LogoutView(APIView):
+    permission_classes = (IsAuthenticated,)
+
+    def post(self, request):
+        serializer = LogoutSerializer(data=request.data)
+        if serializer.is_valid():
+            try:
+                refresh_token = serializer.validated_data["refresh"]
+                token = RefreshToken(refresh_token)
+                token.blacklist()
+                return Response({"message": "Logout realizado com sucesso."}, status=status.HTTP_200_OK)
+            except Exception as e:
+                return Response({"error": "Token inválido ou expirado."}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class PasswordResetView(APIView):
+    permission_classes = (AllowAny,)
+
+    def post(self, request):
+        serializer = PasswordResetSerializer(data=request.data)
+        if serializer.is_valid():
+            email = serializer.validated_data['email']
+            user = User.objects.filter(email=email).first()
+            if user:
+                token = default_token_generator.make_token(user)
+                uid = urlsafe_base64_encode(force_bytes(user.pk))
+                reset_link = f"http://localhost:3000/auth/reset-password/{uid}/{token}/"  # Frontend URL
+                
+                # Enviar email (simulado no console em dev)
+                try:
+                    send_mail(
+                        'Redefinição de Senha - NutriXpertPro',
+                        f'Para redefinir sua senha, clique no link: {reset_link}',
+                        'noreply@nutrixpert.com.br',
+                        [email],
+                        fail_silently=False,
+                    )
+                except Exception as e:
+                    return Response({"error": "Erro ao enviar email."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
+            # Por segurança, sempre retornar 200 mesmo se o email não existir
+            return Response({"message": "Se o email existir, as instruções foram enviadas."}, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class PasswordResetConfirmView(APIView):
+    permission_classes = (AllowAny,)
+
+    def post(self, request, uidb64, token):
+        serializer = PasswordResetConfirmSerializer(data=request.data)
+        if serializer.is_valid():
+            try:
+                uid = force_str(urlsafe_base64_decode(uidb64))
+                user = User.objects.get(pk=uid)
+            except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+                user = None
+
+            if user is not None and default_token_generator.check_token(user, token):
+                user.set_password(serializer.validated_data['password'])
+                user.save()
+                return Response({"message": "Senha redefinida com sucesso."}, status=status.HTTP_200_OK)
+            else:
+                return Response({"error": "Link inválido ou expirado."}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -106,13 +177,8 @@ def google_login_view(request):
     API endpoint para login com Google OAuth.
     Recebe um id_token, verifica com o Google e retorna tokens JWT.
     """
-    from .serializers import GoogleLoginSerializer
     from google.oauth2 import id_token
     from google.auth.transport import requests
-    from django.conf import settings
-    from django.contrib.auth import get_user_model
-    
-    User = get_user_model()
     
     serializer = GoogleLoginSerializer(data=request.data)
     if not serializer.is_valid():
@@ -128,26 +194,20 @@ def google_login_view(request):
             settings.GOOGLE_OAUTH2_CLIENT_ID
         )
         
-        # O token é válido. Obter informações do usuário.
         email = id_info['email']
         name = id_info.get('name', '')
         
-        # Verificar se o usuário já existe
         try:
             user = User.objects.get(email=email)
         except User.DoesNotExist:
-            # Criar novo usuário (assumindo paciente por padrão se não especificado, 
-            # mas aqui vamos criar como paciente para segurança)
             user = User.objects.create_user(
                 email=email,
                 name=name,
-                user_type='paciente' # Default para login social
+                user_type='paciente'
             )
-            # Definir uma senha aleatória inutilizável
             user.set_unusable_password()
             user.save()
             
-        # Gerar tokens JWT
         refresh = RefreshToken.for_user(user)
         
         return Response({
@@ -165,7 +225,6 @@ def google_login_view(request):
         }, status=status.HTTP_200_OK)
         
     except ValueError as e:
-        # Token inválido
         return Response({"error": "Token Google inválido", "details": str(e)}, status=status.HTTP_400_BAD_REQUEST)
     except Exception as e:
         return Response({"error": "Erro interno no login Google", "details": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
