@@ -3,20 +3,22 @@ URL configuration for setup project.
 Django REST API - Arquitetura Headless
 """
 
+from django.http import JsonResponse
 from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 from rest_framework_simplejwt.views import (
-    TokenObtainPairView,
     TokenRefreshView,
     TokenVerifyView,
 )
+from users.jwt_views import CustomTokenObtainPairView
 
 urlpatterns = [
     path("admin/", admin.site.urls),
+    path("", lambda request: JsonResponse({"message": "Nutri 4.0 API is running"}), name="root"),
     # API REST - Autenticação JWT
-    path("api/token/", TokenObtainPairView.as_view(), name="token_obtain_pair"),
+    path("api/token/", CustomTokenObtainPairView.as_view(), name="token_obtain_pair"),
     path("api/token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
     path("api/token/verify/", TokenVerifyView.as_view(), name="token_verify"),
     # Apps

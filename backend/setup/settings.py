@@ -31,9 +31,16 @@ except Exception as e:
 
 SECRET_KEY = config('SECRET_KEY', default='dev-secret-key-CHANGE-IN-PRODUCTION-!!!')
 GOOGLE_OAUTH2_CLIENT_ID = config('GOOGLE_OAUTH2_CLIENT_ID', default='')
-DEBUG = config('DEBUG', default=False, cast=bool)
+DEBUG = True # Forcing DEBUG for local development
 print(f"DEBUG mode is: {DEBUG}")
-ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='127.0.0.1,localhost', cast=Csv)
+ALLOWED_HOSTS = [
+    'localhost',
+    '127.0.0.1',
+    '0.0.0.0',  # Permite qualquer IP (útil para desenvolvimento)
+]
+
+# Permissive CORS for development
+CORS_ALLOW_ALL_ORIGINS = True
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -61,6 +68,11 @@ INSTALLED_APPS = [
     'lab_exams.apps.LabExamsConfig'
 ]
 
+AUTHENTICATION_BACKENDS = [
+    'users.authentication.EmailBackend',  # Backend personalizado para login com email
+    'django.contrib.auth.backends.ModelBackend',  # Backend padrão do Django (mantido para o admin)
+]
+
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
@@ -78,8 +90,21 @@ MIDDLEWARE = [
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
+    "http://localhost:8000",
+    "http://127.0.0.1:8000",
 ]
 CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+]
 
 ROOT_URLCONF = 'setup.urls'
 

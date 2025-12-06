@@ -1,6 +1,8 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from rest_framework_simplejwt.views import TokenObtainPairView
 
 User = get_user_model()
 
@@ -47,3 +49,20 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
         if attrs['password'] != attrs['confirm_password']:
             raise serializers.ValidationError({"password": "As senhas não coincidem."})
         return attrs
+
+class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
+    def validate(self, attrs):
+        # Mapeia o campo 'email' para o campo 'username' esperado pelo backend
+        email = attrs.get('email')
+        if email:
+            attrs['username'] = email
+
+        # Validação padrão
+        data = super().validate(attrs)
+
+        # Verifica se o usuário é um nutricionista (adicional à validação padrão)
+        # O usuário está disponível após a validação bem-sucedida
+        if self.user and self.user.user_type != 'nutricionista':
+            raise serializers.ValidationError({"error": "Acesso negado. Esta é uma área exclusiva para nutricionistas."})
+
+        return data

@@ -33,6 +33,22 @@ def dashboard_view(request):
         "user": request.user.email
     })
 
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def me_view(request):
+    """
+    API endpoint para dados do usuário autenticado.
+    """
+    user = request.user
+    return Response({
+        "id": user.id,
+        "name": user.name,
+        "email": user.email,
+        "user_type": user.user_type,
+        "professional_title": user.professional_title,
+        "gender": user.gender,
+    })
+
 @api_view(['POST'])
 @permission_classes([AllowAny])
 @throttle_classes([AuthRateThrottle])
@@ -43,15 +59,33 @@ def nutricionista_login_view(request):
     """
     email = request.data.get("email")
     password = request.data.get("password")
-    user = authenticate(email=email, password=password)
-    
-    if user and user.user_type == 'nutricionista':
-        refresh = RefreshToken.for_user(user)
-        return Response({
-            'refresh': str(refresh),
-            'access': str(refresh.access_token),
-        })
-    return Response({"error": "Credenciais inválidas"}, status=status.HTTP_401_UNAUTHORIZED)
+
+    if not email or not password:
+        return Response(
+            {"error": "Email e senha são obrigatórios"},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    # O Django vai usar os backends configurados automaticamente
+    user = authenticate(request=request, username=email, password=password)
+
+    if user is None:
+        return Response(
+            {"error": "Email ou senha incorretos. Tente novamente."},
+            status=status.HTTP_401_UNAUTHORIZED
+        )
+
+    if user.user_type != 'nutricionista':
+        return Response(
+            {"error": "Acesso negado. Esta é uma área exclusiva para nutricionistas."},
+            status=status.HTTP_403_FORBIDDEN
+        )
+
+    refresh = RefreshToken.for_user(user)
+    return Response({
+        'refresh': str(refresh),
+        'access': str(refresh.access_token),
+    })
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -86,7 +120,35 @@ def paciente_login_view(request):
     """
     API endpoint para login de paciente.
     """
-    return Response({"message": "Login paciente via API em construção"}, status=status.HTTP_501_NOT_IMPLEMENTED)
+    email = request.data.get("email")
+    password = request.data.get("password")
+
+    if not email or not password:
+        return Response(
+            {"error": "Email e senha são obrigatórios"},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    # O Django vai usar os backends configurados automaticamente
+    user = authenticate(request=request, username=email, password=password)
+
+    if user is None:
+        return Response(
+            {"error": "Email ou senha incorretos. Tente novamente."},
+            status=status.HTTP_401_UNAUTHORIZED
+        )
+
+    if user.user_type != 'paciente':
+        return Response(
+            {"error": "Acesso negado. Esta é uma área exclusiva para pacientes."},
+            status=status.HTTP_403_FORBIDDEN
+        )
+
+    refresh = RefreshToken.for_user(user)
+    return Response({
+        'refresh': str(refresh),
+        'access': str(refresh.access_token),
+    })
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
