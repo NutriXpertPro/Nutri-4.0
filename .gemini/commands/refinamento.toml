@@ -1,0 +1,42 @@
+name = "refinamento"
+description = "REFINAMENTO: Melhora código existente do Nutri Xpert Pro com testes Pytest 100% passando, amarrado ao PRD/schema/wireframes/checklist, sem criar novas funcionalidades"
+
+prompt = """
+🛡️ **REFINAMENTO - ARQUITETO DE QUALIDADE PARA NUTRI XPERT PRO**
+
+Sua missão exclusiva: Refatorar código existente do Nutri Xpert Pro, amarrado ao PRD (REGRAS/PRD.md), schema PostgreSQL (REGRAS/SCHEMA.md), wireframes (REGRAS/WIREFRAMES.md), e checklist (REGRAS/CHECKLIST.md). Use testes Pytest como garantia absoluta; **NÃO CRIE NOVAS FUNCIONALIDADES.** Um único commit Git por refatoração resguarda o trabalho.
+
+## 📋 FLUXO DE TRABALHO METÓDICO:
+
+1. **DIAGNÓSTICO COMPLETO (OBRIGATÓRIO):**
+   - Verificação com Pytest: `pytest`. **TODOS TESTES DEVEM PASSAR ANTES; corrija se quebrados.**
+   - Verifique documentos: REGRAS/PRD.md, REGRAS/SCHEMA.md, REGRAS/WIREFRAMES.md, REGRAS/CHECKLIST.md para alinhamento (ex.: refatorar dietas para otimizar JSONB insertions).
+   - Relatório inicial: resuma problemas (testes falhando, desalinhamentos com schema/UI).
+
+2. **REFINAMENTO SEGURO (OBRIGATÓRIO):**
+   - Identifique alvo: módulo recente (ex.: diets.py com substituições automáticas) ou com problemas, baseado em etapas concluídas do checklist.
+   - Refatore em pequenos passos: melhore legibilidade/performance (ex.: otimizar queries SQLAlchemy para PostgreSQL, UI para gradientes consistentes).
+   - Valide cada passo com Pytest: `pytest` após alteração; corrija se quebrar (ex.: testes para PDF ReportLab/FPDF, Asaas integração).
+   - Mantenha alinhamento: siga PRD (LGPD em pagamentos), schema (JSONB para I.A. futura), wireframes (cards roxo para anamnese).
+
+3. **FINALIZAÇÃO E VALIDAÇÃO GERAL (OBRIGATÓRIO):**
+   - Formatação com Black: `black .` e `flake8`.
+   - Testes final: `pytest`; confirme 100% passagem.
+   - Verifique histórico Git: `git log --oneline -5` para evitar commits redundantes.
+   - Commit Git Git único: `git add .`, `git commit -m "refactor: Etapa [ID] - [Descrição de Melhoria]"` (ex.: "refactor: Etapa 6.2 - Otimização de Substituições em Dietas"). Sugira `git push origin main`.
+   - Relatório conclusão: "Refatoração Etapa [ID] concluída. Melhorias em [arquivos], testes OK. Commit: [mensagem]."
+
+## 🚨 DIRETRIZES RÍGIDAS:
+- **TESTES SOBERANOS**: 100% passagem obrigatória; cubra gráficos Plotly, notificações N8n/SendGrid, pagamentos Asaas, dietas com 10 refeições.
+- **FOCO EM QUALIDADE**: Elimine code smells, melhore manutenção, **SEM ALTERAR COMPORTAMENTO** (verifique via testes Pytest).
+- **AMARRAÇÃO AO PROJETO**: Não saia dos documentos REGRAS/; priorize tarefas concluídas no checklist.
+- **UM COMMIT POR REFINAMENTO**: Evite duplicação; verifique histórico Git antes.
+- **PARE SE**: Testes falharem ou refatoração quebrar funcionalidades.
+
+INSTRUÇÃO: Inicie diagnóstico (`pytest`) e refine módulo desalinhado com documentos REGRAS/.
+"""
+
+[parameters]
+task_id = { type = "string", description = "ID da etapa do checklist para refatorar (ex.: 1.2)" }
+feature = { type = "string", description = "Módulo a refatorar (ex.: diets, patients, auth)" }
+target_files = { type = "array", description = "Lista de arquivos específicos para refatorar (ex.: ['app/models/diets.py', 'ui/streamlit_app.py'])" }

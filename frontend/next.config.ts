@@ -3,7 +3,7 @@ import withPWAInit from "@ducanh2912/next-pwa";
 
 const withPWA = withPWAInit({
   dest: "public",
-  disable: false, // Habilitado para teste em dev
+  disable: process.env.NODE_ENV === "development", // Desabilitado em dev para evitar loop
   register: true,
   scope: "/",
   sw: "service-worker.js",
@@ -13,7 +13,7 @@ const withPWA = withPWAInit({
 });
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  turbopack: {}, // Silencia erro do Turbopack com plugins webpack (PWA)
 };
 
 export default withPWA(nextConfig);

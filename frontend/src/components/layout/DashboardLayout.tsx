@@ -19,7 +19,10 @@ export function DashboardLayout({ children, className }: DashboardLayoutProps) {
     return (
         <div className="min-h-screen bg-background">
             {/* Sidebar */}
-            <Sidebar />
+            <Sidebar
+                collapsed={sidebarCollapsed}
+                onToggle={setSidebarCollapsed}
+            />
 
             {/* Header */}
             <Header sidebarCollapsed={sidebarCollapsed} />
@@ -35,7 +38,7 @@ export function DashboardLayout({ children, className }: DashboardLayoutProps) {
                     className
                 )}
             >
-                <div className="p-4 lg:p-6 max-w-7xl mx-auto">
+                <div className="p-4 lg:p-6 w-full">
                     {children}
                 </div>
             </main>

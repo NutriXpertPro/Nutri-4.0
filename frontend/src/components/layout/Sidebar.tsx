@@ -34,6 +34,8 @@ interface SidebarItem {
 
 interface SidebarProps {
     className?: string
+    collapsed?: boolean
+    onToggle?: (collapsed: boolean) => void
 }
 
 // Mock data - será substituído por dados reais da API
@@ -45,10 +47,23 @@ const mockBadges = {
     notifications: 5,
 }
 
-export function Sidebar({ className }: SidebarProps) {
+export function Sidebar({ className, collapsed, onToggle }: SidebarProps) {
     const pathname = usePathname()
-    const [isCollapsed, setIsCollapsed] = React.useState(false)
+    // Estado interno caso não seja controlado externamente
+    const [internalCollapsed, setInternalCollapsed] = React.useState(false)
     const [isMobileOpen, setIsMobileOpen] = React.useState(false)
+
+    // Usa prop se definida, senão usa estado interno
+    const isCollapsed = collapsed !== undefined ? collapsed : internalCollapsed
+
+    const handleToggle = () => {
+        const newState = !isCollapsed
+        if (onToggle) {
+            onToggle(newState)
+        } else {
+            setInternalCollapsed(newState)
+        }
+    }
 
     const sidebarItems: SidebarItem[] = [
         {
@@ -227,7 +242,7 @@ export function Sidebar({ className }: SidebarProps) {
                         variant="ghost"
                         size="sm"
                         className="w-full justify-center"
-                        onClick={() => setIsCollapsed(!isCollapsed)}
+                        onClick={handleToggle}
                     >
                         {isCollapsed ? (
                             <ChevronRight className="h-4 w-4" />

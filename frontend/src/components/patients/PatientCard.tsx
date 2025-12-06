@@ -77,7 +77,12 @@ export function PatientCard({ patient, className }: PatientCardProps) {
                     </Avatar>
 
                     <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold truncate">{patient.name}</h3>
+                        <div className="flex items-center gap-2 mb-1">
+                            <h3 className="font-semibold truncate">{patient.name}</h3>
+                            <Badge variant={patient.status === "active" ? "default" : "secondary"} className="h-5 px-1.5 text-[10px]">
+                                {patient.status === "active" ? "Ativo" : "Inativo"}
+                            </Badge>
+                        </div>
                         {patient.goal && (
                             <p className="text-xs text-muted-foreground truncate">
                                 🎯 {patient.goal}
@@ -156,9 +161,7 @@ export function PatientCard({ patient, className }: PatientCardProps) {
                             </span>
                         </div>
                     ) : (
-                        <Badge variant="outline" className="text-xs">
-                            {patient.status === "active" ? "Ativo" : "Inativo"}
-                        </Badge>
+                        <div className="text-xs text-muted-foreground">Sem dados de progresso</div>
                     )}
 
                     <Button size="sm" variant="outline" asChild>

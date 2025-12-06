@@ -47,7 +47,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 setUser(userData)
             }
         } catch (error) {
-            console.error("Failed to fetch user profile", error)
+            // Silently ignore 401/403 errors during dev as we might use mock data
+            // console.error("Failed to fetch user profile", error) 
         }
     }
 

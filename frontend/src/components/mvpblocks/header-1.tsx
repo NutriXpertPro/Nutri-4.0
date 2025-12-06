@@ -82,6 +82,8 @@ export default function Header1() {
                 width={50}
                 height={50}
                 className="rounded-xl"
+                priority
+                sizes="50px"
               />
             </Link>
           </motion.div>
@@ -109,7 +111,7 @@ export default function Header1() {
             </Button>
             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
               <Button className="bg-[#238636] hover:bg-[#2ea043] text-white font-bold" asChild>
-                <Link href="/login">Criar Conta</Link>
+                <Link href="/register">Criar Conta</Link>
               </Button>
             </motion.div>
           </div>
@@ -154,7 +156,7 @@ export default function Header1() {
                     <Link href="/login">Entrar</Link>
                   </Button>
                   <Button className="w-full bg-[#238636] hover:bg-[#2ea043] text-white font-bold" asChild onClick={() => setIsMobileMenuOpen(false)}>
-                    <Link href="/login">Criar Conta</Link>
+                    <Link href="/register">Criar Conta</Link>
                   </Button>
                 </div>
               </div>

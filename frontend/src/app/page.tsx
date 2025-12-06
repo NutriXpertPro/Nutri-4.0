@@ -1,11 +1,14 @@
 import Header1 from "@/components/mvpblocks/header-1";
 import Hero1 from "@/components/mvpblocks/hero-1";
-import Feature1 from "@/components/mvpblocks/feature-1";
-import Testimonial1 from "@/components/mvpblocks/testimonial-1";
-import Pricing1 from "@/components/mvpblocks/pricing-1";
-import Faq1 from "@/components/mvpblocks/faq-1";
-import CTA1 from "@/components/mvpblocks/cta-1";
-import Footer4Col from "@/components/mvpblocks/footer-4col";
+import dynamic from "next/dynamic";
+
+// Lazy load componentes abaixo da dobra para acelerar carregamento inicial
+const Feature1 = dynamic(() => import("@/components/mvpblocks/feature-1"));
+const Testimonial1 = dynamic(() => import("@/components/mvpblocks/testimonial-1"));
+const Pricing1 = dynamic(() => import("@/components/mvpblocks/pricing-1"));
+const Faq1 = dynamic(() => import("@/components/mvpblocks/faq-1"));
+const CTA1 = dynamic(() => import("@/components/mvpblocks/cta-1"));
+const Footer4Col = dynamic(() => import("@/components/mvpblocks/footer-4col"));
 
 export default function LandingPage() {
   return (

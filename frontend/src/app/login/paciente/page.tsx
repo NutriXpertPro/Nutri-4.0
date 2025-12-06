@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -10,17 +10,13 @@ import { useTheme } from "next-themes"
 import { useColor } from "@/components/color-provider"
 import { Moon, Sun, Eye, EyeOff, Loader2 } from "lucide-react"
 import { FcGoogle } from "react-icons/fc"
+import Link from "next/link"
 import { useAuth } from "@/contexts/auth-context"
 
-export default function LoginPage() {
+export default function PatientLoginPage() {
     const router = useRouter()
     const { theme, setTheme } = useTheme()
     const { color, setColor } = useColor()
-    const [mounted, setMounted] = useState(false)
-
-    useEffect(() => {
-        setMounted(true)
-    }, [])
 
     const { login } = useAuth()
     const [email, setEmail] = useState("")
@@ -35,8 +31,8 @@ export default function LoginPage() {
         setIsLoading(true)
 
         try {
-            // Chamada para a API de autenticação JWT do Django - login específico para nutricionistas
-            const response = await fetch("http://localhost:8000/users/login/nutricionista/", {
+            // Chamada para a API de autenticação JWT do Django
+            const response = await fetch("http://localhost:8000/api/token/", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -54,15 +50,15 @@ export default function LoginPage() {
             const data = await response.json()
 
             // Usar o contexto para login (salva cookies e redireciona)
-            login(data)
+            // Pacientes vão para o dashboard/paciente
+            login(data, false)
+            router.push("/dashboard/paciente")
 
         } catch (err) {
             setError("Email ou senha incorretos. Tente novamente.")
             setIsLoading(false)
         }
     }
-
-    if (!mounted) return null
 
     return (
         <div className="min-h-screen bg-background flex items-center justify-center p-4">
@@ -117,16 +113,16 @@ export default function LoginPage() {
                 <CardHeader className="text-center space-y-4">
                     {/* Logo/Brand */}
                     <div className="mx-auto w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
-                        <span className="text-3xl">🥗</span>
+                        <span className="text-3xl">👤</span>
                     </div>
                     <div>
                         <CardTitle className="text-2xl font-bold">NutriXpertPro</CardTitle>
                         <CardDescription className="mt-2">
-                            Sistema Avançado de Nutrição
+                            Acompanhe sua evolução nutricional
                         </CardDescription>
                     </div>
                     <Badge variant="secondary" className="mx-auto">
-                        Acesso Nutricionista
+                        Acesso Paciente
                     </Badge>
                 </CardHeader>
 
@@ -230,13 +226,6 @@ export default function LoginPage() {
                         >
                             Esqueceu sua senha?
                         </button>
-
-                        <div className="text-sm text-center text-muted-foreground">
-                            É paciente?{" "}
-                            <a href="/login/paciente" className="text-primary hover:underline font-medium">
-                                Acesse aqui
-                            </a>
-                        </div>
                     </CardFooter>
                 </form>
             </Card>

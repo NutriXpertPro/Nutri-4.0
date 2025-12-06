@@ -65,7 +65,7 @@ const mockPatients = [
         email: "carlos@email.com",
         phone: "(11) 96666-3456",
         createdAt: "20/11/2025",
-        status: "inactive" as const,
+        status: "active" as const,
         goal: "Perder 10kg",
         progress: { value: 2, isPositive: true },
     },
@@ -104,7 +104,7 @@ const mockPatients = [
         email: "lucas.f@email.com",
         phone: "(11) 92222-9012",
         createdAt: "01/11/2025",
-        status: "inactive" as const,
+        status: "active" as const,
     },
     {
         id: "9",
