@@ -11,7 +11,7 @@ class EmailBackend(BaseBackend):
         # Verifica se o username é um email
         if username is None:
             username = kwargs.get('email')
-
+        
         if username is None or password is None:
             return None
 
@@ -19,6 +19,7 @@ class EmailBackend(BaseBackend):
             # Tenta encontrar o usuário pelo email
             user = User.objects.get(email=username)
         except User.DoesNotExist:
+
             # Executa o mesmo número de operações de hash para evitar timing attacks
             User().set_password(password)
             return None

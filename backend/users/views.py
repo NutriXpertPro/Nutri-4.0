@@ -11,6 +11,7 @@ from django.core.mail import send_mail
 from django.conf import settings
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.utils.encoding import force_bytes, force_str
+
 from .serializers import (
     NutritionistRegistrationSerializer, 
     GoogleLoginSerializer,
@@ -59,7 +60,7 @@ def nutricionista_login_view(request):
     """
     email = request.data.get("email")
     password = request.data.get("password")
-
+    
     if not email or not password:
         return Response(
             {"error": "Email e senha são obrigatórios"},

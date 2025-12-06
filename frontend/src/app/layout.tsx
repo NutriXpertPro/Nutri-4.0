@@ -5,6 +5,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { ColorProvider } from "@/components/color-provider";
 
 import { AuthProvider } from "@/contexts/auth-context"
+import QueryProvider from "@/components/query-provider"
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -51,7 +52,9 @@ export default function RootLayout({
         >
           <ColorProvider>
             <AuthProvider>
-              {children}
+              <QueryProvider>
+                {children}
+              </QueryProvider>
             </AuthProvider>
           </ColorProvider>
         </ThemeProvider>

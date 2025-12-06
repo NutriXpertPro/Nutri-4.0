@@ -35,9 +35,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [isLoading, setIsLoading] = useState(true)
     const router = useRouter()
 
-    const fetchUserProfile = async (token: string) => {
+    const fetchUserProfile = async (token: string): Promise<boolean> => {
         try {
-            const response = await fetch("http://127.0.0.1:8000/users/me/", {
+            // Use localhost and add /api/v1/ prefix
+            const response = await fetch("http://localhost:8000/api/v1/users/me/", {
                 headers: {
                     "Authorization": `Bearer ${token}`
                 }
@@ -45,10 +46,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             if (response.ok) {
                 const userData = await response.json()
                 setUser(userData)
+                return true
             }
+            return false
         } catch (error) {
             // Silently ignore 401/403 errors during dev as we might use mock data
             // console.error("Failed to fetch user profile", error) 
+            return false
         }
     }
 
@@ -56,8 +60,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const initAuth = async () => {
             const token = Cookies.get("accessToken")
             if (token) {
-                setIsAuthenticated(true)
-                await fetchUserProfile(token)
+                // Keep token sync in case it's valid, but verify first
+                localStorage.setItem('access_token', token)
+
+                const isValid = await fetchUserProfile(token)
+
+                if (isValid) {
+                    setIsAuthenticated(true)
+                } else {
+                    // Token invalid/expired - cleanup
+                    Cookies.remove("accessToken")
+                    Cookies.remove("refreshToken")
+                    localStorage.removeItem('access_token')
+                    localStorage.removeItem('refresh_token')
+                    setIsAuthenticated(false)
+                    setUser(null)
+                }
+            } else {
+                setIsAuthenticated(false)
+                setUser(null)
             }
             setIsLoading(false)
         }
@@ -67,6 +88,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const login = async (tokens: { access: string; refresh: string }, redirect = true) => {
         Cookies.set("accessToken", tokens.access, { expires: 1 }) // 1 day
         Cookies.set("refreshToken", tokens.refresh, { expires: 7 }) // 7 days
+
+        // Sync with localStorage for api.ts interceptor
+        localStorage.setItem('access_token', tokens.access)
+        localStorage.setItem('refresh_token', tokens.refresh)
+
         setIsAuthenticated(true)
         await fetchUserProfile(tokens.access)
 
@@ -78,6 +104,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const logout = () => {
         Cookies.remove("accessToken")
         Cookies.remove("refreshToken")
+
+        // Clear localStorage
+        localStorage.removeItem('access_token')
+        localStorage.removeItem('refresh_token')
+
         setUser(null)
         setIsAuthenticated(false)
         router.push("/login")

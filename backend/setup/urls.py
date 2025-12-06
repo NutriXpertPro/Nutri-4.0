@@ -22,15 +22,15 @@ urlpatterns = [
     path("api/token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
     path("api/token/verify/", TokenVerifyView.as_view(), name="token_verify"),
     # Apps
-    path("users/", include("users.urls", namespace="users")),
-    path("patients/", include("patients.urls", namespace="patients")),
-    path("appointments/", include("appointments.urls", namespace="appointments")),
-    path("anamnesis/", include("anamnesis.urls", namespace="anamnesis")),
-    path("diets/", include("diets.urls", namespace="diets")),
-    path("evaluations/", include("evaluations.urls", namespace="evaluations")),
-    path("api/notifications/", include("notifications.urls", namespace="notification")),
-    path("messages/", include("messages.urls", namespace="messages")),
-    path("lab_exams/", include("lab_exams.urls", namespace="lab_exams")),
+    path("api/v1/users/", include("users.urls", namespace="users")),
+    path("api/v1/patients/", include("patients.urls", namespace="patients")),
+    path("api/v1/appointments/", include("appointments.urls", namespace="appointments")),
+    path("api/v1/anamnesis/", include("anamnesis.urls", namespace="anamnesis")),
+    path("api/v1/diets/", include("diets.urls", namespace="diets")),
+    path("api/v1/evaluations/", include("evaluations.urls", namespace="evaluations")),
+    path("api/v1/notifications/", include("notifications.urls", namespace="notification")),
+    path("api/v1/messages/", include("messages.urls", namespace="messages")),
+    path("api/v1/lab_exams/", include("lab_exams.urls", namespace="lab_exams")),
 ]
 
 if settings.DEBUG:

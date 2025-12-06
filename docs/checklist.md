@@ -203,17 +203,23 @@ Este checklist organiza todo o desenvolvimento do NutriXpertPro em **5 fases pri
 - [ ] API `GET /api/v1/patients/{id}/compare-photos/` - Comparar fotos antes/depois
 
 ### 3.2 Gestão de Pacientes - Frontend
-- [ ] Página Lista de Pacientes (grid de cards, busca, paginação)
-- [ ] Componente PatientCard
-- [ ] Modal/Página Criar Paciente (formulário multi-seção)
+- [x] Página Lista de Pacientes (grid de cards, busca, paginação)
+- [x] Componente PatientCard
+- [x] Modal/Página Criar Paciente (formulário multi-seção)
 - [ ] Validações de formulário (email único, telefone BR, data nascimento)
-- [ ] Página Detalhes do Paciente - Vista Dashboard
-  - [ ] Seção de fotos (3 ângulos: frente, lateral, costas)
-  - [ ] 5 cards de métricas (peso, gordura, músculo, IMC, abdômen)
-  - [ ] Gráfico evolução corporal (Recharts - linha)
-  - [ ] Gráfico radar composição
+- [x] Página Detalhes do Paciente - Vista Dashboard
+  - [x] Seção de fotos (3 ângulos: frente, lateral, costas)
+  - [x] 5 cards de métricas (peso, gordura, músculo, IMC, abdômen)
+  - [x] Gráfico evolução corporal (Recharts - linha)
+  - [x] Gráfico radar composição
 - [ ] Página Detalhes do Paciente - Vista Timeline
-- [ ] Página Comparar Fotos (side-by-side)
+- [x] Correções visuais e temas em Detalhes do Paciente (Responsividade, Dark Mode)
+- [x] Integração Visual Premium em todas as abas (Visão Geral, Análise, Dieta)
+
+### Próximos Passos (Backend Integration)
+- [ ] Conectar Lista de Pacientes com API Real
+- [ ] Implementar formulário completo de Anamnese
+- [ ] Integração do Dashboard com dados reais
 - [ ] Página Editar Paciente
 
 ### 3.3 Avaliações Físicas - Backend

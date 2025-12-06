@@ -27,124 +27,32 @@ import {
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/contexts/auth-context"
-
-// Mock data - será substituído por dados da API
-const mockPatients = [
-    {
-        id: "1",
-        name: "Maria Silva",
-        email: "maria.silva@email.com",
-        phone: "(11) 99999-1234",
-        createdAt: "01/12/2025",
-        status: "active" as const,
-        goal: "Perder 8kg",
-        progress: { value: 5, isPositive: true },
-    },
-    {
-        id: "2",
-        name: "João Santos",
-        email: "joao.santos@email.com",
-        phone: "(11) 98888-5678",
-        createdAt: "28/11/2025",
-        status: "active" as const,
-        goal: "Ganhar massa",
-        progress: { value: 3, isPositive: false },
-    },
-    {
-        id: "3",
-        name: "Ana Costa",
-        email: "ana.costa@email.com",
-        phone: "(21) 97777-9012",
-        createdAt: "25/11/2025",
-        status: "active" as const,
-        goal: "Manutenção",
-    },
-    {
-        id: "4",
-        name: "Carlos Oliveira",
-        email: "carlos@email.com",
-        phone: "(11) 96666-3456",
-        createdAt: "20/11/2025",
-        status: "active" as const,
-        goal: "Perder 10kg",
-        progress: { value: 2, isPositive: true },
-    },
-    {
-        id: "5",
-        name: "Fernanda Lima",
-        email: "fernanda.lima@email.com",
-        phone: "(11) 95555-7890",
-        createdAt: "15/11/2025",
-        status: "active" as const,
-        goal: "Emagrecimento",
-        progress: { value: 4, isPositive: true },
-    },
-    {
-        id: "6",
-        name: "Ricardo Mendes",
-        email: "ricardo@email.com",
-        phone: "(21) 94444-1234",
-        createdAt: "10/11/2025",
-        status: "active" as const,
-        goal: "Hipertrofia",
-    },
-    {
-        id: "7",
-        name: "Patricia Souza",
-        email: "patricia@email.com",
-        phone: "(11) 93333-5678",
-        createdAt: "05/11/2025",
-        status: "active" as const,
-        goal: "Reeducação alimentar",
-        progress: { value: 3, isPositive: true },
-    },
-    {
-        id: "8",
-        name: "Lucas Ferreira",
-        email: "lucas.f@email.com",
-        phone: "(11) 92222-9012",
-        createdAt: "01/11/2025",
-        status: "active" as const,
-    },
-    {
-        id: "9",
-        name: "Juliana Alves",
-        email: "juliana@email.com",
-        phone: "(21) 91111-3456",
-        createdAt: "28/10/2025",
-        status: "active" as const,
-        goal: "Perder 5kg",
-        progress: { value: 2, isPositive: true },
-    },
-]
+import { usePatients } from "@/hooks/usePatients"
 
 export default function PatientsPage() {
     const router = useRouter()
-    const { isAuthenticated, isLoading } = useAuth()
+    const { isAuthenticated, isLoading: isAuthLoading } = useAuth()
+    const { patients, isLoading: isPatientsLoading, error } = usePatients()
+
     const [searchQuery, setSearchQuery] = React.useState("")
     const [sortBy, setSortBy] = React.useState("recent")
     const [filterStatus, setFilterStatus] = React.useState("all")
     const [currentPage, setCurrentPage] = React.useState(1)
-    const [isLoadingData, setIsLoadingData] = React.useState(true)
     const [viewMode, setViewMode] = React.useState<"grid" | "list">("grid")
     const itemsPerPage = 6
 
-    // Simular loading
-    React.useEffect(() => {
-        const timer = setTimeout(() => setIsLoadingData(false), 1000)
-        return () => clearTimeout(timer)
-    }, [])
-
     // Auth check
     React.useEffect(() => {
-        if (!isLoading && !isAuthenticated) {
+        if (!isAuthLoading && !isAuthenticated) {
             router.push("/login")
         }
-    }, [isLoading, isAuthenticated, router])
+    }, [isAuthLoading, isAuthenticated, router])
 
     // Filtrar e ordenar pacientes
     const filteredPatients = React.useMemo(() => {
-        let result = [...mockPatients]
+        if (!patients) return []
+
+        let result = [...patients]
 
         // Busca
         if (searchQuery) {
@@ -158,19 +66,19 @@ export default function PatientsPage() {
 
         // Filtro de status
         if (filterStatus !== "all") {
-            result = result.filter((p) => p.status === filterStatus)
+            const isActive = filterStatus === "active"
+            result = result.filter((p) => p.status === isActive)
         }
 
         // Ordenação
         if (sortBy === "recent") {
-            result.sort((a, b) => new Date(b.createdAt.split('/').reverse().join('-')).getTime() -
-                new Date(a.createdAt.split('/').reverse().join('-')).getTime())
+            result.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
         } else if (sortBy === "name") {
             result.sort((a, b) => a.name.localeCompare(b.name))
         }
 
         return result
-    }, [searchQuery, sortBy, filterStatus])
+    }, [patients, searchQuery, sortBy, filterStatus])
 
     // Paginação
     const totalPages = Math.ceil(filteredPatients.length / itemsPerPage)
@@ -179,11 +87,24 @@ export default function PatientsPage() {
         currentPage * itemsPerPage
     )
 
-    if (isLoading || !isAuthenticated) {
+    if (isAuthLoading || !isAuthenticated) {
         return (
             <div className="min-h-screen bg-background flex items-center justify-center">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
             </div>
+        )
+    }
+
+    if (error) {
+        return (
+            <DashboardLayout>
+                <div className="flex flex-col items-center justify-center py-12 text-center text-destructive">
+                    <p>Erro ao carregar pacientes.</p>
+                    <p className="text-sm mt-2 font-mono bg-destructive/10 p-2 rounded">
+                        {error instanceof Error ? error.message : JSON.stringify(error)}
+                    </p>
+                </div>
+            </DashboardLayout>
         )
     }
 
@@ -197,7 +118,7 @@ export default function PatientsPage() {
                         Meus Pacientes
                     </h1>
                     <p className="text-muted-foreground mt-1">
-                        {mockPatients.length} pacientes cadastrados
+                        {patients?.length || 0} pacientes cadastrados
                     </p>
                 </div>
                 <Button className="gap-2" asChild>
@@ -277,7 +198,7 @@ export default function PatientsPage() {
             )}
 
             {/* Patient Grid */}
-            {isLoadingData ? (
+            {isPatientsLoading ? (
                 <div className={cn(
                     "grid gap-4",
                     viewMode === "grid"
@@ -312,7 +233,17 @@ export default function PatientsPage() {
                         : "grid-cols-1"
                 )}>
                     {paginatedPatients.map((patient) => (
-                        <PatientCard key={patient.id} patient={patient} />
+                        <PatientCard
+                            key={patient.id}
+                            patient={{
+                                ...patient,
+                                id: patient.id.toString(),
+                                createdAt: patient.created_at,
+                                status: patient.status ? 'active' : 'inactive',
+                                progress: { value: 0, isPositive: true },
+                                phone: patient.phone || '',
+                            }}
+                        />
                     ))}
                 </div>
             )}

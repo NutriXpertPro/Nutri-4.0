@@ -27,11 +27,11 @@ export function PatientDietTab() {
 
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {/* Café da Manhã */}
-                <Card>
+                <Card className="hover:border-primary/50 transition-colors">
                     <CardHeader className="pb-2">
                         <div className="flex items-center justify-between">
-                            <Badge variant="secondary">07:30</Badge>
-                            <Utensils className="h-4 w-4 text-muted-foreground" />
+                            <Badge variant="outline" className="border-primary/20 text-primary">07:30</Badge>
+                            <Utensils className="h-4 w-4 text-primary" />
                         </div>
                         <CardTitle className="text-base mt-2">Café da Manhã</CardTitle>
                     </CardHeader>
@@ -43,11 +43,11 @@ export function PatientDietTab() {
                 </Card>
 
                 {/* Colação */}
-                <Card>
+                <Card className="hover:border-primary/50 transition-colors">
                     <CardHeader className="pb-2">
                         <div className="flex items-center justify-between">
-                            <Badge variant="secondary">10:30</Badge>
-                            <Utensils className="h-4 w-4 text-muted-foreground" />
+                            <Badge variant="outline" className="border-primary/20 text-primary">10:30</Badge>
+                            <Utensils className="h-4 w-4 text-primary" />
                         </div>
                         <CardTitle className="text-base mt-2">Colação</CardTitle>
                     </CardHeader>
@@ -57,14 +57,14 @@ export function PatientDietTab() {
                     </CardContent>
                 </Card>
 
-                {/* Almoço */}
-                <Card className="border-primary/20 bg-primary/5">
+                {/* Almoço - Destacado */}
+                <Card className="border-primary bg-primary/10 shadow-md">
                     <CardHeader className="pb-2">
                         <div className="flex items-center justify-between">
                             <Badge className="bg-primary hover:bg-primary/90">13:00</Badge>
                             <Utensils className="h-4 w-4 text-primary" />
                         </div>
-                        <CardTitle className="text-base mt-2">Almoço</CardTitle>
+                        <CardTitle className="text-base mt-2 font-bold text-primary">Almoço (Atual)</CardTitle>
                     </CardHeader>
                     <CardContent className="text-sm space-y-2">
                         <p>• 150g Frango ou Peixe grelhado</p>
@@ -75,11 +75,11 @@ export function PatientDietTab() {
                 </Card>
 
                 {/* Tarde */}
-                <Card>
+                <Card className="hover:border-primary/50 transition-colors">
                     <CardHeader className="pb-2">
                         <div className="flex items-center justify-between">
-                            <Badge variant="secondary">16:00</Badge>
-                            <Utensils className="h-4 w-4 text-muted-foreground" />
+                            <Badge variant="outline" className="border-primary/20 text-primary">16:00</Badge>
+                            <Utensils className="h-4 w-4 text-primary" />
                         </div>
                         <CardTitle className="text-base mt-2">Lanche da Tarde</CardTitle>
                     </CardHeader>
@@ -91,11 +91,11 @@ export function PatientDietTab() {
                 </Card>
 
                 {/* Jantar */}
-                <Card>
+                <Card className="hover:border-primary/50 transition-colors">
                     <CardHeader className="pb-2">
                         <div className="flex items-center justify-between">
-                            <Badge variant="secondary">19:30</Badge>
-                            <Utensils className="h-4 w-4 text-muted-foreground" />
+                            <Badge variant="outline" className="border-primary/20 text-primary">19:30</Badge>
+                            <Utensils className="h-4 w-4 text-primary" />
                         </div>
                         <CardTitle className="text-base mt-2">Jantar</CardTitle>
                     </CardHeader>
