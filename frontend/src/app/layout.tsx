@@ -4,6 +4,8 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ColorProvider } from "@/components/color-provider";
 
+import { AuthProvider } from "@/contexts/auth-context"
+
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -48,7 +50,9 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <ColorProvider>
-            {children}
+            <AuthProvider>
+              {children}
+            </AuthProvider>
           </ColorProvider>
         </ThemeProvider>
       </body>
