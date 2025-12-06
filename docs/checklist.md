@@ -87,17 +87,46 @@ Este checklist organiza todo o desenvolvimento do NutriXpertPro em **5 fases pri
 - [x] Componente Toggle de visibilidade de senha
 - [ ] Funcionalidade "Lembrar-me"
 - [ ] Página Esqueceu a senha
-- [ ] Integração OAuth Google
+- [x] Integração OAuth Google (Botão Visual)
 - [ ] Contexto de autenticação (AuthContext)
 - [ ] Proteção de rotas (middleware)
 - [x] Persistência de sessão (tokens no localStorage/cookies)
 
 ### 2.3 Layout Principal
-- [ ] Componente Header (logo, busca global, notificações, perfil)
-- [ ] Componente Sidebar (navegação com ícones)
-- [ ] Layout Dashboard (header + sidebar + main content)
-- [ ] Layout Auth (centralizado, sem sidebar)
-- [ ] Responsividade: sidebar colapsável em mobile
+
+#### Header Completo
+- [x] Logo NutriXpertPro à esquerda
+- [x] Busca Global (Command Palette estilo Ctrl+K)
+  - [x] Autocomplete para pacientes, dietas, consultas
+  - [x] Navegação por teclado (↑↓ Enter)
+- [x] Sino de Notificações com badge
+  - [x] Dropdown com 5 últimas notificações
+  - [x] Destaque para mensagens não respondidas 24h+
+- [x] Perfil do usuário com dropdown
+- [x] Toggle tema (dark/light)
+- [x] Seletor de cor do tema
+
+#### Sidebar de Navegação (10 itens)
+- [x] 🏠 Dashboard (`/dashboard`)
+- [x] 👥 Pacientes (`/patients`) - badge: total
+- [x] 🍽️ Dietas (`/diets`)
+- [x] 📅 Agenda (`/calendar`) - badge: consultas hoje
+- [x] 💬 Mensagens (`/messages`) - badge: não lidas (vermelho pulsante se 24h+)
+- [x] 📋 Anamneses (`/anamnesis`) - badge: incompletas
+- [x] 📊 Avaliações (`/evaluations`)
+- [x] 🧪 Exames (`/lab-exams`)
+- [x] — Divisor —
+- [x] 🔔 Notificações (`/notifications`) - badge: total não lidas
+- [x] ⚙️ Configurações (`/settings`)
+
+#### Responsividade
+- [x] Desktop (>1024px): Sidebar fixa 240px
+- [x] Tablet (768-1024px): Sidebar colapsada 60px (apenas ícones)
+- [x] Mobile (<768px): Sidebar em overlay (hamburger menu)
+
+#### Layouts
+- [x] Layout Dashboard (header + sidebar + main content)
+- [x] Layout Auth (centralizado, sem sidebar)
 
 ### 2.4 Dashboard Nutricionista - Backend
 - [ ] API `GET /api/v1/dashboard/stats/` - Estatísticas do dashboard
@@ -105,11 +134,49 @@ Este checklist organiza todo o desenvolvimento do NutriXpertPro em **5 fases pri
 - [ ] API `GET /api/v1/patients/featured/` - Paciente em foco
 
 ### 2.5 Dashboard Nutricionista - Frontend
-- [ ] Componente StatCard (4 cards: pacientes, consultas, dietas, rating)
-- [ ] Componente saudação dinâmica (Bom dia/tarde/noite)
-- [ ] Componente Agenda do Dia (lista de consultas)
-- [ ] Componente Paciente em Foco
-- [ ] Página Dashboard completa (conforme wireframe)
+
+#### Saudação e Data
+- [x] Componente saudação dinâmica (Bom dia/tarde/noite + título + nome)
+- [x] Data atual formatada (Sexta-feira, 06 de Dezembro de 2025)
+
+#### Stats Cards Premium (4 cards)
+- [x] Pacientes Ativos (badge: +N este mês, ícone azul)
+- [x] Consultas Hoje (badge: próxima às HH:MM, ícone âmbar)
+- [x] Dietas Ativas (badge: N vencem em breve, ícone verde)
+- [ ] Taxa de Adesão (badge: +N% vs mês anterior, ícone violeta)
+- [ ] Design Premium:
+  - [ ] Glassmorphism (vidro fosco)
+  - [ ] Gradientes sutis por tipo
+  - [ ] Hover effects com elevação
+  - [ ] Números animados (contador)
+  - [ ] Ícones coloridos por contexto
+  - [ ] Skeleton loading enquanto carrega
+
+#### Agenda do Dia
+- [ ] Timeline visual com linha conectando consultas
+- [ ] Cards de consulta: horário, paciente, tipo (📍/💻), duração
+- [ ] Indicador "AGORA" para consulta atual
+- [ ] Ações: Ligar, Mensagem, Entrar (se online)
+- [ ] Link "Ver Agenda Completa" → `/calendar`
+
+#### Paciente em Foco
+- [ ] Card destacado com próximo paciente ou paciente especial
+- [ ] Foto do paciente
+- [ ] Nome e objetivo principal
+- [ ] 4 mini métricas: IMC, Gordura, Músculo, Peso (com trends ↑↓)
+- [ ] Botões: Ver Perfil, Mensagem
+
+#### Indicador de Adesão (Sistema de Cores)
+- [ ] Verde (>80% adesão)
+- [ ] Âmbar (50-80% adesão)
+- [ ] Vermelho (<50% adesão)
+
+#### Ações Rápidas
+- [ ] 4 botões: + Novo Paciente, + Criar Dieta, + Agendar Consulta, + Anamnese
+
+#### Notificações de Mensagens
+- [ ] Badge de mensagens não respondidas há 24h+ (vermelho pulsante)
+- [ ] Preview no dropdown de notificações
 
 ### 2.6 Perfil do Usuário - Backend
 - [ ] API `GET /api/v1/users/me/` - Dados do usuário autenticado
