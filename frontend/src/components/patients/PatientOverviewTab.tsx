@@ -32,17 +32,17 @@ export function PatientOverviewTab() {
                         </div>
 
                         {/* Visual Gauge (Vermelho -> Amarelo -> Verde) */}
-                        <div className="relative pt-2">
-                            <div className="h-4 w-full rounded-full bg-gradient-to-r from-red-500 via-yellow-400 to-green-500 opacity-80" />
-                            {/* Marcador de Posição (Exemplo: 60% do caminho para a meta) */}
+                        <div className="relative pt-4 pb-2">
+                            <div className="h-1.5 w-full rounded-full bg-gradient-to-r from-red-500 via-yellow-400 to-green-500 opacity-80" />
+                            {/* Marcador de Posição */}
                             <div
-                                className="absolute top-1 bottom-0 w-1 h-6 bg-foreground border-2 border-background shadow-sm -mt-1 transform -translate-x-1/2 transition-all duration-500"
+                                className="absolute top-3 w-2.5 h-3.5 bg-white dark:bg-zinc-200 border-2 border-zinc-900/10 dark:border-black/20 shadow-sm rounded-full transform -translate-x-1/2 transition-all duration-500"
                                 style={{ left: '60%' }}
                             />
                             {/* Marcador de Início */}
-                            <div className="absolute top-6 left-0 text-[10px] text-muted-foreground">85kg</div>
+                            <div className="absolute top-7 left-0 text-[10px] text-muted-foreground font-medium">85kg</div>
                             {/* Marcador de Meta */}
-                            <div className="absolute top-6 right-0 text-[10px] text-muted-foreground text-right">Meta: 65kg</div>
+                            <div className="absolute top-7 right-0 text-[10px] text-muted-foreground text-right font-medium">Meta: 65kg</div>
                         </div>
                     </CardContent>
                 </Card>
