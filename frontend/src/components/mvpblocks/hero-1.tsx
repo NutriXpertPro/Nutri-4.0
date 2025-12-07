@@ -13,7 +13,8 @@ export default function Hero1() {
           alt="Background"
           fill
           priority
-          quality={85}
+          quality={100}
+          unoptimized
           sizes="100vw"
           className="object-cover object-center"
         />
@@ -22,15 +23,8 @@ export default function Hero1() {
       <div className="absolute top-0 z-[0] h-full w-full bg-neutral-900/10 bg-[radial-gradient(ellipse_20%_80%_at_50%_-20%,rgba(120,119,198,0.3),rgba(255,255,255,0))]"></div>
 
       <section className="relative z-1 w-full h-full flex items-center justify-center pb-20">
-        <div className="pointer-events-none absolute h-full w-full overflow-hidden opacity-50 [perspective:200px]">
-          <div className="absolute inset-0 [transform:rotateX(35deg)]">
-            <div className="animate-grid [inset:0%_0px] [margin-left:-50%] [height:300vh] [width:600vw] [transform-origin:100%_0_0] [background-image:linear-gradient(to_right,rgba(255,255,255,0.25)_1px,transparent_0),linear-gradient(to_bottom,rgba(255,255,255,0.2)_1px,transparent_0)] [background-size:120px_120px] [background-repeat:repeat]"></div>
-          </div>
-
-        </div>
-
         <div className="relative z-20 mx-auto max-w-screen-xl gap-8 px-4 text-center md:px-8 flex flex-col items-center">
-          <div className="mx-auto max-w-4xl space-y-6 text-center">
+          <div className="mx-auto max-w-7xl space-y-6 text-center">
 
             <div className="mb-2 flex justify-center">
               <Image
@@ -49,7 +43,8 @@ export default function Hero1() {
               className="text-3xl md:text-5xl lg:text-6xl font-bold leading-tight mb-4 text-white"
               style={{ textShadow: "0 4px 20px rgba(0, 0, 0, 0.5), 0 2px 8px rgba(0, 0, 0, 0.3)" }}
             >
-              A Plataforma para Nutricionistas de Alta Performance
+              A Plataforma para Nutricionistas<br />
+              de Alta Performance
             </h1>
 
             <p className="mx-auto max-w-2xl text-[#8b949e] text-lg md:text-xl whitespace-nowrap">

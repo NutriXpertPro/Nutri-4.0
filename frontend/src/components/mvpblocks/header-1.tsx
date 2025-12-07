@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, ChevronDown, ArrowRight } from 'lucide-react';
+import { Menu, X, ChevronDown, ArrowRight, Search } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useTheme } from 'next-themes';
@@ -64,48 +64,68 @@ export default function Header1() {
         boxShadow: isScrolled ? '0 8px 32px rgba(0, 0, 0, 0.3)' : 'none',
       }}
     >
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div className="w-full px-4 sm:px-6 lg:px-8">
         <div className="flex h-20 items-center justify-between">
-          <motion.div
-            className="flex items-center space-x-2"
-            whileHover={{ scale: 1.05 }}
-            transition={{ type: 'spring', stiffness: 400, damping: 10 }}
-          >
-            <Link
-              prefetch={false}
-              href="/"
+          <div className="flex items-center gap-8">
+            <motion.div
               className="flex items-center space-x-2"
+              whileHover={{ scale: 1.05 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 10 }}
             >
-              <Image
-                src="/logo.png"
-                alt="Nutri Xpert Pro"
-                width={50}
-                height={50}
-                className="rounded-xl"
-                priority
-                sizes="50px"
-              />
-            </Link>
-          </motion.div>
-
-          <nav className="hidden items-center space-x-8 lg:flex">
-            {navItems.map((item) => (
-              <div
-                key={item.name}
-                className="relative"
+              <Link
+                prefetch={false}
+                href="/"
+                className="flex items-center space-x-2"
               >
-                <Link
-                  prefetch={false}
-                  href={item.href}
-                  className="text-white font-bold text-base transition-colors duration-200 hover:text-[#3fb950]"
+                <Image
+                  src="/logo.png"
+                  alt="Nutri Xpert Pro"
+                  width={50}
+                  height={50}
+                  className="rounded-xl"
+                  priority
+                  sizes="50px"
+                />
+              </Link>
+            </motion.div>
+
+            <nav className="hidden items-center gap-6 lg:flex">
+              {navItems.map((item) => (
+                <div
+                  key={item.name}
+                  className="relative"
                 >
-                  <span>{item.name}</span>
-                </Link>
-              </div>
-            ))}
-          </nav>
+                  <Link
+                    prefetch={false}
+                    href={item.href}
+                    className="text-white font-bold text-base transition-colors duration-200 hover:text-[#3fb950]"
+                  >
+                    <span>{item.name}</span>
+                  </Link>
+                </div>
+              ))}
+            </nav>
+          </div>
 
           <div className="hidden items-center space-x-4 lg:flex">
+            <div className="hidden lg:flex items-center relative mr-2">
+              <div className="relative group">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Search className="h-4 w-4 text-gray-400 group-focus-within:text-white transition-colors" />
+                </div>
+                <input
+                  type="text"
+                  placeholder="Pesquisar..."
+                  className="bg-transparent border border-[#30363d] text-white text-sm rounded-md block w-64 pl-10 p-1.5 placeholder-gray-400 focus:ring-2 focus:ring-[#0969da] focus:border-[#0969da] focus:outline-none focus:bg-[#161b22] focus:w-80 transition-all duration-300 ease-in-out shadow-inner"
+                />
+                <div className="absolute inset-y-0 right-0 pr-2 flex items-center pointer-events-none">
+                  <kbd className="inline-flex items-center border border-[#30363d] rounded px-2 text-[10px] font-sans font-medium text-gray-400">
+                    /
+                  </kbd>
+                </div>
+              </div>
+            </div>
+
             <Button variant="ghost" className="text-white font-bold hover:bg-white/10" asChild>
               <Link href="/login">Entrar</Link>
             </Button>
