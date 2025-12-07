@@ -296,3 +296,97 @@ def google_login_view(request):
         return Response({"error": "Token Google inválido", "details": str(e)}, status=status.HTTP_400_BAD_REQUEST)
     except Exception as e:
         return Response({"error": "Erro interno no login Google", "details": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def dashboard_stats_view(request):
+    """
+    Retorna estatísticas para o dashboard do nutricionista.
+    """
+    from patients.models import PatientProfile
+    from diets.models import Diet
+    from appointments.models import Appointment
+    from django.utils import timezone
+    from datetime import timedelta
+    
+    user = request.user
+    today = timezone.now().date()
+    first_day_of_month = today.replace(day=1)
+    
+    # Pacientes Ativos (Assumindo que existência de perfil = ativo)
+    active_patients = PatientProfile.objects.filter(nutritionist=user).count()
+    
+    # Novos pacientes este mês
+    new_patients_this_month = PatientProfile.objects.filter(
+        nutritionist=user,
+        created_at__gte=first_day_of_month
+    ).count()
+    
+    # Consultas Hoje
+    appointments_today = Appointment.objects.filter(
+        user=user,
+        date__date=today
+    ).count()
+    
+    # Próxima consulta
+    next_appointment = Appointment.objects.filter(
+        user=user,
+        date__gte=timezone.now()
+    ).order_by('date').first()
+    
+    next_appointment_time = next_appointment.date.strftime('%H:%M') if next_appointment else None
+    
+    # Dietas Ativas
+    active_diets = Diet.objects.filter(
+        patient__nutritionist=user,
+        is_active=True
+    ).count()
+    
+    # Dietas vencendo em breve (não temos data de validade no modelo ainda, usando simulado ou criado há X dias)
+    # Por enquanto, placeholder ou baseada na data de criação
+    
+    return Response({
+        "active_patients": {
+            "value": active_patients,
+            "trend": new_patients_this_month,
+            "trend_label": "este mês"
+        },
+        "appointments_today": {
+            "value": appointments_today,
+            "next_at": next_appointment_time
+        },
+        "active_diets": {
+            "value": active_diets,
+            "expiring_soon": 0 # TODO: Implementar lógica de validade
+        }
+    })
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def appointments_today_view(request):
+    """
+    Retorna a lista de consultas do dia.
+    """
+    from appointments.models import Appointment
+    from django.utils import timezone
+    
+    user = request.user
+    today = timezone.now().date()
+    
+    appointments = Appointment.objects.filter(
+        user=user,
+        date__date=today
+    ).select_related('patient', 'patient__user').order_by('date')
+    
+    data = []
+    for app in appointments:
+        data.append({
+            "id": app.id,
+            "patient_name": app.patient.user.name,
+            "time": app.date.strftime('%H:%M'),
+            "duration": 60, # TODO: Adicionar campo duration no model
+            "type": "presencial", # TODO: Adicionar campo type no model
+            "status": "confirmed" # TODO: Adicionar status
+        })
+        
+    return Response(data)

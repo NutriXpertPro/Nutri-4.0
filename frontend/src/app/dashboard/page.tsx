@@ -49,7 +49,15 @@ export default function DashboardPage() {
             title = titles[user.professional_title] || user.professional_title
         }
 
-        return `${timeGreeting}, ${title ? title + " " : ""}${user?.name || "Nutricionista"}! 👋`
+        let displayName = user?.name || "Nutricionista"
+        if (user?.name) {
+            const parts = user.name.trim().split(" ")
+            if (parts.length > 1) {
+                displayName = `${parts[0]} ${parts[parts.length - 1]}`
+            }
+        }
+
+        return `${timeGreeting}, ${title ? title + " " : ""}${displayName}! 👋`
     }
 
     // Formatar data

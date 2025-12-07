@@ -31,8 +31,8 @@ export default function PatientLoginPage() {
         setIsLoading(true)
 
         try {
-            // Chamada para a API de autenticação JWT do Django
-            const response = await fetch("http://localhost:8000/api/token/", {
+            // Chamada para a API de autenticação JWT do Django - login específico para pacientes
+            const response = await fetch("http://localhost:8000/api/v1/users/login/paciente/", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",

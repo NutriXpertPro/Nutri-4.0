@@ -75,6 +75,10 @@ export function Header({ className, sidebarCollapsed }: HeaderProps) {
         setMounted(true)
     }, [])
 
+    React.useEffect(() => {
+        console.log('Header renderizado')
+    }, [])
+
     const unreadCount = mockNotifications.length
 
     return (
@@ -86,6 +90,7 @@ export function Header({ className, sidebarCollapsed }: HeaderProps) {
                 "left-0",
                 className
             )}
+            style={{ marginTop: '6.5px' }}
         >
             <div className="flex items-center justify-between h-full px-4 lg:px-6">
                 {/* Left: Logo (mobile) + Search */}

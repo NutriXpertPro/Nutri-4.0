@@ -1,8 +1,10 @@
 import React from 'react';
 import { ArrowRight } from 'lucide-react';
-import Image from 'next/image';
+import Image from 'next/image'; /* mantém para outras imagens */
 import Link from 'next/link';
 import { Button } from "@/components/ui/button";
+import adipometro from '@/assets/adipometro.png';
+import nome from '@/assets/nome.png';
 
 export default function Hero1() {
   return (
@@ -26,32 +28,42 @@ export default function Hero1() {
         <div className="relative z-20 mx-auto max-w-screen-xl gap-8 px-4 text-center md:px-8 flex flex-col items-center">
           <div className="mx-auto max-w-7xl space-y-6 text-center">
 
-            <div className="mb-2 flex justify-center">
-              <Image
-                src="/nome.png"
-                alt="Nutri Xpert Pro"
-                width={500}
-                height={116}
-                className="mt-4"
-                style={{ width: 'auto', height: 'auto' }}
-                priority
-                sizes="(max-width: 768px) 100vw, 500px"
-              />
+            <div className="mb-2 flex justify-start items-center ml-[157px]">
+              <div className="relative">
+                <img
+                  src={nome.src}
+                  alt="Nutri Xpert Pro"
+                  className="mt-4 object-contain bg-transparent"
+                  style={{ height: '370px', background: 'transparent' }}
+                  loading="eager"
+                  decoding="async"
+                />
+                <img
+                  src={adipometro.src}
+                  alt="Adipômetro"
+                  width={110}
+                  height={110}
+                  className="absolute top-[233px] left-[-63px] object-contain bg-transparent"
+                  style={{ background: 'transparent' }}
+                  loading="eager"
+                  decoding="async"
+                />
+              </div>
             </div>
 
             <h1
-              className="text-3xl md:text-5xl lg:text-6xl font-bold leading-tight mb-4 text-white"
+              className="text-3xl md:text-5xl lg:text-6xl font-bold leading-tight mb-4 text-white relative top-[-16px]"
               style={{ textShadow: "0 4px 20px rgba(0, 0, 0, 0.5), 0 2px 8px rgba(0, 0, 0, 0.3)" }}
             >
               A Plataforma para Nutricionistas<br />
               de Alta Performance
             </h1>
 
-            <p className="mx-auto max-w-2xl text-[#8b949e] text-lg md:text-xl whitespace-nowrap">
+            <p className="mx-auto max-w-2xl text-[#8b949e] text-lg md:text-xl whitespace-nowrap relative top-[-16px]">
               Mais produtividade, mais autoridade e mais resultados com o poder do modo Xpert.
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-4 justify-center mt-10">
+            <div className="flex flex-col sm:flex-row gap-4 justify-center mt-10 relative top-[-16px]">
               <Button size="lg" className="bg-[#238636] hover:bg-[#2ea043] text-white font-bold h-12 px-8 text-lg" asChild>
                 <Link href="/login">
                   Sou Nutricionista

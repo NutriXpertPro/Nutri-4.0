@@ -4,9 +4,9 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, X, ChevronDown, ArrowRight, Search } from 'lucide-react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { useTheme } from 'next-themes';
 import { Button } from "@/components/ui/button";
+import logo from "@/assets/logo.png";
 
 interface NavItem {
   name: string;
@@ -77,14 +77,20 @@ export default function Header1() {
                 href="/"
                 className="flex items-center space-x-2"
               >
-                <Image
-                  src="/logo.png"
+                <img
+                  src={logo.src}
                   alt="Nutri Xpert Pro"
-                  width={50}
-                  height={50}
-                  className="rounded-xl"
-                  priority
-                  sizes="50px"
+                  width={55}
+                  height={55}
+                  className="rounded-xl bg-transparent"
+                  style={{
+                      background: 'transparent',
+                      imageRendering: 'crisp-edges',
+                      imageRendering: '-webkit-optimize-contrast',
+                      filter: 'contrast(110%) brightness(105%)'
+                  }}
+                  loading="eager"
+                  decoding="async"
                 />
               </Link>
             </motion.div>
@@ -135,6 +141,8 @@ export default function Header1() {
               </Button>
             </motion.div>
           </div>
+
+
 
           <motion.button
             className="hover:bg-muted rounded-lg p-2 transition-colors duration-200 lg:hidden text-white"

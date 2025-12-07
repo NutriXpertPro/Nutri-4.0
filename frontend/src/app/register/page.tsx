@@ -57,7 +57,7 @@ export default function RegisterPage() {
 
         try {
             console.log("Sending data:", formData) // Log data being sent
-            const response = await fetch("http://127.0.0.1:8000/users/register/nutricionista/", {
+            const response = await fetch("http://localhost:8000/api/v1/users/register/nutricionista/", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",

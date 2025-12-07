@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import logo from "@/assets/logo.png";
 import {
     Home,
     Users,
@@ -166,17 +167,30 @@ export function Sidebar({ className, collapsed, onToggle }: SidebarProps) {
             >
                 {/* Logo */}
                 <div className={cn(
-                    "flex items-center gap-3 px-4 py-5 border-b",
+                    "flex items-center gap-3 px-4 py-2 border-b",
                     isCollapsed && "justify-center px-2"
                 )}>
-                    <span className="text-2xl">🥗</span>
+                    <img
+                        src={logo.src}
+                        width={55}
+                        height={55}
+                        className="rounded-xl bg-transparent"
+                        style={{
+                            background: 'transparent',
+                            imageRendering: 'crisp-edges',
+                            imageRendering: '-webkit-optimize-contrast',
+                            filter: 'contrast(110%) brightness(105%)'
+                        }}
+                        loading="eager"
+                        decoding="async"
+                    />
                     {!isCollapsed && (
                         <span className="font-bold text-lg">NutriXpertPro</span>
                     )}
                 </div>
 
                 {/* Navigation Items */}
-                <nav className="flex-1 overflow-y-auto py-4">
+                <nav className="flex-1 overflow-y-auto py-2">
                     <ul className="space-y-1 px-2">
                         {sidebarItems.map((item, index) => {
                             if (item.isDivider) {

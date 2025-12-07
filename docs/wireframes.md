@@ -32,8 +32,6 @@ Este documento apresenta wireframes ASCII/textual das principais páginas do sis
 ### Features:
 - Centralizado, minimalista
 - 2 CTAs principais (Blue gradient buttons)
-- Dark mode toggle top-right
-- Badges de confiança no footer
 
 ---
 
