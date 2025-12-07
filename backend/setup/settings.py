@@ -181,7 +181,21 @@ SPECTACULAR_SETTINGS = {
     'SERVE_INCLUDE_SCHEMA': False,
 }
 
-SIMPLE_JWT = {'ACCESS_TOKEN_LIFETIME':timedelta(minutes=5),'REFRESH_TOKEN_LIFETIME':timedelta(days=1),'ROTATE_REFRESH_TOKENS':True,'BLACKLIST_AFTER_ROTATION':True,'UPDATE_LAST_LOGIN':False,'ALGORITHM':'HS256','SIGNING_KEY':SECRET_KEY,'AUTH_HEADER_TYPES':('Bearer',),'USER_ID_FIELD':'id','USER_ID_CLAIM':'user_id','AUTH_TOKEN_CLASSES':('rest_framework_simplejwt.tokens.AccessToken',),'TOKEN_TYPE_CLAIM':'token_type','JTI_CLAIM':'jti',}
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(days=365),  # 1 ano - sem necessidade de login frequente
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=365),  # 1 ano
+    'ROTATE_REFRESH_TOKENS': True,
+    'BLACKLIST_AFTER_ROTATION': True,
+    'UPDATE_LAST_LOGIN': False,
+    'ALGORITHM': 'HS256',
+    'SIGNING_KEY': SECRET_KEY,
+    'AUTH_HEADER_TYPES': ('Bearer',),
+    'USER_ID_FIELD': 'id',
+    'USER_ID_CLAIM': 'user_id',
+    'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
+    'TOKEN_TYPE_CLAIM': 'token_type',
+    'JTI_CLAIM': 'jti',
+}
 
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 MEDIA_URL = '/media/'

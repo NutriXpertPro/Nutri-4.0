@@ -1,4 +1,5 @@
 from django.db import models
+from django.conf import settings
 from patients.models import PatientProfile
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator, MaxValueValidator
@@ -161,6 +162,7 @@ class Anamnesis(models.Model):
         """Retorna uma representação em string da anamnese."""
         return f"Anamnese de {self.patient.user.name}"
     
+
     def get_progresso(self):
         """Calcula o progresso de preenchimento do questionário (0-100%)."""
         campos_obrigatorios = [
@@ -169,3 +171,57 @@ class Anamnesis(models.Model):
         ]
         preenchidos = sum(1 for campo in campos_obrigatorios if campo)
         return int((preenchidos / len(campos_obrigatorios)) * 100)
+
+
+class AnamnesisTemplate(models.Model):
+    """
+    Modelos de anamnese personalizados criados pelo nutricionista.
+    Estrutura de perguntas é salva em JSON.
+    """
+    nutritionist = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="anamnesis_templates"
+    )
+    title = models.CharField(max_length=200)
+    description = models.TextField(blank=True)
+    questions = models.JSONField(default=list)  # Lista de objetos {id, type, label, options, required}
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Modelo de Anamnese'
+        verbose_name_plural = 'Modelos de Anamnese'
+
+    def __str__(self):
+        return self.title
+
+
+class AnamnesisResponse(models.Model):
+    """
+    Respostas de uma anamnese personalizada.
+    """
+    patient = models.ForeignKey(
+        PatientProfile,
+        on_delete=models.CASCADE,
+        related_name="anamnesis_responses"
+    )
+    template = models.ForeignKey(
+        AnamnesisTemplate,
+        on_delete=models.CASCADE,
+        related_name="responses"
+    )
+    answers = models.JSONField(default=dict)  # Dicionário {question_id: answer_value}
+    filled_date = models.DateField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-filled_date']
+        verbose_name = 'Resposta de Anamnese'
+        verbose_name_plural = 'Respostas de Anamnese'
+
+    def __str__(self):
+        return f"{self.template.title} - {self.patient.user.name}"

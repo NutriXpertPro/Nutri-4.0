@@ -1,10 +1,14 @@
-from django.urls import path
-from . import views
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
+from .views import AnamnesisViewSet, AnamnesisTemplateViewSet, AnamnesisResponseViewSet
 
-app_name = "anamnesis"
+router = DefaultRouter()
+
+app_name = 'anamnesis'
+router.register(r'standard', AnamnesisViewSet, basename='anamnesis-standard')
+router.register(r'templates', AnamnesisTemplateViewSet, basename='anamnesis-template')
+router.register(r'responses', AnamnesisResponseViewSet, basename='anamnesis-response')
 
 urlpatterns = [
-    path("", views.anamnesis_list, name="list"),
-    path("form/", views.anamnesis_form, name="form"),
-    path("form/<int:pk>/", views.anamnesis_form, name="form_edit"),
+    path('', include(router.urls)),
 ]

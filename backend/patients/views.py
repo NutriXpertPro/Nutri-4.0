@@ -48,7 +48,13 @@ def patient_list(request):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def patient_detail(request, pk):
-    return Response({"message": "Patient Detail API em construção"}, status=status.HTTP_501_NOT_IMPLEMENTED)
+    """Busca um paciente específico pelo ID"""
+    patient = get_object_or_404(
+        PatientProfile.objects.filter(nutritionist=request.user),
+        pk=pk
+    )
+    serializer = PatientProfileSerializer(patient)
+    return Response(serializer.data)
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])

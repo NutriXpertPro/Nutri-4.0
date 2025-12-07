@@ -1,11 +1,26 @@
 from rest_framework import serializers
-from .models import Anamnesis
-
+from .models import Anamnesis, AnamnesisTemplate, AnamnesisResponse
 
 class AnamnesisSerializer(serializers.ModelSerializer):
     class Meta:
         model = Anamnesis
-        fields = [
-            'patient', 'weight', 'height', 'medical_conditions',
-            'food_preferences', 'allergies', 'photo_url', 'created_at'
-        ]
+        fields = '__all__'
+
+class AnamnesisTemplateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AnamnesisTemplate
+        fields = ['id', 'title', 'description', 'questions', 'is_active', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'created_at', 'updated_at']
+
+    def create(self, validated_data):
+        # Set nutritionist from context
+        validated_data['nutritionist'] = self.context['request'].user
+        return super().create(validated_data)
+
+class AnamnesisResponseSerializer(serializers.ModelSerializer):
+    template_title = serializers.CharField(source='template.title', read_only=True)
+
+    class Meta:
+        model = AnamnesisResponse
+        fields = ['id', 'patient', 'template', 'template_title', 'answers', 'filled_date', 'created_at']
+        read_only_fields = ['id', 'filled_date', 'created_at']
