@@ -1,15 +1,35 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
+// Lista de rotas que requerem autenticação
+const protectedRoutes = [
+    '/dashboard',
+    '/patients',
+    '/anamnesis',
+    '/diets',
+    '/calendar',
+    '/messages',
+    '/evaluations',
+    '/lab-exams',
+    '/notifications',
+    '/settings',
+]
+
+// Lista de rotas públicas (não autenticadas)
+const publicRoutes = ['/login', '/register', '/']
+
 export function middleware(request: NextRequest) {
     const token = request.cookies.get('accessToken')?.value
     const { pathname } = request.nextUrl
 
-    // Rotas protegidas (Dashboard e suas sub-rotas)
-    if (pathname.startsWith('/dashboard')) {
-        if (!token) {
-            return NextResponse.redirect(new URL('/login', request.url))
-        }
+    // Verifica se é uma rota protegida
+    const isProtectedRoute = protectedRoutes.some(route =>
+        pathname === route || pathname.startsWith(`${route}/`)
+    )
+
+    // Rotas protegidas precisam de token
+    if (isProtectedRoute && !token) {
+        return NextResponse.redirect(new URL('/login', request.url))
     }
 
     // Rotas públicas (Login/Register) - redireciona se já estiver logado
@@ -22,8 +42,20 @@ export function middleware(request: NextRequest) {
 
 export const config = {
     matcher: [
+        // Rotas protegidas
         '/dashboard/:path*',
+        '/patients/:path*',
+        '/anamnesis/:path*',
+        '/diets/:path*',
+        '/calendar/:path*',
+        '/messages/:path*',
+        '/evaluations/:path*',
+        '/lab-exams/:path*',
+        '/notifications/:path*',
+        '/settings/:path*',
+        // Rotas públicas
         '/login/:path*',
-        '/register/:path*'
+        '/register/:path*',
     ],
 }
+

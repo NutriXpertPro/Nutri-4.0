@@ -206,7 +206,7 @@ export default function NewPatientPage() {
                                             Adicione uma foto para facilitar a identificação visual nos cards e listas.
                                         </p>
                                     </div>
-                                    <Button variant="secondary" size="sm" type="button" onClick={() => document.querySelector('input[type="file"]')?.click()} className="active:scale-95 transition-transform">
+                                    <Button variant="secondary" size="sm" type="button" onClick={() => (document.querySelector('input[type="file"]') as HTMLInputElement | null)?.click()} className="active:scale-95 transition-transform">
                                         <Upload className="mr-2 h-3.5 w-3.5" />
                                         Selecionar Arquivo
                                     </Button>

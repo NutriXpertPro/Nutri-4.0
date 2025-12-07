@@ -48,11 +48,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 setUser(userData)
                 return true
             }
-            return false
+            // Somente retorna false para 401/403 (token inválido)
+            if (response.status === 401 || response.status === 403) {
+                return false
+            }
+            // Para outros erros (500, etc), assumimos que o token ainda pode ser válido
+            return true
         } catch (error) {
-            // Silently ignore 401/403 errors during dev as we might use mock data
-            // console.error("Failed to fetch user profile", error) 
-            return false
+            // Erro de rede - não significa que o token é inválido
+            console.warn("Could not verify token (network error)", error)
+            return true // Manter autenticado em caso de erro de rede
         }
     }
 
@@ -68,7 +73,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 if (isValid) {
                     setIsAuthenticated(true)
                 } else {
-                    // Token invalid/expired - cleanup
+                    // Token explicitamente inválido (401/403) - cleanup
                     Cookies.remove("accessToken")
                     Cookies.remove("refreshToken")
                     localStorage.removeItem('access_token')
@@ -84,6 +89,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
         initAuth()
     }, [])
+
 
     const login = async (tokens: { access: string; refresh: string }, redirect = true) => {
         Cookies.set("accessToken", tokens.access, { expires: 1 }) // 1 day

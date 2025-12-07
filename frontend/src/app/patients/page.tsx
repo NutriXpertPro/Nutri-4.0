@@ -41,13 +41,6 @@ export default function PatientsPage() {
     const [viewMode, setViewMode] = React.useState<"grid" | "list">("grid")
     const itemsPerPage = 6
 
-    // Auth check
-    React.useEffect(() => {
-        if (!isAuthLoading && !isAuthenticated) {
-            router.push("/login")
-        }
-    }, [isAuthLoading, isAuthenticated, router])
-
     // Filtrar e ordenar pacientes
     const filteredPatients = React.useMemo(() => {
         if (!patients) return []
@@ -87,13 +80,15 @@ export default function PatientsPage() {
         currentPage * itemsPerPage
     )
 
-    if (isAuthLoading || !isAuthenticated) {
+    // Loading state - espera auth e dados
+    if (isAuthLoading) {
         return (
             <div className="min-h-screen bg-background flex items-center justify-center">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
             </div>
         )
     }
+
 
     if (error) {
         return (

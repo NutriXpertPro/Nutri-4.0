@@ -122,7 +122,7 @@ export function Header({ className, sidebarCollapsed }: HeaderProps) {
                 </div>
 
                 {/* Right: Theme, Notifications, Profile */}
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-8">
                     {/* Theme Toggle */}
                     {mounted && (
                         <Button
@@ -140,7 +140,7 @@ export function Header({ className, sidebarCollapsed }: HeaderProps) {
                     )}
 
                     {/* Color Selector */}
-                    <div className="hidden md:flex gap-1 px-2">
+                    <div className="hidden md:flex gap-3 px-4">
                         {(["monochrome", "teal", "blue", "violet", "pink"] as const).map((c) => (
                             <button
                                 key={c}
