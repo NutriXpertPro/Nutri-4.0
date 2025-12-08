@@ -295,31 +295,31 @@ export function EcoHeader() {
 
             {/* NAVIGATION TABS (Patient Profile Style, Absolute Position) */}
             <div className="absolute bottom-[-23.5px] left-0 w-full z-50 px-6 md:px-8 translate-y-1/2">
-                <Tabs value={activeTab} className="w-full shadow-2xl drop-shadow-2xl">
+                <Tabs value={activeTab || ''} className="w-full shadow-2xl drop-shadow-2xl">
                     <TabsList className="grid w-full grid-cols-5 bg-background border border-border/50 p-1 rounded-xl shadow-sm h-auto">
                         <TabsTrigger
                             value="overview"
-                            onClick={() => setActiveTab('overview')}
+                            onClick={(e) => { e.preventDefault(); activeTab === 'overview' ? setActiveTab('') : setActiveTab('overview') }}
                             className="text-xs md:text-sm py-2 data-[state=active]:bg-primary/10 data-[state=active]:text-primary text-muted-foreground hover:text-foreground transition-all duration-300"
                         >Visão Geral</TabsTrigger>
                         <TabsTrigger
                             value="context"
-                            onClick={() => setActiveTab('context')}
+                            onClick={(e) => { e.preventDefault(); activeTab === 'context' ? setActiveTab('') : setActiveTab('context') }}
                             className="text-xs md:text-sm py-2 data-[state=active]:bg-primary/10 data-[state=active]:text-primary text-muted-foreground hover:text-foreground transition-all duration-300"
                         >Contexto</TabsTrigger>
                         <TabsTrigger
                             value="analysis"
-                            onClick={() => setActiveTab('analysis')}
+                            onClick={(e) => { e.preventDefault(); activeTab === 'analysis' ? setActiveTab('') : setActiveTab('analysis') }}
                             className="text-xs md:text-sm py-2 data-[state=active]:bg-primary/10 data-[state=active]:text-primary text-muted-foreground hover:text-foreground transition-all duration-300"
                         >Análise</TabsTrigger>
                         <TabsTrigger
                             value="diet"
-                            onClick={() => setActiveTab('diet')}
+                            onClick={(e) => { e.preventDefault(); activeTab === 'diet' ? setActiveTab('') : setActiveTab('diet') }}
                             className="text-xs md:text-sm py-2 data-[state=active]:bg-primary/10 data-[state=active]:text-primary text-muted-foreground hover:text-foreground transition-all duration-300"
                         >Dieta</TabsTrigger>
                         <TabsTrigger
                             value="anamnesis"
-                            onClick={() => setActiveTab('anamnesis')}
+                            onClick={(e) => { e.preventDefault(); activeTab === 'anamnesis' ? setActiveTab('') : setActiveTab('anamnesis') }}
                             className="text-xs md:text-sm py-2 data-[state=active]:bg-primary/10 data-[state=active]:text-primary text-muted-foreground hover:text-foreground transition-all duration-300"
                         >Anamnese</TabsTrigger>
                     </TabsList>
