@@ -9,14 +9,14 @@ import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { User, MessageSquare, Phone, Target, TrendingUp, TrendingDown } from "lucide-react"
 
-interface Metric {
+export interface Metric {
     label: string
     value: string | number
     trend?: number
     isPositive?: boolean
 }
 
-interface Patient {
+export interface Patient {
     id: string
     name: string
     avatar?: string

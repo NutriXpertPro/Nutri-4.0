@@ -91,7 +91,7 @@ export default function PatientDetailsPage() {
     return (
         <DashboardLayout>
             <div className="w-full max-w-full space-y-6">
-                <PatientHeader patient={patientData} />
+                <PatientHeader patient={patientData} fullData={patient} />
 
                 <Tabs defaultValue="overview" className="mt-8">
                     <TabsList className="grid w-full grid-cols-5 bg-muted/20 p-1 rounded-xl">
@@ -127,7 +127,7 @@ export default function PatientDetailsPage() {
                         </TabsContent>
 
                         <TabsContent value="analysis">
-                            <PatientAnalysisTab />
+                            <PatientAnalysisTab patientId={patientId} />
                         </TabsContent>
 
                         <TabsContent value="diet">

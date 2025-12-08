@@ -21,6 +21,9 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/v1/auth/', include('users.urls')),
     path('api/v1/patients/', include('patients.urls')),
-    # Outras rotas serão adicionadas conforme implementação
-    # path('api/v1/diets/', include('diets.urls')),
+    path('api/v1/anamnesis/', include('anamnesis.urls')),
+    path('api/v1/evaluations/', include('evaluations.urls')),
+    path('api/v1/', include('diets.urls')),  # Foods and Diets
+    path('api/v1/', include('dashboard.urls')),
 ]
+

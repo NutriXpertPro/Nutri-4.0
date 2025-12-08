@@ -11,6 +11,7 @@ interface User {
     user_type?: string
     professional_title?: string
     gender?: string
+    avatar?: string
 }
 
 interface AuthContextType {

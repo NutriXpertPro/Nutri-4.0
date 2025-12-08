@@ -1,23 +1,94 @@
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/contexts/auth-context"
 import { DashboardLayout } from "@/components/layout"
-import { StatCard, AgendaDoDia, PacienteEmFoco, AcoesRapidas } from "@/components/dashboard"
+import { AgendaDoDia, type Appointment } from "@/components/dashboard/AgendaDoDia"
+import { PacienteEmFoco, type Patient } from "@/components/dashboard/PacienteEmFoco"
+import { StatCard, AcoesRapidas } from "@/components/dashboard"
 import { Users, Calendar, UtensilsCrossed, Activity } from "lucide-react"
+import { dashboardService, DashboardStats, DashboardAppointment, DashboardFeaturedPatient } from "@/services/dashboard-service"
+
 
 export default function DashboardPage() {
     const router = useRouter()
-    const { user, isAuthenticated, isLoading } = useAuth()
+    const { user, isAuthenticated, isLoading: authLoading } = useAuth()
+
+    // States for real data
+    const [stats, setStats] = useState<DashboardStats | null>(null)
+    const [appointments, setAppointments] = useState<Appointment[]>([])
+    const [featuredPatient, setFeaturedPatient] = useState<Patient | null>(null)
+    const [loadingData, setLoadingData] = useState(true)
 
     useEffect(() => {
-        if (!isLoading && !isAuthenticated) {
+        if (!authLoading && !isAuthenticated) {
             router.push("/login")
         }
-    }, [isLoading, isAuthenticated, router])
+    }, [authLoading, isAuthenticated, router])
 
-    if (isLoading || !isAuthenticated) {
+    useEffect(() => {
+        if (isAuthenticated) {
+            fetchDashboardData()
+        }
+    }, [isAuthenticated])
+
+    const fetchDashboardData = async () => {
+        try {
+            setLoadingData(true)
+            const [statsData, appointmentsData, featuredData] = await Promise.all([
+                dashboardService.getStats(),
+                dashboardService.getAppointmentsToday(),
+                dashboardService.getFeaturedPatient()
+            ])
+
+            setStats(statsData)
+
+            // Map Appointments
+            const mappedAppointments: Appointment[] = appointmentsData.map(apt => ({
+                id: String(apt.id),
+                time: apt.time,
+                patientName: apt.patient_name,
+                patientAvatar: apt.photo || undefined, // Convert null/empty to undefined
+                type: apt.type.toLowerCase() as "presencial" | "online",
+                duration: apt.duration,
+                description: apt.status === 'scheduled' ? 'Consulta Agendada' : apt.status,
+                isNow: false
+            }))
+            setAppointments(mappedAppointments)
+
+            // Map Featured Patient
+            if (featuredData && featuredData.id) {
+                const mappedFeatured: Patient = {
+                    id: String(featuredData.id),
+                    name: featuredData.name,
+                    avatar: featuredData.photo || undefined, // Convert null to undefined
+                    goal: featuredData.goal,
+                    metrics: [
+                        { label: "Peso", value: `${featuredData.metrics.weight}kg`, trend: featuredData.metrics.weight_trend, isPositive: featuredData.metrics.weight_trend < 0 },
+                        { label: "Gordura", value: `${featuredData.metrics.body_fat}%`, trend: featuredData.metrics.body_fat_trend, isPositive: featuredData.metrics.body_fat_trend < 0 },
+                        { label: "IMC", value: featuredData.metrics.bmi, trend: featuredData.metrics.bmi_trend, isPositive: featuredData.metrics.bmi_trend < 0 },
+                        { label: "Músculo", value: `${featuredData.metrics.muscle_mass}kg`, trend: featuredData.metrics.muscle_mass_trend, isPositive: featuredData.metrics.muscle_mass_trend > 0 },
+                    ]
+                }
+                setFeaturedPatient(mappedFeatured)
+            } else {
+                setFeaturedPatient(null)
+            }
+
+        } catch (error) {
+            console.error("Failed to fetch dashboard data:", error)
+            // toast({
+            //     title: "Erro ao carregar dados",
+            //     description: "Não foi possível atualizar o dashboard. Tente novamente.",
+            //     variant: "destructive"
+            // })
+        } finally {
+            setLoadingData(false)
+        }
+    }
+
+    if (authLoading || !isAuthenticated) {
         return (
             <div className="min-h-screen bg-background flex items-center justify-center">
                 <div className="flex flex-col items-center gap-4">
@@ -69,7 +140,6 @@ export default function DashboardPage() {
             year: 'numeric'
         }
         const date = new Date().toLocaleDateString('pt-BR', options)
-        // Capitalizar primeira letra
         return date.charAt(0).toUpperCase() + date.slice(1)
     }
 
@@ -88,38 +158,38 @@ export default function DashboardPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
                 <StatCard
                     title="Pacientes Ativos"
-                    value={32}
+                    value={loadingData ? "..." : (stats?.active_patients || 0)}
                     icon={Users}
                     variant="theme"
-                    trend={{ value: 5, label: "este mês", isPositive: true }}
+                    trend={{ value: 0, label: "este mês", isPositive: true }}
                 />
                 <StatCard
                     title="Consultas Hoje"
-                    value={8}
+                    value={loadingData ? "..." : (stats?.appointments_today || 0)}
                     icon={Calendar}
                     variant="amber"
-                    subtitle="Próxima às 14:30"
+                    subtitle={stats?.appointments_today === 0 ? "Nenhuma hoje" : "Ver agenda"}
                 />
                 <StatCard
                     title="Dietas Ativas"
-                    value={42}
+                    value={loadingData ? "..." : (stats?.active_diets || 0)}
                     icon={UtensilsCrossed}
                     variant="green"
-                    subtitle="3 vencem em breve"
+                    subtitle="Em andamento"
                 />
                 <StatCard
                     title="Taxa de Adesão"
-                    value="87%"
+                    value={loadingData ? "..." : `${stats?.adhesion_rate || 0}%`}
                     icon={Activity}
                     variant="violet"
-                    trend={{ value: 2, label: "vs mês anterior", isPositive: true }}
+                    trend={{ value: 0, label: "vs média", isPositive: true }}
                 />
             </div>
 
             {/* Agenda + Paciente em Foco */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-                <AgendaDoDia />
-                <PacienteEmFoco />
+                <AgendaDoDia appointments={loadingData ? [] : appointments} />
+                <PacienteEmFoco patient={loadingData ? undefined : (featuredPatient || undefined)} />
             </div>
 
             {/* Ações Rápidas */}

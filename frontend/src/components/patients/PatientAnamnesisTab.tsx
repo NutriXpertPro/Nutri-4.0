@@ -49,17 +49,39 @@ export function PatientAnamnesisTab({ patientId, patient }: PatientAnamnesisTabP
         createTemplateMutation.mutate(templateData)
     }
 
+    // Fetch Standard Anamnesis
+    const { data: standardAnamnesis, isLoading: isLoadingStandard } = useQuery({
+        queryKey: ['anamnesis-standard', patientId],
+        queryFn: () => anamnesisService.getStandardAnamnesis(patientId),
+        enabled: !!patientId
+    })
+
+    const saveStandardMutation = useMutation({
+        mutationFn: (data: any) => anamnesisService.saveStandardAnamnesis(patientId, data),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['anamnesis-standard', patientId] })
+            setView('LIST')
+            alert("Anamnese salva com sucesso!")
+        },
+        onError: (error) => {
+            console.error("Erro ao salvar anamnese:", error)
+            alert("Erro ao salvar anamnese. Tente novamente.")
+        }
+    })
+
     const handleSaveAnamnesis = async (data: any) => {
-        // TODO: Implementar chamada à API para salvar anamnese
-        console.log("Salvando anamnese:", data)
-        // Aqui você pode adicionar a chamada para a API
-        // await anamnesisService.saveStandardAnamnesis(patientId, data)
-        alert("Anamnese salva com sucesso! (simulação)")
-        setView('LIST')
+        await saveStandardMutation.mutateAsync(data)
     }
 
-    // Pré-preencher dados iniciais do paciente no formulário
+    // Pré-preencher dados iniciais do paciente no formulário ou dados salvos
     const getInitialData = (): Partial<StandardAnamnesisData> | undefined => {
+        // Prioridade: Dados salvos > Dados do perfil > Undefined
+        if (standardAnamnesis) {
+            // Se já existe anamnese salva, retornamos os dados dela
+            // Mapeamento simples assumindo que os campos batem ou são passados diretamente
+            return standardAnamnesis as any
+        }
+
         if (!patient) return undefined
 
         // Calcular idade
@@ -112,6 +134,7 @@ export function PatientAnamnesisTab({ patientId, patient }: PatientAnamnesisTabP
                     onBack={() => setView('LIST')}
                     onSave={handleSaveAnamnesis}
                     initialData={getInitialData()}
+                // isLoading={saveStandardMutation.isPending} // Assuming the form component accepts this prop, if not, it should be added.
                 />
             )}
 

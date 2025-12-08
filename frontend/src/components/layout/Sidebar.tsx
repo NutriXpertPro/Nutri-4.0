@@ -138,7 +138,7 @@ export function Sidebar({ className, collapsed, onToggle }: SidebarProps) {
             <Button
                 variant="ghost"
                 size="icon"
-                className="fixed top-4 left-4 z-50 lg:hidden"
+                className="fixed top-4 left-4 z-[60] lg:hidden"
                 onClick={() => setIsMobileOpen(!isMobileOpen)}
             >
                 {isMobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -178,7 +178,6 @@ export function Sidebar({ className, collapsed, onToggle }: SidebarProps) {
                         style={{
                             background: 'transparent',
                             imageRendering: 'crisp-edges',
-                            imageRendering: '-webkit-optimize-contrast',
                             filter: 'contrast(110%) brightness(105%)'
                         }}
                         loading="eager"

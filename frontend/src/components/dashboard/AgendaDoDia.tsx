@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Calendar, MapPin, Video, Phone, MessageSquare, ChevronRight } from "lucide-react"
 
-interface Appointment {
+export interface Appointment {
     id: string
     time: string
     patientName: string

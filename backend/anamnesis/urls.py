@@ -1,14 +1,17 @@
-from django.urls import path, include
-from rest_framework.routers import DefaultRouter
+from django.urls import path
 from .views import AnamnesisViewSet, AnamnesisTemplateViewSet, AnamnesisResponseViewSet
 
-router = DefaultRouter()
-
 app_name = 'anamnesis'
-router.register(r'standard', AnamnesisViewSet, basename='anamnesis-standard')
-router.register(r'templates', AnamnesisTemplateViewSet, basename='anamnesis-template')
-router.register(r'responses', AnamnesisResponseViewSet, basename='anamnesis-response')
 
 urlpatterns = [
-    path('', include(router.urls)),
+    # Standard Anamnesis
+    path('standard/', AnamnesisViewSet.as_view({'get': 'list', 'post': 'create'}), name='anamnesis-standard-list'),
+    path('standard/<int:pk>/', AnamnesisViewSet.as_view({'get': 'retrieve', 'patch': 'partial_update', 'delete': 'destroy'}), name='anamnesis-standard-detail'),
+    # Templates
+    path('templates/', AnamnesisTemplateViewSet.as_view({'get': 'list', 'post': 'create'}), name='anamnesis-template-list'),
+    path('templates/<int:pk>/', AnamnesisTemplateViewSet.as_view({'get': 'retrieve', 'patch': 'partial_update', 'delete': 'destroy'}), name='anamnesis-template-detail'),
+    # Responses
+    path('responses/', AnamnesisResponseViewSet.as_view({'get': 'list', 'post': 'create'}), name='anamnesis-response-list'),
+    path('responses/<int:pk>/', AnamnesisResponseViewSet.as_view({'get': 'retrieve', 'patch': 'partial_update', 'delete': 'destroy'}), name='anamnesis-response-detail'),
 ]
+

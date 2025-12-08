@@ -7,6 +7,8 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { MessageSquare, Calendar, Edit, Phone, Mail } from "lucide-react"
 
+import { EditPatientDialog } from "./EditPatientDialog"
+
 interface PatientHeaderProps {
     patient?: {
         name: string
@@ -18,10 +20,10 @@ interface PatientHeaderProps {
         status: "active" | "inactive"
         adesao?: number
     }
+    fullData?: any // Pass the full API object here
     className?: string
 }
 
-// Mock data default
 const defaultPatient = {
     name: "Maria Silva",
     email: "maria.silva@email.com",
@@ -32,7 +34,9 @@ const defaultPatient = {
     adesao: 87,
 }
 
-export function PatientHeader({ patient = defaultPatient, className }: PatientHeaderProps) {
+export function PatientHeader({ patient = defaultPatient, fullData, className }: PatientHeaderProps) {
+    const [isEditOpen, setIsEditOpen] = React.useState(false)
+
     return (
         <div className={cn("relative mb-8", className)}>
             {/* Background Banner */}
@@ -94,11 +98,25 @@ export function PatientHeader({ patient = defaultPatient, className }: PatientHe
                         <Calendar className="h-4 w-4 mr-2" />
                         Agendar
                     </Button>
-                    <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-primary">
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="text-muted-foreground hover:text-primary"
+                        onClick={() => setIsEditOpen(true)}
+                        disabled={!fullData}
+                    >
                         <Edit className="h-4 w-4" />
                     </Button>
                 </div>
             </div>
+
+            {fullData && (
+                <EditPatientDialog
+                    open={isEditOpen}
+                    onOpenChange={setIsEditOpen}
+                    patient={fullData}
+                />
+            )}
         </div>
     )
 }

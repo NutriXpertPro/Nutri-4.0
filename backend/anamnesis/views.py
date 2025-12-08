@@ -14,7 +14,13 @@ class AnamnesisViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         # Filter patients managed by this nutritionist
-        return Anamnesis.objects.filter(patient__nutritionist=self.request.user)
+        queryset = Anamnesis.objects.filter(patient__nutritionist=self.request.user)
+        
+        patient_id = self.request.query_params.get('patient')
+        if patient_id:
+            queryset = queryset.filter(patient_id=patient_id)
+            
+        return queryset
 
     def perform_create(self, serializer):
         # Usually standard anamnesis is created with empty values or specifically attached

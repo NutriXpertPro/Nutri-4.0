@@ -19,11 +19,29 @@ export function usePatients() {
         },
     })
 
+    const updatePatient = useMutation({
+        mutationFn: ({ id, data }: { id: number; data: Partial<CreatePatientDTO> }) =>
+            patientService.update(id, data),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['patients'] })
+            queryClient.invalidateQueries({ queryKey: ['patient'] })
+        },
+    })
+
+    const deletePatient = useMutation({
+        mutationFn: (id: number) => patientService.delete(id),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['patients'] })
+        },
+    })
+
     return {
         patients,
         isLoading,
         error,
         createPatient,
+        updatePatient,
+        deletePatient,
     }
 }
 

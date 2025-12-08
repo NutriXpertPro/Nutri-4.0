@@ -4,6 +4,8 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Checkbox } from "@/components/ui/checkbox"
+import Link from "next/link"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { useTheme } from "next-themes"
@@ -25,6 +27,7 @@ export default function LoginPage() {
     const { login } = useAuth()
     const [email, setEmail] = useState("")
     const [password, setPassword] = useState("")
+    const [rememberMe, setRememberMe] = useState(false)
     const [showPassword, setShowPassword] = useState(false)
     const [isLoading, setIsLoading] = useState(false)
     const [error, setError] = useState("")
@@ -179,6 +182,29 @@ export default function LoginPage() {
                             </div>
                         </div>
 
+                        {/* Remember Me & Forgot Password - Row */}
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-2">
+                                <Checkbox
+                                    id="remember"
+                                    checked={rememberMe}
+                                    onCheckedChange={(checked) => setRememberMe(checked as boolean)}
+                                />
+                                <label
+                                    htmlFor="remember"
+                                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                                >
+                                    Lembrar-me
+                                </label>
+                            </div>
+                            <Link
+                                href="/login/forgot-password"
+                                className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                            >
+                                Esqueceu sua senha?
+                            </Link>
+                        </div>
+
                         {/* Error Message */}
                         {error && (
                             <div className="text-sm text-red-500 bg-red-50 dark:bg-red-900/20 p-3 rounded-md">
@@ -224,12 +250,7 @@ export default function LoginPage() {
                             Entrar com Google
                         </Button>
 
-                        <button
-                            type="button"
-                            className="text-sm text-muted-foreground hover:text-primary transition-colors"
-                        >
-                            Esqueceu sua senha?
-                        </button>
+
 
                         <div className="text-sm text-center text-muted-foreground">
                             É paciente?{" "}

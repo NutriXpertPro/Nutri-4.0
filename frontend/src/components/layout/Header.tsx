@@ -83,14 +83,15 @@ export function Header({ className, sidebarCollapsed }: HeaderProps) {
 
     return (
         <header
+            suppressHydrationWarning
             className={cn(
-                "fixed top-0 right-0 z-30 h-16 bg-card/80 backdrop-blur-md border-b",
+                "fixed top-0 right-0 z-50 h-16 bg-card/80 backdrop-blur-md border-b",
                 "transition-all duration-300 ease-in-out",
                 sidebarCollapsed ? "lg:left-[60px]" : "lg:left-[240px]",
                 "left-0",
                 className
             )}
-            style={{ marginTop: '6.5px' }}
+            style={{ marginTop: '0' }}
         >
             <div className="flex items-center justify-between h-full px-4 lg:px-6">
                 {/* Left: Logo (mobile) + Search */}

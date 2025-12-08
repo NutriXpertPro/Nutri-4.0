@@ -80,19 +80,19 @@ Este checklist organiza todo o desenvolvimento do NutriXpertPro em **5 fases pri
 - [x] Configurar rate limiting (5 tentativas/minuto para auth)
 
 ### 2.2 Sistema de Autenticação - Frontend
-- [ ] Página Landing Page (conforme wireframe)
+- [x] Página Landing Page (conforme wireframe)
 - [x] Página Login Nutricionista (conforme wireframe)
-- [ ] Página Login Paciente
-- [ ] Página Registro Nutricionista
+- [x] Página Login Paciente
+- [x] Página Registro Nutricionista
 - [x] Componente Toggle de visibilidade de senha
-- [ ] Funcionalidade "Lembrar-me"
-- [ ] Página Esqueceu a senha
+- [x] Funcionalidade "Lembrar-me"
+- [x] Página Esqueceu a senha
 - [x] Integração OAuth Google (Botão Visual)
-- [ ] Contexto de autenticação (AuthContext)
-- [ ] Proteção de rotas (middleware)
-- [x] Persistência de sessão (tokens no localStorage/cookies)
+- [x] Contexto de autenticação (AuthContext)
+- [x] Proteção de rotas (middleware)
+- [x] Persistência de sessão (tokens no cookies/localStorage) localStorage/cookies)
 
-### 2.3 Layout Principal
+### 2.3 Layout Principal 
 
 #### Header Completo
 - [x] Logo NutriXpertPro à esquerda
@@ -197,8 +197,8 @@ Este checklist organiza todo o desenvolvimento do NutriXpertPro em **5 fases pri
 - [x] Views de CRUD (Django tradicional - converter para API REST)
 - [ ] API `GET /api/v1/patients/` - Listar pacientes (paginação, busca, filtros)
 - [ ] API `POST /api/v1/patients/` - Criar paciente
-- [ ] API `GET /api/v1/patients/{id}/` - Detalhes do paciente
-- [ ] API `PATCH /api/v1/patients/{id}/` - Atualizar paciente
+- [x] API `GET /api/v1/patients/{id}/` - Detalhes do paciente
+- [x] API `PATCH /api/v1/patients/{id}/` - Atualizar paciente
 - [ ] API `DELETE /api/v1/patients/{id}/` - Deletar paciente (soft delete)
 - [ ] API `GET /api/v1/patients/{id}/compare-photos/` - Comparar fotos antes/depois
 
@@ -217,33 +217,33 @@ Este checklist organiza todo o desenvolvimento do NutriXpertPro em **5 fases pri
 - [x] Integração Visual Premium em todas as abas (Visão Geral, Análise, Dieta)
 
 ### Próximos Passos (Backend Integration)
-- [ ] Conectar Lista de Pacientes com API Real
-- [ ] Implementar formulário completo de Anamnese
-- [ ] Integração do Dashboard com dados reais
-- [ ] Página Editar Paciente
+- [x] Conectar Lista de Pacientes com API Real
+- [x] Implementar formulário completo de Anamnese
+- [x] Integração do Dashboard com dados reais
+- [x] Página Editar Paciente (Modal via Header)
 
 ### 3.3 Avaliações Físicas - Backend
 - [x] Modelo Evaluation (peso, altura, gordura, massa magra, circunferências)
 - [x] Modelo EvaluationPhoto (frente, lado, costas)
-- [ ] API `POST /api/v1/evaluations/` - Criar avaliação (multipart/form-data)
-- [ ] API `GET /api/v1/patients/{id}/evaluations/` - Histórico de avaliações
-- [ ] API `GET /api/v1/evaluations/{id}/` - Detalhes de 1 avaliação
+- [x] API `POST /api/v1/evaluations/` - Criar avaliação (multipart/form-data)
+- [x] API `GET /api/v1/evaluations/?patient={id}` - Histórico de avaliações
+- [x] API `GET /api/v1/evaluations/{id}/` - Detalhes de 1 avaliação
 - [ ] Cálculo automático de IMC
 - [ ] Storage para fotos (configurar django-storages + S3/CloudFlare R2)
 
 ### 3.4 Avaliações Físicas - Frontend
-- [ ] Modal/Página Criar Avaliação (formulário com upload de fotos)
-- [ ] Componente de upload de múltiplas fotos
+- [x] Modal/Página Criar Avaliação (formulário com upload de fotos)
+- [x] Componente de upload de múltiplas fotos
 - [ ] Histórico de avaliações na página do paciente
 - [ ] Visualização de fotos em modal (galeria)
 
 ### 3.5 Anamnese - Backend
 - [x] Modelo Anamnesis com 7 seções completas (~50 campos)
 - [x] Serializer já existe
-- [ ] API `GET /api/v1/anamnesis/` - Listar anamneses
-- [ ] API `POST /api/v1/anamnesis/` - Criar anamnese
-- [ ] API `PATCH /api/v1/anamnesis/{id}/` - Atualizar (salvar rascunho)
-- [ ] API `GET /api/v1/anamnesis/{id}/` - Carregar anamnese
+- [ ] API `GET /api/v1/anamnesis/` - Listar anamneses (geral)
+- [x] API `POST /api/v1/anamnesis/standard/` - Criar anamnese padrão
+- [x] API `PATCH /api/v1/anamnesis/standard/{id}/` - Atualizar anamnese padrão
+- [x] API `GET /api/v1/anamnesis/standard/?patient={id}` - Carregar do paciente
 - [ ] Auto-save a cada 30 segundos
 
 ### 3.6 Anamnese - Frontend

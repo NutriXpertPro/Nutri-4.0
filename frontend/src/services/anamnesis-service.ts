@@ -57,6 +57,25 @@ export const anamnesisService = {
     createResponse: async (response: { patient: number, template: number, answers: Record<string, any> }) => {
         const { data } = await api.post<AnamnesisResponse>("/anamnesis/responses/", response)
         return data
+    },
+
+    // Standard Anamnesis
+    getStandardAnamnesis: async (patientId: number) => {
+        const { data } = await api.get<any[]>(`/anamnesis/standard/?patient=${patientId}`)
+        return data.length > 0 ? data[0] : null
+    },
+
+    saveStandardAnamnesis: async (patientId: number, data: any) => {
+        // Check if exists first (simple logic for now, ideally backend handles update-or-create)
+        const existing = await anamnesisService.getStandardAnamnesis(patientId)
+
+        if (existing) {
+            const response = await api.patch(`/anamnesis/standard/${existing.id}/`, { ...data, patient: patientId })
+            return response.data
+        } else {
+            const response = await api.post("/anamnesis/standard/", { ...data, patient: patientId })
+            return response.data
+        }
     }
 }
 

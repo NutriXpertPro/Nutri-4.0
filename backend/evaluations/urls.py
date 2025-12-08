@@ -4,7 +4,12 @@ from . import views
 app_name = "evaluations"
 
 urlpatterns = [
-    path("", views.evaluation_list, name="list"),
-    path("create/", views.evaluation_create, name="create"),
-    path("<int:pk>/partial/", views.evaluation_details_partial, name="detail_partial"),
+    # Evaluations CRUD
+    path('', views.EvaluationViewSet.as_view({'get': 'list', 'post': 'create'}), name='evaluation-list'),
+    path('<int:pk>/', views.EvaluationViewSet.as_view({'get': 'retrieve', 'patch': 'partial_update', 'delete': 'destroy'}), name='evaluation-detail'),
+    path('<int:pk>/upload_photo/', views.EvaluationViewSet.as_view({'post': 'upload_photo'}), name='evaluation-upload-photo'),
+    # Photos
+    path('photos/', views.EvaluationPhotoViewSet.as_view({'get': 'list'}), name='evaluation-photo-list'),
+    path('photos/<int:pk>/', views.EvaluationPhotoViewSet.as_view({'get': 'retrieve', 'delete': 'destroy'}), name='evaluation-photo-detail'),
 ]
+

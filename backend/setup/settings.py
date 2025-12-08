@@ -65,7 +65,8 @@ INSTALLED_APPS = [
     'payments.apps.PaymentsConfig',
     'notifications.apps.NotificationsConfig',
     'messages.apps.MessagesConfig',
-    'lab_exams.apps.LabExamsConfig'
+    'lab_exams.apps.LabExamsConfig',
+    'dashboard',
 ]
 
 AUTHENTICATION_BACKENDS = [
