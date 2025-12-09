@@ -436,9 +436,58 @@ Sistema web moderno (SPA) para nutricionistas gerenciarem pacientes, dietas, con
   - Visualização inline (futuro)
 - **API:** `GET /api/v1/patients/{id}/lab-exams/`
 
----
 
-### 10. NOTIFICAÇÕES
+### 11. PERSONALIZAÇÃO & DOCUMENTOS
+
+#### RF-034: Identidade Visual e Assinatura
+- **Descrição:** Personalização de documentos gerados
+- **Prioridade:** P1
+- **Funcionalidades:**
+  - Upload de Logotipo do Nutricionista
+  - Upload de Assinatura Digitalizada
+  - Campo para CRN (obrigatório para assinatura)
+  - Aplicação automática em PDFs: Dieta, Prescrições (manipulados/suplementos), Exames
+- **API:** `POST /api/v1/users/me/branding/`
+
+### 12. AUTOMAÇÃO
+#### RF-035: Mensagens Automáticas
+- **Descrição:** Sistema de mensagens transacionais editáveis
+- **Prioridade:** P1
+- **Funcionalidades:**
+  - Templates editáveis pelo nutricionista
+  - Triggers automáticos:
+    - Confirmação de agendamento
+    - Lembrete 24h antes
+    - Boas-vindas (novo paciente)
+    - Aniversário
+    - Follow-up pós-consulta (30/60 dias)
+  - Variáveis dinâmicas ({nome_paciente}, {data}, {hora})
+- **API:** `GET/POST /api/v1/automation/templates/`
+
+### 13. APP DO PACIENTE (ENGAGEMENT)
+
+#### RF-036: Diário Alimentar e Físico
+- **Descrição:** Registro diário para monitoramento e engajamento
+- **Prioridade:** P1
+- **Funcionalidades:**
+  - Upload de fotos das refeições (café, almoço, etc)
+  - Upload de fotos do físico (evolução)
+  - Notas de texto sobre a refeição/dia
+  - Notificação automática para o Nutricionista ao postar
+  - Feedback rápido do Nutri (curtir/comentar no diário)
+- **API:** `POST /api/v1/patient-diary/entries/`
+
+#### RF-037: Rede Social Fechada (Comunidade)
+- **Descrição:** Ambiente seguro para motivação mútua
+- **Prioridade:** P2 (Inovação)
+- **Regras:**
+  - **Opt-in:** Paciente precisa aceitar participar
+  - **Conteúdo:** Fotos de refeições e físico compartilhadas no feed
+  - **Interação Própria:** Paciente pode comentar nas próprias fotos
+  - **Interação com Outros:** Paciente pode APENAS CURTIR fotos de terceiros (sem comentários para evitar toxicidade)
+  - **Moderação:** Nutricionista vê tudo e pode moderar
+- **API:** `GET /api/v1/community/feed/`
+
 
 #### RF-033: Sistema de Notificações
 - **Descrição:** Alertas em tempo real
@@ -539,7 +588,13 @@ Sistema web moderno (SPA) para nutricionistas gerenciarem pacientes, dietas, con
 - Chat real-time
 - Notificações push
 - Templates de dieta
-- Geração PDF
+- Geração PDF (com Logo/Assinatura)
+- Automação de Mensagens
+- Diário do Paciente (v1)
+
+### V1.2 - +1 mês
+- Rede Social Fechada (Comunidade)
+- Integração Google Calendar
 
 ### V1.2 - +1 mês
 - Integração Google Calendar
@@ -550,7 +605,7 @@ Sistema web moderno (SPA) para nutricionistas gerenciarem pacientes, dietas, con
 - API pública
 - Marketplace templates
 - Analytics dashboard
-- Mobile app (PWA)
+- Mobile app Nativo (opcional, foco em PWA robusto)
 
 ---
 
@@ -559,7 +614,7 @@ Sistema web moderno (SPA) para nutricionistas gerenciarem pacientes, dietas, con
 - ❌ Pagamentos integrados
 - ❌ Videochamada nativa
 - ❌ Integração wearables
-- ❌ App mobile nativo
+- ❌ App mobile nativo (inicialmente PWA App Store/Play Store)
 - ❌ Marketplace de profissionais
 - ❌ Teleconsulta completa
 

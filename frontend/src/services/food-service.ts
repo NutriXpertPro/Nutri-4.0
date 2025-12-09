@@ -66,7 +66,7 @@ export const foodService = {
         if (options?.grupo) params.append('grupo', options.grupo)
         if (options?.limit) params.append('limit', options.limit.toString())
 
-        const { data } = await api.get<FoodSearchResponse>(`/foods/?${params}`)
+        const { data } = await api.get<FoodSearchResponse>(`/diets/foods/?${params}`)
         return data
     },
 

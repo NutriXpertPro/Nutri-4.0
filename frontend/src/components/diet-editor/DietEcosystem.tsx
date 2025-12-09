@@ -4,12 +4,12 @@ import React from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { EcoHeader } from './ecosystem/hud/EcoHeader'
 import { useDietEditorStore, useDietEditorPatient } from '@/stores/diet-editor-store'
+import { DietTemplateWorkspace } from './DietTemplateWorkspace'
 
 // Import Patient Tabs Components
 import { PatientOverviewTab } from "@/components/patients/PatientOverviewTab"
 import { PatientContextTab } from "@/components/patients/PatientContextTab"
 import { PatientAnalysisTab } from "@/components/patients/PatientAnalysisTab"
-import { PatientDietTab } from "@/components/patients/PatientDietTab"
 import { PatientAnamnesisTab } from "@/components/patients/PatientAnamnesisTab"
 
 // Mock if patient is missing
@@ -24,115 +24,61 @@ export function DietEcosystem() {
     const patientContext = patient || MOCK_PATIENT
     const patientId = String(patientContext.id)
 
-    // Animações para o efeito de gaveta "saindo do móvel"
-    const contentVariants = {
+    // Shared Drawer Animation Variants
+    // Both the Diet Template and the Tabs use this "Drawer from Ceiling" effect
+    const drawerVariants = {
         initial: { y: "-100%", opacity: 1, zIndex: 20 },
         animate: { y: 0, opacity: 1, zIndex: 20 },
         exit: { y: "-100%", opacity: 1, zIndex: 20 },
         transition: { type: "spring" as const, bounce: 0, duration: 0.5 }
     };
 
-    // Backdrop animation
-    const backdropVariants = {
-        initial: { opacity: 0 },
-        animate: { opacity: 1 },
-        exit: { opacity: 0 },
-        transition: { duration: 0.3 }
-    }
-
     const renderContent = () => {
-        let content = null;
+        // If no tab is active, show the Diet Template Workspace
+        if (!activeTab || activeTab === 'diet') {
+            return (
+                <motion.div
+                    key="diet-template-workspace"
+                    {...drawerVariants}
+                    className="w-full min-h-[calc(100vh-120px)] bg-background/95 backdrop-blur-sm border-b border-border/10 rounded-b-3xl shadow-2xl relative pointer-events-auto px-2 md:px-4 mt-[30px]"
+                    onClick={(e) => e.stopPropagation()}
+                    style={{ zIndex: 10 }}
+                >
+                    <DietTemplateWorkspace />
+                </motion.div>
+            )
+        }
 
+        // Otherwise, render the active tab drawer
+        let content = null;
         switch (activeTab) {
-            case 'diet':
-                content = (
-                    <motion.div
-                        key="diet-drawer"
-                        {...contentVariants}
-                        className="w-full h-[50vh] bg-background/50 flex items-center justify-center relative rounded-b-3xl shadow-2xl border-b border-border/10 overflow-hidden"
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        <div className="absolute inset-0 z-[-1] opacity-5 bg-[radial-gradient(#000_1px,transparent_1px)] [background-size:16px_16px] dark:bg-[radial-gradient(#fff_1px,transparent_1px)]" />
-                        <p className="text-muted-foreground text-sm font-mono">Workspace de Dieta (Em Construção)</p>
-                    </motion.div>
-                )
-                break;
             case 'overview':
-                content = (
-                    <motion.div
-                        key="overview-drawer"
-                        {...contentVariants}
-                        className="w-full bg-background/95 backdrop-blur-sm p-6 md:p-8 rounded-b-3xl shadow-2xl border-b border-border/10"
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        <div className="space-y-6">
-                            <PatientOverviewTab />
-                        </div>
-                    </motion.div>
-                )
+                content = <PatientOverviewTab />
                 break;
             case 'context':
-                content = (
-                    <motion.div
-                        key="context-drawer"
-                        {...contentVariants}
-                        className="w-full bg-background/95 backdrop-blur-sm p-6 md:p-8 rounded-b-3xl shadow-2xl border-b border-border/10"
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        <div className="space-y-6">
-                            <PatientContextTab />
-                        </div>
-                    </motion.div>
-                )
+                content = <PatientContextTab />
                 break;
             case 'analysis':
-                content = (
-                    <motion.div
-                        key="analysis-drawer"
-                        {...contentVariants}
-                        className="w-full bg-background/95 backdrop-blur-sm p-6 md:p-8 rounded-b-3xl shadow-2xl border-b border-border/10"
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        <div className="space-y-6">
-                            <PatientAnalysisTab patientId={Number(patientId)} />
-                        </div>
-                    </motion.div>
-                )
+                content = <PatientAnalysisTab patientId={Number(patientId)} />
                 break;
             case 'anamnesis':
-                content = (
-                    <motion.div
-                        key="anamnesis-drawer"
-                        {...contentVariants}
-                        className="w-full bg-background/95 backdrop-blur-sm p-6 md:p-8 rounded-b-3xl shadow-2xl border-b border-border/10"
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        <div className="space-y-6">
-                            <PatientAnamnesisTab patientId={Number(patientId)} patient={patientContext as any} />
-                        </div>
-                    </motion.div>
-                )
+                content = <PatientAnamnesisTab patientId={Number(patientId)} patient={patientContext as any} />
                 break;
             default:
                 return null
         }
 
         return (
-            <>
-                {/* Backdrop - Click to Close */}
-                <motion.div
-                    key="backdrop"
-                    {...backdropVariants}
-                    className="absolute inset-0 z-10 bg-black/5 cursor-pointer"
-                    onClick={() => setActiveTab('')}
-                />
-                {/* Drawer Content */}
-                <div className="relative z-20 pointer-events-none">
-                    <div className="pointer-events-auto">
-                        {content}
-                    </div>
+            <motion.div
+                key="active-tab-content"
+                {...drawerVariants}
+                className="w-full bg-background/95 backdrop-blur-sm p-6 md:p-8 rounded-b-3xl shadow-2xl border-b border-border/10 pointer-events-auto"
+                onClick={(e) => e.stopPropagation()}
+            >
+                <div className="space-y-6 mt-3">
+                    {content}
                 </div>
-            </>
+            </motion.div>
         )
     }
 
@@ -145,10 +91,29 @@ export function DietEcosystem() {
             </div>
 
             {/* AREA: WORKSPACE / TABS CONTENT */}
-            <div className="flex-1 relative pt-12 overflow-hidden">
-                <AnimatePresence mode="wait">
-                    {activeTab && renderContent()}
+            <div className="flex-1 relative overflow-y-auto">
+                {/* Backdrop Layer */}
+                <AnimatePresence>
+                    {activeTab && activeTab !== 'diet' && (
+                        <motion.div
+                            key="backdrop"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            transition={{ duration: 0.3 }}
+                            className="absolute inset-0 z-10 bg-black/10 cursor-pointer backdrop-blur-[2px]"
+                            onClick={() => setActiveTab('')} // Closing tab returns to Diet Template
+                        />
+                    )}
                 </AnimatePresence>
+
+                {/* Content Drawer Area */}
+                <div className="relative z-20 pointer-events-none">
+                    {/* Use pointer-events-auto on children to allow interaction */}
+                    <AnimatePresence mode="popLayout" initial={false}>
+                        {renderContent()}
+                    </AnimatePresence>
+                </div>
             </div>
 
         </div>

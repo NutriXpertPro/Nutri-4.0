@@ -15,7 +15,7 @@ const ColorContext = React.createContext<ColorContextType>({
 })
 
 export function ColorProvider({ children }: { children: React.ReactNode }) {
-    const [color, setColor] = React.useState<ThemeColor>("monochrome")
+    const [color, setColor] = React.useState<ThemeColor>("blue")
 
     React.useEffect(() => {
         const root = document.documentElement

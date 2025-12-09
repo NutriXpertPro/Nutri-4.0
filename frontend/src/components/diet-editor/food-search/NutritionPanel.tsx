@@ -8,6 +8,13 @@ import { foodService, Food } from '@/services/food-service'
 import { useDietEditorStore } from '@/stores/diet-editor-store'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select"
 
 // Debounce hook
 function useDebounce<T>(value: T, delay: number): T {
@@ -160,8 +167,8 @@ function SearchResultsList({ results, isLoading, onSelect }: SearchResultsListPr
                             <p className="text-xs text-slate-400">{food.grupo}</p>
                         </div>
                         <span className={`text-xs px-1.5 py-0.5 rounded ${food.source === 'TACO' ? 'bg-green-500/20 text-green-400' :
-                                food.source === 'TBCA' ? 'bg-blue-500/20 text-blue-400' :
-                                    'bg-purple-500/20 text-purple-400'
+                            food.source === 'TBCA' ? 'bg-blue-500/20 text-blue-400' :
+                                'bg-purple-500/20 text-purple-400'
                             }`}>
                             {food.source}
                         </span>
@@ -247,8 +254,8 @@ function FoodDetailView({
                         key={qty}
                         onClick={() => onQuantityChange(qty)}
                         className={`flex-1 py-1.5 rounded-lg text-xs font-medium transition-all ${quantity === qty
-                                ? 'bg-indigo-500 text-white'
-                                : 'bg-white/5 text-slate-400 hover:bg-white/10'
+                            ? 'bg-indigo-500 text-white'
+                            : 'bg-white/5 text-slate-400 hover:bg-white/10'
                             }`}
                     >
                         {qty}g

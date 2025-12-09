@@ -45,6 +45,30 @@ export interface PatientContext {
     allergies: string[]
 }
 
+// Workspace Meal Types (for DietTemplateWorkspace)
+export interface WorkspaceMealFood {
+    id: number
+    name: string
+    qty: number
+    unit: string
+    measure: string
+    prep: string
+    ptn: number
+    cho: number
+    fat: number
+    fib: number
+    preferred: boolean
+}
+
+export interface WorkspaceMeal {
+    id: number
+    type: string
+    time: string
+    observation: string
+    foods: WorkspaceMealFood[]
+    isCollapsed: boolean
+}
+
 // Calculation Methods
 export type CalculationMethod = 'mifflin' | 'harris_benedict' | 'cunningham' | 'katch_mcardle'
 
@@ -96,7 +120,7 @@ interface DietEditorState {
     tmb: number
     get: number
     targetCalories: number
-    targetMacros: { carbs: number; protein: number; fats: number }
+    targetMacros: { carbs: number; protein: number; fats: number; fiber: number }
 
     // Navigation
     activeTab: string
@@ -115,6 +139,13 @@ interface DietEditorState {
     // History for Undo/Redo
     history: DietDayPlan[][]
     historyIndex: number
+
+    // Workspace Template State (persists between tab switches)
+    workspaceMeals: WorkspaceMeal[]
+    activeWorkspaceDay: string
+    validityStartDate: string
+    validityEndDate: string
+    favorites: Food[]
 
     // Actions
     setPatient: (patient: PatientContext | null) => void
@@ -148,6 +179,19 @@ interface DietEditorState {
     saveSnapshot: () => void
 
     reset: () => void
+
+    // Workspace Template Actions
+    setWorkspaceMeals: (meals: WorkspaceMeal[]) => void
+    addWorkspaceMeal: (meal: WorkspaceMeal) => void
+    updateWorkspaceMeal: (mealId: number, updates: Partial<WorkspaceMeal>) => void
+    deleteWorkspaceMeal: (mealId: number) => void
+    copyWorkspaceMeal: (mealId: number) => void
+    setActiveWorkspaceDay: (day: string) => void
+    setValidityDates: (start: string, end: string) => void
+    addFavorite: (food: Food) => void
+    removeFavorite: (foodId: number) => void
+    addFoodToWorkspaceMeal: (mealId: number, food: Food) => void
+    removeFoodFromWorkspaceMeal: (mealId: number, foodId: number) => void
 }
 
 // Helper: Generate unique ID
@@ -234,7 +278,7 @@ const initialState = {
     tmb: 0,
     get: 0,
     targetCalories: 0,
-    targetMacros: { carbs: 0, protein: 0, fats: 0 },
+    targetMacros: { carbs: 0, protein: 0, fats: 0, fiber: 25 },
     activeTab: 'diet',
     currentDayIndex: 0,
     weekPlan: createDefaultWeekPlan(),
@@ -245,6 +289,19 @@ const initialState = {
     rightPanelCollapsed: false,
     history: [],
     historyIndex: -1,
+    // Workspace state
+    workspaceMeals: [{
+        id: 1,
+        type: 'Café da Manhã',
+        time: '07:00',
+        observation: '',
+        foods: [],
+        isCollapsed: false
+    }] as WorkspaceMeal[],
+    activeWorkspaceDay: 'Seg',
+    validityStartDate: '',
+    validityEndDate: '',
+    favorites: [],
 }
 
 // Zustand Store
@@ -303,6 +360,7 @@ export const useDietEditorStore = create<DietEditorState>((set, get) => ({
             carbs: Math.round((targetCalories * macroDistribution.carbs / 100) / 4), // 4 kcal/g
             protein: Math.round((targetCalories * macroDistribution.protein / 100) / 4), // 4 kcal/g
             fats: Math.round((targetCalories * macroDistribution.fats / 100) / 9), // 9 kcal/g
+            fiber: 25, // Fixed target of 25g fiber per day
         }
 
         set({ tmb: Math.round(tmb), get: getVal, targetCalories, targetMacros })
@@ -445,7 +503,94 @@ export const useDietEditorStore = create<DietEditorState>((set, get) => ({
         set({ history: newHistory.slice(-50), historyIndex: newHistory.length - 1 }) // Keep last 50 snapshots
     },
 
-    reset: () => set(initialState)
+    reset: () => set(initialState),
+
+    // Workspace Template Actions
+    setWorkspaceMeals: (workspaceMeals) => set({ workspaceMeals }),
+
+    addWorkspaceMeal: (meal) => {
+        const { workspaceMeals } = get()
+        set({ workspaceMeals: [...workspaceMeals, meal] })
+    },
+
+    updateWorkspaceMeal: (mealId, updates) => {
+        const { workspaceMeals } = get()
+        set({
+            workspaceMeals: workspaceMeals.map(m =>
+                m.id === mealId ? { ...m, ...updates } : m
+            )
+        })
+    },
+
+    deleteWorkspaceMeal: (mealId) => {
+        const { workspaceMeals } = get()
+        // Removed check for minimum 1 meal to allow empty state
+        set({
+            workspaceMeals: workspaceMeals.filter(m => m.id !== mealId)
+        })
+    },
+
+    copyWorkspaceMeal: (mealId) => {
+        const { workspaceMeals } = get()
+        const mealToCopy = workspaceMeals.find(m => m.id === mealId)
+        if (!mealToCopy) return
+        const newId = Math.max(...workspaceMeals.map(m => m.id)) + 1
+        const copiedMeal: WorkspaceMeal = {
+            ...mealToCopy,
+            id: newId,
+            foods: mealToCopy.foods.map((f, i) => ({ ...f, id: Date.now() + i }))
+        }
+        set({ workspaceMeals: [...workspaceMeals, copiedMeal] })
+    },
+
+    setActiveWorkspaceDay: (activeWorkspaceDay) => set({ activeWorkspaceDay }),
+
+    setValidityDates: (start, end) => set({ validityStartDate: start, validityEndDate: end }),
+
+    addFavorite: (food) => {
+        const { favorites } = get()
+        if (!favorites.some(f => f.id === food.id)) {
+            set({ favorites: [...favorites, food] })
+        }
+    },
+
+    removeFavorite: (foodId) => {
+        const { favorites } = get()
+        set({ favorites: favorites.filter(f => f.id !== foodId) })
+    },
+
+    addFoodToWorkspaceMeal: (mealId, food) => {
+        const { workspaceMeals } = get()
+        set({
+            workspaceMeals: workspaceMeals.map(meal => {
+                if (meal.id !== mealId) return meal
+                const newFood: WorkspaceMealFood = {
+                    id: Date.now(),
+                    name: food.nome,
+                    qty: 100, // Default 100g
+                    unit: 'g',
+                    measure: '100g',
+                    prep: '',
+                    ptn: food.proteina_g,
+                    cho: food.carboidrato_g,
+                    fat: food.lipidios_g,
+                    fib: food.fibra_g || 0,
+                    preferred: false
+                }
+                return { ...meal, foods: [...meal.foods, newFood] }
+            })
+        })
+    },
+
+    removeFoodFromWorkspaceMeal: (mealId, foodId) => {
+        const { workspaceMeals } = get()
+        set({
+            workspaceMeals: workspaceMeals.map(meal => {
+                if (meal.id !== mealId) return meal
+                return { ...meal, foods: meal.foods.filter(f => f.id !== foodId) }
+            })
+        })
+    },
 }))
 
 export const useDietEditorPatient = () => useDietEditorStore((state) => state.patient)
@@ -453,4 +598,9 @@ export const useDietEditorMeals = () => {
     const currentDayIndex = useDietEditorStore((state) => state.currentDayIndex)
     const weekPlan = useDietEditorStore((state) => state.weekPlan)
     return weekPlan[currentDayIndex]?.meals || []
+}
+export const useDietEditorTargets = () => {
+    const targetCalories = useDietEditorStore((state) => state.targetCalories)
+    const targetMacros = useDietEditorStore((state) => state.targetMacros)
+    return { calories: targetCalories, macros: targetMacros }
 }

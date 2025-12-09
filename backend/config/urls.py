@@ -23,7 +23,7 @@ urlpatterns = [
     path('api/v1/patients/', include('patients.urls')),
     path('api/v1/anamnesis/', include('anamnesis.urls')),
     path('api/v1/evaluations/', include('evaluations.urls')),
-    path('api/v1/', include('diets.urls')),  # Foods and Diets
+    path('api/v1/diets/', include('diets.urls')),  # Foods and Diets
     path('api/v1/', include('dashboard.urls')),
 ]
 

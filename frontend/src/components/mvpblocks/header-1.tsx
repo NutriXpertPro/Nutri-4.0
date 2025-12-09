@@ -84,10 +84,9 @@ export default function Header1() {
                   height={55}
                   className="rounded-xl bg-transparent"
                   style={{
-                      background: 'transparent',
-                      imageRendering: 'crisp-edges',
-                      imageRendering: '-webkit-optimize-contrast',
-                      filter: 'contrast(110%) brightness(105%)'
+                    background: 'transparent',
+                    imageRendering: 'crisp-edges',
+                    filter: 'contrast(110%) brightness(105%)'
                   }}
                   loading="eager"
                   decoding="async"

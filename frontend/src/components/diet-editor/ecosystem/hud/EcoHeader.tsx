@@ -77,9 +77,11 @@ export function EcoHeader() {
             acc.protein += item.protein
             acc.carbs += item.carbs
             acc.fats += item.fats
+            acc.fiber += (item as any).fiber || 0
         })
         return acc
-    }, { calories: 0, protein: 0, carbs: 0, fats: 0 })
+    }, { calories: 0, protein: 0, carbs: 0, fats: 0, fiber: 0 })
+
 
     const weight = patient?.weight || 70
 
@@ -100,6 +102,7 @@ export function EcoHeader() {
     const proteinData = getMacroData(currentTotals.protein, targetMacros.protein, "PTN")
     const carbsData = getMacroData(currentTotals.carbs, targetMacros.carbs, "CHO")
     const fatsData = getMacroData(currentTotals.fats, targetMacros.fats, "FAT")
+    const fiberData = getMacroData(currentTotals.fiber || 0, targetMacros.fiber || 25, "FIB")
 
     return (
         <div className="relative mb-2 bg-background z-40 shadow-sm border-b border-border/10 pb-6">
@@ -283,10 +286,11 @@ export function EcoHeader() {
                     </div>
 
                     {/* Live Macro Monitor */}
-                    <div className="flex-1 w-full grid grid-cols-3 gap-4 px-2">
+                    <div className="flex-1 w-full grid grid-cols-4 gap-4 px-2">
                         <MacroMonitor data={proteinData} color="bg-emerald-500" textColor="text-emerald-500" />
                         <MacroMonitor data={carbsData} color="bg-blue-500" textColor="text-blue-500" />
                         <MacroMonitor data={fatsData} color="bg-amber-500" textColor="text-amber-500" />
+                        <MacroMonitor data={fiberData} color="bg-purple-500" textColor="text-purple-500" />
                     </div>
 
                 </div>
@@ -295,8 +299,8 @@ export function EcoHeader() {
 
             {/* NAVIGATION TABS (Patient Profile Style, Absolute Position) */}
             <div className="absolute bottom-[-23.5px] left-0 w-full z-50 px-6 md:px-8 translate-y-1/2">
-                <Tabs value={activeTab || ''} className="w-full shadow-2xl drop-shadow-2xl">
-                    <TabsList className="grid w-full grid-cols-5 bg-background border border-border/50 p-1 rounded-xl shadow-sm h-auto">
+                <Tabs value={activeTab || ''} className="w-full">
+                    <TabsList className="grid w-full grid-cols-5 bg-background border border-border/30 p-1 rounded-xl shadow-md h-auto">
                         <TabsTrigger
                             value="overview"
                             onClick={(e) => { e.preventDefault(); activeTab === 'overview' ? setActiveTab('') : setActiveTab('overview') }}
@@ -463,6 +467,11 @@ function CircularMacroChart({ totals, targets, targetCalories }: any) {
                         <div className="w-2 h-2 rounded-full bg-amber-500" />
                         <span className="text-[10px] uppercase font-bold text-muted-foreground w-6">FAT</span>
                         <span className="font-bold text-foreground">{Math.round(totals.fats)}g</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-xs">
+                        <div className="w-2 h-2 rounded-full bg-purple-500" />
+                        <span className="text-[10px] uppercase font-bold text-muted-foreground w-6">FIB</span>
+                        <span className="font-bold text-foreground">{Math.round(totals.fiber || 0)}g</span>
                     </div>
                 </div>
 

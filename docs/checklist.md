@@ -409,6 +409,23 @@ Este checklist organiza todo o desenvolvimento do NutriXpertPro em **5 fases pri
 - [ ] Exportar consultas para Google Calendar
 - [ ] Importar eventos do Google Calendar
 
+### 4.12 Configurações de Branding
+- [ ] Backend: Modelo UserBranding (logo, assinatura, crn)
+- [ ] API `POST /api/v1/users/me/branding/` - Upload e configurações
+- [ ] Frontend: Página de Branding em Configurações
+- [ ] Preview de Logo e Assinatura
+- [ ] Integração com gerador de PDF (aplicar nos documentos)
+
+### 4.13 Automação de Mensagens
+- [ ] Backend: Modelo AutomationTemplate (trigger, content, is_active)
+- [ ] API `GET/POST /api/v1/automation/templates/` - CRUD Templates
+- [ ] Editor de Templates (Frontend) com variáveis dinâmicas
+- [ ] Implementar Triggers (Celery):
+  - [ ] Confirmação de Agendamento
+  - [ ] Lembrete 24h
+  - [ ] Aniversário
+  - [ ] Follow-up pós-consulta
+
 ---
 
 ## 🚀 FASE 5: ENTERPRISE & POLISH (2-3 meses)
@@ -420,6 +437,18 @@ Este checklist organiza todo o desenvolvimento do NutriXpertPro em **5 fases pri
   - [ ] Próxima consulta
   - [ ] Plano alimentar atual
   - [ ] Gráfico de evolução
+
+### 5.2 Diário & Comunidade (App Paciente)
+- [ ] Backend: Modelo PatientDiaryEntry (paciente, tipo, foto, texto, timestamp)
+- [ ] Backend: Modelo SocialLike (quem curtiu)
+- [ ] Backend: Modelo SocialComment (quem comentou - restrito ao dono)
+- [ ] API `POST /api/v1/patient-diary/` - Postar entrada
+- [ ] API `GET /api/v1/community/feed/` - Feed da comunidade (apenas opt-in)
+- [ ] Frontend Mobile/App:
+  - [ ] Tela Diário (Upload rápido de foto)
+  - [ ] Tela Feed Comunidade
+  - [ ] Lógica de interação restrita (Like all, Comment self only)
+  - [ ] Notificações de engajamento
 
 ### 5.2 2FA (Two-Factor Auth)
 - [ ] API `POST /api/v1/auth/2fa/enable/` - Habilitar 2FA
