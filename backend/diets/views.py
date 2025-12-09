@@ -2,6 +2,7 @@ from rest_framework import viewsets, filters, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.pagination import PageNumberPagination # Importado
 from django.db.models import Q
 from itertools import chain
 
@@ -11,6 +12,11 @@ from .serializers import (
     UnifiedFoodSerializer, DietSerializer, MealSerializer, FoodItemSerializer
 )
 
+
+class FoodPageNumberPagination(PageNumberPagination):
+    page_size = 50
+    page_size_query_param = 'page_size'
+    max_page_size = 1000 # Definir um tamanho máximo para evitar abusos
 
 class FoodSearchViewSet(viewsets.ViewSet):
     """
@@ -26,7 +32,7 @@ class FoodSearchViewSet(viewsets.ViewSet):
         search_query = request.query_params.get('search', '').strip()
         source_filter = request.query_params.get('source', '').upper()
         grupo_filter = request.query_params.get('grupo', '')
-        limit = int(request.query_params.get('limit', 50))
+        # Remove manual limit handling as pagination will take care of it
         
         if len(search_query) < 2:
             return Response(
@@ -41,7 +47,7 @@ class FoodSearchViewSet(viewsets.ViewSet):
             taco_qs = AlimentoTACO.objects.filter(nome__icontains=search_query)
             if grupo_filter:
                 taco_qs = taco_qs.filter(grupo__icontains=grupo_filter)
-            for item in taco_qs[:limit]:
+            for item in taco_qs:
                 results.append({
                     'id': item.id,
                     'nome': item.nome,
@@ -61,7 +67,7 @@ class FoodSearchViewSet(viewsets.ViewSet):
             tbca_qs = AlimentoTBCA.objects.filter(nome__icontains=search_query)
             if grupo_filter:
                 tbca_qs = tbca_qs.filter(grupo__icontains=grupo_filter)
-            for item in tbca_qs[:limit]:
+            for item in tbca_qs:
                 results.append({
                     'id': item.id,
                     'nome': item.nome,
@@ -81,7 +87,7 @@ class FoodSearchViewSet(viewsets.ViewSet):
             usda_qs = AlimentoUSDA.objects.filter(nome__icontains=search_query)
             if grupo_filter:
                 usda_qs = usda_qs.filter(categoria__icontains=grupo_filter)
-            for item in usda_qs[:limit]:
+            for item in usda_qs:
                 results.append({
                     'id': item.id,
                     'nome': item.nome,
@@ -96,13 +102,14 @@ class FoodSearchViewSet(viewsets.ViewSet):
                     'peso_unidade_caseira_g': item.porcao_padrao_g,
                 })
         
-        # Sort by name and limit
-        results = sorted(results, key=lambda x: x['nome'])[:limit]
+        # Sort all results
+        results = sorted(results, key=lambda x: x['nome'])
         
-        return Response({
-            'count': len(results),
-            'results': results
-        })
+        # Paginate the results
+        paginator = FoodPageNumberPagination()
+        paginated_results = paginator.paginate_queryset(results, request, view=self)
+        
+        return paginator.get_paginated_response(paginated_results)
     
     @action(detail=False, methods=['GET'])
     def grupos(self, request):

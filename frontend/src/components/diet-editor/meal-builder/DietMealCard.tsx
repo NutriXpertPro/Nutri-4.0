@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useRef, useEffect } from 'react'
+import React, { useState, useRef, useEffect, MutableRefObject } from 'react'
 import { Food, foodService } from '@/services/food-service'
 import { WorkspaceMeal } from '@/stores/diet-editor-store'
 import { Input } from "@/components/ui/input"
@@ -53,6 +53,7 @@ export function DietMealCard({
     const [sourceFilter, setSourceFilter] = useState<string | null>(null)
     const [isSearchFocused, setIsSearchFocused] = useState(false)
     const [expanded, setExpanded] = useState(!compact)
+    const [lastAddedFoodId, setLastAddedFoodId] = useState<number | null>(null)
 
     // Modals State
     const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false)
@@ -61,12 +62,28 @@ export function DietMealCard({
 
     const searchInputRef = useRef<HTMLInputElement>(null)
     const containerRef = useRef<HTMLDivElement>(null)
+    const quantityInputRefs = useRef<Record<number, React.RefObject<HTMLInputElement>>>(
+        meal.foods.reduce((acc, food) => {
+            acc[food.id] = React.createRef()
+            return acc
+        }, {} as Record<number, React.RefObject<HTMLInputElement>>)
+    )
+
+    // Atualizar os refs quando a lista de alimentos mudar
+    useEffect(() => {
+        meal.foods.forEach(food => {
+            if (!quantityInputRefs.current[food.id]) {
+                quantityInputRefs.current[food.id] = React.createRef()
+            }
+        })
+    }, [meal.foods]) // Mantém a dependência para garantir que novos alimentos tenham refs
 
     const debouncedQuery = useDebounce(searchQuery, 300)
 
+
     // Calculate Meal Totals
     const totals = meal.foods.reduce((acc, f) => {
-        const ratio = f.qty / 100
+        const ratio = f.qty / 100; // A quantidade já está em gramas
         return {
             kcal: acc.kcal + (f.ptn * 4 + f.cho * 4 + f.fat * 9) * ratio,
             ptn: acc.ptn + f.ptn * ratio,
@@ -92,6 +109,39 @@ export function DietMealCard({
         setIsSearchFocused(false)
         // Não limpar o filtro de fonte para manter a seleção do usuário
     }
+
+    // Efeito para rastrear quando um novo alimento é adicionado
+    useEffect(() => {
+        if (meal.foods.length > 0) {
+            // Atualizar o ID do último alimento adicionado
+            const lastFood = meal.foods[meal.foods.length - 1]
+            setLastAddedFoodId(lastFood.id)
+        }
+    }, [meal.foods.length]) // Apenas quando o número de alimentos mudar
+
+    // Efeito para focar no campo de quantidade do último alimento adicionado
+    useEffect(() => {
+        if (lastAddedFoodId !== null) {
+            // Usar setTimeout com timeout 0 para garantir que o DOM está completamente atualizado
+            const timer = setTimeout(() => {
+                // Garantir que o ref existe antes de tentar focar
+                if (!quantityInputRefs.current[lastAddedFoodId]) {
+                    quantityInputRefs.current[lastAddedFoodId] = React.createRef()
+                }
+
+                const foodRef = quantityInputRefs.current[lastAddedFoodId]
+                if (foodRef?.current) {
+                    foodRef.current.focus()
+                    foodRef.current.select() // Seleciona o conteúdo para edição fácil
+                }
+
+                // Resetar o ID após focar para evitar foco repetido
+                setLastAddedFoodId(null)
+            }, 0)
+
+            return () => clearTimeout(timer)
+        }
+    }, [lastAddedFoodId])
 
     // Close Dropdown on click outside
     useEffect(() => {
@@ -350,9 +400,22 @@ export function DietMealCard({
                                 <th className="p-2 text-left">Alimento</th>
                                 <th className="p-2 text-center w-14">Qtd</th>
                                 <th className="p-2 text-center w-14">Unid</th>
-                                <th className="p-2 text-center w-12">PTN</th>
-                                <th className="p-2 text-center w-12">CHO</th>
-                                <th className="p-2 text-center w-12">FAT</th>
+                                <th className="p-2 text-center w-20">
+                                    <select className="text-xs bg-background border border-border rounded w-full">
+                                        <option value="default">Medida</option>
+                                        <option value="col_sopa">Col. Sopa</option>
+                                        <option value="col_cha">Col. Chá</option>
+                                        <option value="col_sobremesa">Col. Sobremesa</option>
+                                        <option value="xicara">Xícara</option>
+                                        <option value="copo">Copo</option>
+                                        <option value="unidade">Unidade</option>
+                                    </select>
+                                </th>
+                                <th className="p-2 text-center w-10">PTN</th>
+                                <th className="p-2 text-center w-10">CHO</th>
+                                <th className="p-2 text-center w-10">FAT</th>
+                                <th className="p-2 text-center w-10">FIB</th>
+                                <th className="p-2 text-center w-10">kcal</th>
                                 <th className="p-2 text-center w-10">...</th>
                             </tr>
                         </thead>
@@ -369,14 +432,70 @@ export function DietMealCard({
                                             type="number"
                                             value={food.qty}
                                             onChange={(e) => onUpdate({ foods: meal.foods.map(f => f.id === food.id ? { ...f, qty: Number(e.target.value) } : f) })}
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter') {
+                                                    // Retorna o foco ao campo de busca de alimentos
+                                                    if (searchInputRef.current) {
+                                                        searchInputRef.current.focus()
+                                                    }
+                                                }
+                                            }}
+                                            ref={quantityInputRefs.current[food.id]}
                                             className="h-6 w-full text-center px-1 bg-transparent focus:bg-background"
                                         />
                                     </td>
                                     <td className="p-2 text-center text-[10px] text-muted-foreground">{food.unit}</td>
-                                    {/* Autosum per item (Total for Qty) */}
+                                    <td className="p-2">
+                                        <div className="flex flex-col items-center gap-1">
+                                            <select
+                                                value={food.measure}
+                                                onChange={(e) => {
+                                                    onUpdate({ foods: meal.foods.map(f =>
+                                                        f.id === food.id ? { ...f, measure: e.target.value } : f)
+                                                    });
+                                                }}
+                                                className="h-5 w-full text-[9px] bg-background border border-border rounded text-center"
+                                            >
+                                                <option value="default">Auto ({food.unidade_caseira || 'N/A'})</option>
+                                                <option value="col_sopa">Col. Sopa</option>
+                                                <option value="col_cha">Col. Chá</option>
+                                                <option value="col_sobremesa">Col. Sobremesa</option>
+                                                <option value="xicara">Xícara</option>
+                                                <option value="copo">Copo</option>
+                                                <option value="unidade">Unidade</option>
+                                            </select>
+                                            <div className="text-[9px] text-muted-foreground w-full text-center">
+                                                {(() => {
+                                                    if (food.measure === 'default' || food.measure === 'g' || !food.measure) {
+                                                        if (food.unidade_caseira && food.peso_unidade_caseira_g && food.peso_unidade_caseira_g > 0) {
+                                                            const equivalentQty = food.qty / food.peso_unidade_caseira_g;
+                                                            return `${equivalentQty.toFixed(2)} ${food.unidade_caseira}`;
+                                                        }
+                                                        return 'N/A';
+                                                    } else if (food.measure === 'col_sopa') {
+                                                        return `${(food.qty / 10).toFixed(2)} col. sopa`;
+                                                    } else if (food.measure === 'col_cha') {
+                                                        return `${(food.qty / 5).toFixed(2)} col. chá`;
+                                                    } else if (food.measure === 'col_sobremesa') {
+                                                        return `${(food.qty / 15).toFixed(2)} col. sobremesa`;
+                                                    } else if (food.measure === 'xicara') {
+                                                        return `${(food.qty / 240).toFixed(2)} xícara`;
+                                                    } else if (food.measure === 'copo') {
+                                                        return `${(food.qty / 200).toFixed(2)} copo`;
+                                                    } else if (food.measure === 'unidade' && food.peso_unidade_caseira_g) {
+                                                        return `${(food.qty / food.peso_unidade_caseira_g).toFixed(2)} und.`;
+                                                    }
+                                                    return 'N/A';
+                                                })()}
+                                            </div>
+                                        </div>
+                                    </td>
+                                    {/* Autosum per item (Total for Qty in grams) */}
                                     <td className="p-2 text-center">{(food.ptn * (food.qty / 100)).toFixed(1)}</td>
                                     <td className="p-2 text-center">{(food.cho * (food.qty / 100)).toFixed(1)}</td>
                                     <td className="p-2 text-center">{(food.fat * (food.qty / 100)).toFixed(1)}</td>
+                                    <td className="p-2 text-center">{(food.fib * (food.qty / 100)).toFixed(1)}</td>
+                                    <td className="p-2 text-center">{((food.ptn * 4 + food.cho * 4 + food.fat * 9) * (food.qty / 100)).toFixed(1)}</td>
                                     <td className="p-2 text-center">
                                         <div className="flex justify-center opacity-0 group-hover:opacity-100 transition-opacity gap-1">
                                             <button
@@ -412,9 +531,12 @@ export function DietMealCard({
                             <tr>
                                 <td colSpan={2} className="p-2 text-right text-muted-foreground">Subtotal:</td>
                                 <td colSpan={2} className="p-2 text-center">{Math.round(totals.kcal)} kcal</td>
+                                <td></td> {/* Coluna para medida equivalente */}
                                 <td className="p-2 text-center">{Math.round(totals.ptn)}g</td>
                                 <td className="p-2 text-center">{Math.round(totals.cho)}g</td>
                                 <td className="p-2 text-center">{Math.round(totals.fat)}g</td>
+                                <td className="p-2 text-center">{Math.round(totals.fib)}g</td>
+                                <td className="p-2 text-center">{Math.round(totals.kcal)}</td>
                                 <td></td>
                             </tr>
                         </tfoot>

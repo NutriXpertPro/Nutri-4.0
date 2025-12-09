@@ -232,7 +232,12 @@ function FoodDetailView({
                     type="number"
                     value={quantity}
                     onChange={(e) => onQuantityChange(Number(e.target.value))}
-                    className="flex-1 bg-white/5 border-white/10 text-white"
+                    onKeyDown={(e) => {
+                        if (e.key === 'Enter' && canAdd) {
+                            onAdd();
+                        }
+                    }}
+                    className="flex-1 bg-white/5 border-white/10 text-white [-webkit-appearance:none] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-inner-spin-button]:m-0 [&::-webkit-outer-spin-button]:m-0"
                 />
                 <select
                     value={unit}

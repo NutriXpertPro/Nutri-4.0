@@ -58,6 +58,8 @@ export interface WorkspaceMealFood {
     fat: number
     fib: number
     preferred: boolean
+    unidade_caseira?: string
+    peso_unidade_caseira_g?: number
 }
 
 export interface WorkspaceMeal {
@@ -567,15 +569,17 @@ export const useDietEditorStore = create<DietEditorState>((set, get) => ({
                 const newFood: WorkspaceMealFood = {
                     id: Date.now(),
                     name: food.nome,
-                    qty: 100, // Default 100g
+                    qty: 0, // Default 0g, allowing nutritionist to choose
                     unit: 'g',
-                    measure: '100g',
+                    measure: 'default', // Modo de medida padrão (automático)
                     prep: '',
                     ptn: food.proteina_g,
                     cho: food.carboidrato_g,
                     fat: food.lipidios_g,
                     fib: food.fibra_g || 0,
-                    preferred: false
+                    preferred: false,
+                    unidade_caseira: food.unidade_caseira,
+                    peso_unidade_caseira_g: food.peso_unidade_caseira_g
                 }
                 return { ...meal, foods: [...meal.foods, newFood] }
             })

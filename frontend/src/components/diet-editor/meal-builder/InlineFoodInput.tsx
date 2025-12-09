@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import {
     Search,
     Plus,
@@ -20,8 +20,10 @@ export function InlineFoodInput({ onAddFood }: InlineFoodInputProps) {
     const [query, setQuery] = useState('')
     const [isOpen, setIsOpen] = useState(false)
     const [selectedFood, setSelectedFood] = useState<Food | null>(null)
-    const [quantity, setQuantity] = useState(100)
+    const [quantity, setQuantity] = useState<number | ''>('') // Começa vazio
     const [unit, setUnit] = useState('g')
+    const [shouldFocusSearch, setShouldFocusSearch] = useState(false)
+    const searchInputRef = useRef<HTMLInputElement>(null)
 
     const { data: searchResults, isLoading } = useQuery({
         queryKey: ['food-search', query],
@@ -29,31 +31,53 @@ export function InlineFoodInput({ onAddFood }: InlineFoodInputProps) {
         enabled: query.length >= 2,
     })
 
+    const quantityInputRef = useRef<HTMLInputElement>(null)
+
     const handleSelectFood = (food: Food) => {
         setSelectedFood(food)
         setQuery(food.nome)
         setIsOpen(false)
-        // Focus quantity input automatically would be nice here using refs
+        setQuantity('') // Garante que a quantidade comece vazia
+        // Focus quantity input automatically
+        setTimeout(() => {
+            if (quantityInputRef.current) {
+                quantityInputRef.current.focus()
+                // Não selecionar texto pois está vazio, apenas colocar cursor no início
+                quantityInputRef.current.select()
+            }
+        }, 10) // Slightly longer timeout to ensure DOM update
     }
+
+    // Effect to handle focus after state changes
+    useEffect(() => {
+        if (shouldFocusSearch) {
+            setShouldFocusSearch(false);
+            // Focus back on the search input for the next item
+            setTimeout(() => {
+                if (searchInputRef.current) {
+                    searchInputRef.current.focus()
+                    searchInputRef.current.select() // Select all text to make it easier to type
+                }
+            }, 10) // Slightly shorter timeout for more responsive focus
+        }
+    }, [shouldFocusSearch]) // Re-run only when shouldFocusSearch changes
 
     const handleAdd = () => {
         if (selectedFood) {
-            onAddFood(selectedFood, quantity, unit)
-            // Reset
+            // Só adiciona se a quantidade for um número positivo
+            if (typeof quantity === 'number' && quantity > 0) {
+                onAddFood(selectedFood, quantity, unit)
+            }
+            // Reset independentemente de ter adicionado ou não
             setQuery('')
             setSelectedFood(null)
-            setQuantity(100)
-            // Keep focus on input for next item
+            setQuantity('') // Agora reseta como vazio
+            setUnit('g') // Also reset unit
+            // Trigger the effect to focus back on search input
+            setShouldFocusSearch(true);
         }
     }
 
-    const handleKeyDown = (e: React.KeyboardEvent) => {
-        if (e.key === 'Enter') {
-            if (selectedFood) {
-                handleAdd()
-            }
-        }
-    }
 
     return (
         <div className="flex items-center gap-2 p-2 rounded-lg group focus-within:ring-2 focus-within:ring-indigo-500/20 transition-all">
@@ -63,13 +87,29 @@ export function InlineFoodInput({ onAddFood }: InlineFoodInputProps) {
                         <div className="relative">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-indigo-500" />
                             <Input
+                                ref={searchInputRef}
                                 value={query}
                                 onChange={(e) => {
                                     setQuery(e.target.value)
                                     setIsOpen(true)
                                     if (selectedFood) setSelectedFood(null) // Clear selection if typing again
                                 }}
-                                onKeyDown={handleKeyDown}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter') {
+                                        if (selectedFood) {
+                                            // Se um alimento está selecionado, adicionar normalmente
+                                            // mesmo que a quantidade esteja vazia (irá apenas resetar sem adicionar)
+                                            handleAdd()
+                                        } else if (query.trim() !== '') {
+                                            // If there's a query but no selected food, try to select the first result
+                                            if (searchResults?.results && searchResults.results.length > 0) {
+                                                handleSelectFood(searchResults.results[0])
+                                            }
+                                        }
+                                        // Prevent default to avoid page reload
+                                        e.preventDefault()
+                                    }
+                                }}
                                 placeholder="Adicionar alimento (digite 'arroz'...)"
                                 className="pl-9 border-0 bg-transparent shadow-none focus-visible:ring-0 placeholder:text-slate-400 text-slate-200"
                             />
@@ -118,11 +158,31 @@ export function InlineFoodInput({ onAddFood }: InlineFoodInputProps) {
             {selectedFood && (
                 <div className="flex items-center gap-2 animate-in fade-in slide-in-from-left-2">
                     <Input
+                        ref={quantityInputRef}
                         type="number"
-                        value={quantity}
-                        onChange={(e) => setQuantity(Number(e.target.value))}
-                        onKeyDown={handleKeyDown}
-                        className="w-20 h-9 bg-slate-800 border-slate-700 text-slate-200"
+                        value={quantity === '' ? '' : quantity}
+                        onChange={(e) => {
+                            const value = e.target.value;
+                            setQuantity(value === '' ? '' : Number(value));
+                        }}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                                handleAdd();
+                                // Prevent default to avoid form submission
+                                e.preventDefault();
+                            } else if (e.key === 'Escape') {
+                                // If esc is pressed, clear selection and focus back to search
+                                setQuery('');
+                                setSelectedFood(null);
+                                setQuantity(''); // Agora vazio
+                                setTimeout(() => {
+                                    if (searchInputRef.current) {
+                                        searchInputRef.current.focus();
+                                    }
+                                }, 10);
+                            }
+                        }}
+                        className="w-20 h-9 bg-slate-800 border-slate-700 text-slate-200 [-webkit-appearance:none] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-inner-spin-button]:m-0 [&::-webkit-outer-spin-button]:m-0"
                     />
                     <select
                         value={unit}
@@ -138,7 +198,12 @@ export function InlineFoodInput({ onAddFood }: InlineFoodInputProps) {
                     <Button
                         size="sm"
                         onClick={handleAdd}
-                        className="h-9 w-9 p-0 bg-indigo-600 hover:bg-indigo-700 text-white"
+                        disabled={quantity === '' || (typeof quantity === 'number' && quantity <= 0)}
+                        className={`h-9 w-9 p-0 text-white ${
+                            (quantity === '' || (typeof quantity === 'number' && quantity <= 0))
+                            ? 'bg-gray-400 cursor-not-allowed'
+                            : 'bg-indigo-600 hover:bg-indigo-700'
+                        }`}
                     >
                         <Plus className="h-4 w-4" />
                     </Button>
@@ -147,3 +212,5 @@ export function InlineFoodInput({ onAddFood }: InlineFoodInputProps) {
         </div>
     )
 }
+
+export default InlineFoodInput
