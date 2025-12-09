@@ -90,7 +90,7 @@ export function DietMealCard({
         onAddFood(meal.id, food)
         setSearchQuery('')
         setIsSearchFocused(false)
-        setSourceFilter(null)
+        // Não limpar o filtro de fonte para manter a seleção do usuário
     }
 
     // Close Dropdown on click outside
