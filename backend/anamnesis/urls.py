@@ -1,9 +1,11 @@
 from django.urls import path
-from .views import AnamnesisViewSet, AnamnesisTemplateViewSet, AnamnesisResponseViewSet
+from .views import AnamnesisGeneralViewSet, AnamnesisViewSet, AnamnesisTemplateViewSet, AnamnesisResponseViewSet
 
 app_name = 'anamnesis'
 
 urlpatterns = [
+    # General Anamnesis (for the main endpoint)
+    path('', AnamnesisGeneralViewSet.as_view({'get': 'list'}), name='anamnesis-list'),
     # Standard Anamnesis
     path('standard/', AnamnesisViewSet.as_view({'get': 'list', 'post': 'create'}), name='anamnesis-standard-list'),
     path('standard/<int:pk>/', AnamnesisViewSet.as_view({'get': 'retrieve', 'patch': 'partial_update', 'delete': 'destroy'}), name='anamnesis-standard-detail'),

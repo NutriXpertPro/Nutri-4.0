@@ -16,6 +16,14 @@ import {
     SelectValue,
 } from "@/components/ui/select"
 import {
+    Command,
+    CommandEmpty,
+    CommandGroup,
+    CommandItem,
+    CommandList,
+} from "@/components/ui/command"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import {
     Search,
     UserPlus,
     Users,
@@ -28,6 +36,7 @@ import {
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/contexts/auth-context"
 import { usePatients } from "@/hooks/usePatients"
+import patientService from "@/services/patient-service"
 
 export default function PatientsPage() {
     const router = useRouter()
@@ -40,6 +49,28 @@ export default function PatientsPage() {
     const [currentPage, setCurrentPage] = React.useState(1)
     const [viewMode, setViewMode] = React.useState<"grid" | "list">("grid")
     const itemsPerPage = 6
+
+    const [searchResults, setSearchResults] = React.useState<{ id: number; name: string }[]>([]);
+    const [isSearchFocused, setIsSearchFocused] = React.useState(false);
+
+    React.useEffect(() => {
+        if (searchQuery.trim() === "") {
+            setSearchResults([]);
+            return;
+        }
+
+        const fetchResults = async () => {
+            const results = await patientService.search(searchQuery);
+            setSearchResults(results);
+        };
+
+        const debounceTimer = setTimeout(() => {
+            fetchResults();
+        }, 300);
+
+        return () => clearTimeout(debounceTimer);
+    }, [searchQuery]);
+
 
     // Filtrar e ordenar pacientes
     const filteredPatients = React.useMemo(() => {
@@ -127,18 +158,49 @@ export default function PatientsPage() {
             {/* Filters */}
             <div className="flex flex-col md:flex-row gap-4 mb-6">
                 {/* Search */}
-                <div className="relative flex-1">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                        placeholder="Buscar por nome ou email..."
-                        value={searchQuery}
-                        onChange={(e) => {
-                            setSearchQuery(e.target.value)
-                            setCurrentPage(1)
-                        }}
-                        className="pl-9"
-                    />
+                <div className="flex-1">
+                  <Popover open={isSearchFocused && searchQuery.length > 0 && searchResults.length > 0} onOpenChange={setIsSearchFocused}>
+                    <PopoverTrigger asChild>
+                      <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          placeholder="Buscar por nome..."
+                          value={searchQuery}
+                          onFocus={() => setIsSearchFocused(true)}
+                          onBlur={() => setTimeout(() => setIsSearchFocused(false), 150)} // Delay blur to allow click
+                          onChange={(e) => {
+                            setSearchQuery(e.target.value);
+                            setCurrentPage(1);
+                          }}
+                          className="pl-9 w-full"
+                        />
+                      </div>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                      <Command>
+                        <CommandList>
+                          {searchResults.length === 0 && searchQuery.length > 1 ? (
+                            <CommandEmpty>Nenhum paciente encontrado.</CommandEmpty>
+                          ) : null}
+                          <CommandGroup>
+                            {searchResults.map((patient) => (
+                              <CommandItem
+                                key={patient.id}
+                                onSelect={() => {
+                                  setSearchQuery(patient.name);
+                                  setIsSearchFocused(false);
+                                }}
+                              >
+                                {patient.name}
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
                 </div>
+
 
                 {/* Sort */}
                 <Select value={sortBy} onValueChange={setSortBy}>

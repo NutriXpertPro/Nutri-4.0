@@ -9,7 +9,7 @@ try:
     mysqlclient_fake_module = types.ModuleType('MySQLdb')
     mysqlclient_fake_module.connect = mariadb.connect
     mysqlclient_fake_module.Connection = mariadb.Connection
-    mysqlclient_fake_module cursors = mariadb
+    mysqlclient_fake_module.cursors = mariadb
 
     # Criar submódulos necessários
     connections_module = types.ModuleType('MySQLdb.connections')

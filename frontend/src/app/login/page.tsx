@@ -39,7 +39,7 @@ export default function LoginPage() {
 
         try {
             // Chamada para a API de autenticação JWT do Django - login específico para nutricionistas
-            const response = await fetch("http://localhost:8000/api/v1/users/login/nutricionista/", {
+            const response = await fetch("http://localhost:8000/api/v1/auth/token/", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",

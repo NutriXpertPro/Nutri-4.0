@@ -152,6 +152,7 @@ class Anamnesis(models.Model):
     # ========== METADADOS ==========
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    auto_saved_at = models.DateTimeField(null=True, blank=True, help_text="Última atualização via auto-save")
 
     class Meta:
         ordering = ['-created_at']

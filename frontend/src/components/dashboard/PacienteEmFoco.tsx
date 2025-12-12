@@ -29,20 +29,24 @@ interface PacienteEmFocoProps {
     className?: string
 }
 
-// Mock data - será substituído por dados da API
-const mockPatient: Patient = {
-    id: "1",
-    name: "Maria Silva",
-    goal: "Perder 8kg",
-    metrics: [
-        { label: "IMC", value: "26.4", trend: -2, isPositive: true },
-        { label: "Gordura", value: "22%", trend: -3, isPositive: true },
-        { label: "Músculo", value: "58kg", trend: 1, isPositive: true },
-        { label: "Peso", value: "78kg", trend: -5, isPositive: true },
-    ],
-}
+export function PacienteEmFoco({ patient, className }: PacienteEmFocoProps) {
+    if (!patient) {
+        return (
+            <Card className={cn(
+                "h-full relative overflow-hidden flex flex-col items-center justify-center text-center p-6",
+                "border-dashed border-2 border-muted-foreground/50 bg-muted/20",
+                className
+            )}>
+                <User className="h-10 w-10 text-muted-foreground mb-4" />
+                <h3 className="text-lg font-semibold text-muted-foreground">Nenhum paciente em foco</h3>
+                <p className="text-sm text-muted-foreground mt-1">Agende uma consulta para destacar o próximo paciente.</p>
+                <Button asChild className="mt-4">
+                    <Link href="/appointments/new">Agendar Consulta</Link>
+                </Button>
+            </Card>
+        )
+    }
 
-export function PacienteEmFoco({ patient = mockPatient, className }: PacienteEmFocoProps) {
     return (
         <Card className={cn(
             "h-full relative overflow-hidden",

@@ -33,11 +33,23 @@ export function InlineFoodInput({ onAddFood }: InlineFoodInputProps) {
 
     const quantityInputRef = useRef<HTMLInputElement>(null)
 
+    // Calcular automaticamente medida caseira quando quantidade em gramas muda
+    const calculateHomemadeMeasure = () => {
+        if (selectedFood && quantity && typeof quantity === 'number') {
+            if (selectedFood.peso_unidade_caseira_g && selectedFood.unidade_caseira) {
+                const convertedValue = quantity / selectedFood.peso_unidade_caseira_g;
+                return { value: convertedValue, unit: selectedFood.unidade_caseira };
+            }
+        }
+        return null;
+    };
+
     const handleSelectFood = (food: Food) => {
         setSelectedFood(food)
         setQuery(food.nome)
         setIsOpen(false)
         setQuantity('') // Garante que a quantidade comece vazia
+        setUnit('g') // Garante que a unidade comece como 'g'
         // Focus quantity input automatically
         setTimeout(() => {
             if (quantityInputRef.current) {
@@ -78,6 +90,7 @@ export function InlineFoodInput({ onAddFood }: InlineFoodInputProps) {
         }
     }
 
+    const homemadeMeasure = calculateHomemadeMeasure();
 
     return (
         <div className="flex items-center gap-2 p-2 rounded-lg group focus-within:ring-2 focus-within:ring-indigo-500/20 transition-all">
@@ -191,10 +204,12 @@ export function InlineFoodInput({ onAddFood }: InlineFoodInputProps) {
                     >
                         <option value="g">g</option>
                         <option value="ml">ml</option>
-                        {selectedFood.unidade_caseira && (
-                            <option value="porcao">{selectedFood.unidade_caseira}</option>
-                        )}
                     </select>
+                    {homemadeMeasure && (
+                        <div className="text-xs text-slate-400 bg-slate-800 px-2 py-2 rounded-md">
+                            ≈ {(Math.round(homemadeMeasure.value * 100) / 100)} {homemadeMeasure.unit}
+                        </div>
+                    )}
                     <Button
                         size="sm"
                         onClick={handleAdd}

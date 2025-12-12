@@ -42,10 +42,15 @@ import {
     Sparkles,
     FileUp,
     AlertCircle,
+    List,
+    Edit,
+    Eye,
 } from "lucide-react"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
 import { TemplateBuilder } from "@/components/anamnesis/TemplateBuilder"
+import { AnamnesisList } from "@/components/anamnesis/AnamnesisList"
+import { WizardAnamnesisForm } from "@/components/anamnesis/WizardAnamnesisForm"
 import {
     Dialog,
     DialogContent,
@@ -133,6 +138,7 @@ export default function AnamnesisPage() {
     const [editingTemplate, setEditingTemplate] = React.useState<AnamnesisTemplate | null>(null)
     const [importJson, setImportJson] = React.useState("")
     const [importDialogOpen, setImportDialogOpen] = React.useState(false)
+    const [viewMode, setViewMode] = React.useState<"list" | "form">("list") // Para alternar entre lista e formulário
 
     const queryClient = useQueryClient()
 
@@ -203,6 +209,24 @@ export default function AnamnesisPage() {
         })
     }
 
+    const handleNewAnamnesis = () => {
+        setViewMode("form")
+    }
+
+    const handleEditAnamnesis = (id: number) => {
+        setViewMode("form")
+        // Aqui você pode carregar os dados da anamnese com o ID especificado
+    }
+
+    const handleViewAnamnesis = (id: number) => {
+        // Aqui você pode implementar a visualização da anamnese
+        alert(`Visualizando anamnese ${id}`)
+    }
+
+    const handleCancelForm = () => {
+        setViewMode("list")
+    }
+
     if (showTemplateBuilder) {
         return (
             <DashboardLayout>
@@ -215,6 +239,29 @@ export default function AnamnesisPage() {
                     }}
                     isLoading={createTemplateMutation.isPending}
                 />
+            </DashboardLayout>
+        )
+    }
+
+    if (viewMode === "form") {
+        return (
+            <DashboardLayout>
+                <div className="fixed inset-0 bg-gradient-to-br from-primary/5 via-background to-secondary/5 -z-10" />
+                <div className="max-w-4xl mx-auto py-6 px-4">
+                    <div className="flex items-center gap-4 mb-6">
+                        <Button variant="ghost" onClick={handleCancelForm} className="gap-2">
+                            <ChevronLeft className="h-4 w-4" />
+                            Voltar para Lista
+                        </Button>
+                        <div>
+                            <h1 className="text-2xl font-bold">Preencher Anamnese</h1>
+                            <p className="text-muted-foreground">
+                                Preencha as informações do paciente passo a passo
+                            </p>
+                        </div>
+                    </div>
+                    <WizardAnamnesisForm onCancel={handleCancelForm} />
+                </div>
             </DashboardLayout>
         )
     }
@@ -282,9 +329,14 @@ export default function AnamnesisPage() {
                             </DialogContent>
                         </Dialog>
 
-                        <Button onClick={() => setShowTemplateBuilder(true)} className="gap-2 shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all">
+                        <Button onClick={handleNewAnamnesis} className="gap-2 shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all">
                             <Plus className="h-4 w-4" />
-                            Criar do Zero
+                            Nova Anamnese
+                        </Button>
+
+                        <Button onClick={() => setShowTemplateBuilder(true)} className="gap-2">
+                            <LayoutTemplate className="h-4 w-4" />
+                            Templates
                         </Button>
                     </div>
                 </div>
@@ -294,11 +346,11 @@ export default function AnamnesisPage() {
                     <Card className="bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-xl border-border/40 hover:shadow-lg transition-all group">
                         <CardContent className="p-5 flex items-center gap-4">
                             <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center group-hover:scale-110 transition-transform">
-                                <Star className="h-7 w-7 text-primary" />
+                                <List className="h-7 w-7 text-primary" />
                             </div>
                             <div>
-                                <p className="text-3xl font-bold">1</p>
-                                <p className="text-sm text-muted-foreground">Anamnese Padrão</p>
+                                <p className="text-3xl font-bold">24</p>
+                                <p className="text-sm text-muted-foreground">Anamneses</p>
                             </div>
                         </CardContent>
                     </Card>
@@ -321,7 +373,7 @@ export default function AnamnesisPage() {
                                 <Clock className="h-7 w-7 text-amber-500" />
                             </div>
                             <div>
-                                <p className="text-3xl font-bold">0</p>
+                                <p className="text-3xl font-bold">8</p>
                                 <p className="text-sm text-muted-foreground">Pendentes</p>
                             </div>
                         </CardContent>
@@ -333,7 +385,7 @@ export default function AnamnesisPage() {
                                 <CheckCircle2 className="h-7 w-7 text-emerald-500" />
                             </div>
                             <div>
-                                <p className="text-3xl font-bold">0</p>
+                                <p className="text-3xl font-bold">16</p>
                                 <p className="text-sm text-muted-foreground">Completas</p>
                             </div>
                         </CardContent>
@@ -341,16 +393,20 @@ export default function AnamnesisPage() {
                 </div>
 
                 {/* Tabs Principal */}
-                <Tabs defaultValue="standard" className="space-y-6">
+                <Tabs defaultValue="list" className="space-y-6">
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                         <TabsList className="bg-muted/30 backdrop-blur-sm p-1 rounded-xl">
+                            <TabsTrigger value="list" className="gap-2 data-[state=active]:bg-primary/10 data-[state=active]:text-primary rounded-lg">
+                                <List className="h-4 w-4" />
+                                Lista de Anamneses
+                            </TabsTrigger>
                             <TabsTrigger value="standard" className="gap-2 data-[state=active]:bg-primary/10 data-[state=active]:text-primary rounded-lg">
                                 <Star className="h-4 w-4" />
                                 Anamnese Padrão
                             </TabsTrigger>
                             <TabsTrigger value="templates" className="gap-2 data-[state=active]:bg-primary/10 data-[state=active]:text-primary rounded-lg">
                                 <LayoutTemplate className="h-4 w-4" />
-                                Meus Templates
+                                Templates
                                 {(templates?.length || 0) > 0 && (
                                     <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">
                                         {templates?.length}
@@ -369,6 +425,15 @@ export default function AnamnesisPage() {
                             />
                         </div>
                     </div>
+
+                    {/* Aba Lista de Anamneses */}
+                    <TabsContent value="list" className="space-y-6 mt-6">
+                        <AnamnesisList
+                            onNewAnamnesis={handleNewAnamnesis}
+                            onEdit={handleEditAnamnesis}
+                            onView={handleViewAnamnesis}
+                        />
+                    </TabsContent>
 
                     {/* Aba Anamnese Padrão */}
                     <TabsContent value="standard" className="space-y-6 mt-6">

@@ -56,4 +56,4 @@ Thumbs.db
 # Others
 *.bak
 *.tmp
-coverage/
+coverage//agent_xpert/ 

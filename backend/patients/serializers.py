@@ -12,11 +12,12 @@ class PatientProfileSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(source='user.email')
     status = serializers.BooleanField(source='user.is_active', read_only=True)
     gender = serializers.ChoiceField(source='user.gender', choices=User.GENDER_CHOICES, required=False)
+    is_active = serializers.BooleanField(read_only=True)
 
     class Meta:
         model = PatientProfile
         fields = [
-            'id', 'user_id', 'name', 'email', 'gender', 'status',
+            'id', 'user_id', 'name', 'email', 'gender', 'status', 'is_active',
             'birth_date', 'phone', 'address', 'goal', 
             'service_type', 'start_date', 'created_at'
         ]

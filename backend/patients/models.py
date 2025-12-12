@@ -1,6 +1,7 @@
 from django.db import models
 from django.conf import settings
 from datetime import date
+from django.utils.translation import gettext_lazy as _
 
 # Create your models here.
 
@@ -11,14 +12,14 @@ class PatientProfile(models.Model):
     metadados associados ao tratamento nutricional.
     """
     SERVICE_TYPE_CHOICES = [
-        ('ONLINE', 'Online'),
-        ('PRESENCIAL', 'Presencial'),
+        ('ONLINE', _('Online')),
+        ('PRESENCIAL', _('Presencial')),
     ]
     GOAL_CHOICES = [
-        ('PERDA_GORDURA', 'Perda de Gordura'),
-        ('GANHO_MASSA', 'Ganho de Massa Muscular'),
-        ('QUALIDADE_VIDA', 'Qualidade de Vida e Saúde'),
-        ('OUTRO', 'Outro'),
+        ('PERDA_GORDURA', _('Perda de Gordura')),
+        ('GANHO_MASSA', _('Ganho de Massa Muscular')),
+        ('QUALIDADE_VIDA', _('Qualidade de Vida e Saúde')),
+        ('OUTRO', _('Outro')),
     ]
 
     user = models.OneToOneField(
@@ -56,6 +57,7 @@ class PatientProfile(models.Model):
         db_index=True # Added for performance
     )
     start_date = models.DateField(null=True, blank=True)
+    is_active = models.BooleanField(default=True)
 
 
     class Meta:

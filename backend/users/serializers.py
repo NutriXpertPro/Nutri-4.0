@@ -3,20 +3,76 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
+from .models import UserProfile, AuthenticationLog
+import re
+
 
 User = get_user_model()
 
+def validate_strong_password(value):
+    """
+    Validação adicional de força de senha
+    - Pelo menos 8 caracteres
+    - Pelo menos uma letra maiúscula
+    - Pelo menos uma letra minúscula
+    - Pelo menos um número
+    - Pelo menos um caractere especial
+    """
+    if len(value) < 8:
+        raise serializers.ValidationError("A senha deve ter pelo menos 8 caracteres.")
+
+    if not re.search(r'[A-Z]', value):
+        raise serializers.ValidationError("A senha deve conter pelo menos uma letra maiúscula.")
+
+    if not re.search(r'[a-z]', value):
+        raise serializers.ValidationError("A senha deve conter pelo menos uma letra minúscula.")
+
+    if not re.search(r'[0-9]', value):
+        raise serializers.ValidationError("A senha deve conter pelo menos um número.")
+
+    if not re.search(r'[!@#$%^&*()_+\-=\[\]{};\':"\\|,.<>\/?]', value):
+        raise serializers.ValidationError("A senha deve conter pelo menos um caractere especial.")
+
+    return value
+
+def validate_password_not_email_or_name(value, email, name):
+    """
+    Validação para garantir que a senha não seja igual ao email ou nome
+    """
+    if email.lower() in value.lower() or value.lower() in email.lower():
+        raise serializers.ValidationError("A senha não pode conter seu email.")
+
+    if name.lower() in value.lower() or value.lower() in name.lower():
+        raise serializers.ValidationError("A senha não pode conter seu nome.")
+
+    return value
+
+
 class NutritionistRegistrationSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(write_only=True, required=True, validators=[validate_password])
+    password = serializers.CharField(write_only=True, required=True)
     confirm_password = serializers.CharField(write_only=True, required=True)
 
     class Meta:
         model = User
         fields = ('name', 'email', 'password', 'confirm_password', 'professional_title', 'gender')
 
+    def validate_password(self, value):
+        # Validação padrão do Django
+        validate_password(value)
+        # Validação adicional de força
+        validate_strong_password(value)
+        return value
+
     def validate(self, attrs):
+        # Verificar se as senhas coincidem
         if attrs['password'] != attrs['confirm_password']:
             raise serializers.ValidationError({"password": "As senhas não coincidem."})
+
+        # Verificar se a senha não é igual ao email ou nome
+        email = self.initial_data.get('email', '')
+        name = self.initial_data.get('name', '')
+        validate_password_not_email_or_name(attrs['password'], email, name)
+
         return attrs
 
     def create(self, validated_data):
@@ -42,27 +98,122 @@ class PasswordResetSerializer(serializers.Serializer):
 
 class PasswordResetConfirmSerializer(serializers.Serializer):
     token = serializers.CharField()
-    password = serializers.CharField(write_only=True, validators=[validate_password])
+    password = serializers.CharField(write_only=True)
     confirm_password = serializers.CharField(write_only=True)
+
+    def validate_password(self, value):
+        # Validação padrão do Django
+        validate_password(value)
+        # Validação adicional de força
+        validate_strong_password(value)
+        return value
 
     def validate(self, attrs):
         if attrs['password'] != attrs['confirm_password']:
             raise serializers.ValidationError({"password": "As senhas não coincidem."})
+
+        # Verificar se a senha não é igual ao email do usuário (quando for possível acessar)
+        # A validação completa de email/nome ocorrerá quando tivermos acesso ao usuário
         return attrs
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     def validate(self, attrs):
-        # Mapeia o campo 'email' para o campo 'username' esperado pelo backend
-        email = attrs.get('email')
-        if email:
-            attrs['username'] = email
-
-        # Validação padrão
+        # A validação padrão do TokenObtainPairSerializer já lida com o USERNAME_FIELD='email'
         data = super().validate(attrs)
 
-        # Verifica se o usuário é um nutricionista (adicional à validação padrão)
-        # O usuário está disponível após a validação bem-sucedida
-        if self.user and self.user.user_type != 'nutricionista':
-            raise serializers.ValidationError({"error": "Acesso negado. Esta é uma área exclusiva para nutricionistas."})
+        # Adicionar dados extras ao token, se necessário (opcional)
+        # Por exemplo, para retornar mais informações sobre o usuário no payload do token.
+        # data['name'] = self.user.name
+        # data['user_type'] = self.user.user_type
 
         return data
+
+
+class UserProfileSettingsSerializer(serializers.ModelSerializer):
+    """Serializer for the nested 'settings' object (read and write)."""
+    class Meta:
+        model = UserProfile
+        fields = ('theme', 'language', 'notifications_email', 'notifications_push')
+
+
+class UserDetailSerializer(serializers.ModelSerializer):
+    """
+    Serializer for the /users/me/ endpoint to retrieve and update user details.
+    """
+    settings = UserProfileSettingsSerializer(source='profile')
+    profile_picture = serializers.ImageField(source='profile.profile_picture', required=False)
+
+    class Meta:
+        model = User
+        fields = (
+            'id', 'email', 'name', 'user_type', 'professional_title',
+            'gender', 'profile_picture', 'settings', 'created_at'
+        )
+        read_only_fields = ('id', 'email', 'user_type', 'created_at')
+
+    def update(self, instance, validated_data):
+        # Separate profile-related data from user data
+        profile_data = validated_data.pop('profile', {})
+
+        # Update the main User instance fields (e.g., 'name', 'professional_title', etc.)
+        instance = super().update(instance, validated_data)
+
+        # Get or create the related UserProfile instance
+        profile = instance.profile
+
+        # Update profile fields from nested serializer
+        for attr, value in profile_data.items():
+            setattr(profile, attr, value)
+
+        profile.save()
+
+        return instance
+
+
+class ChangePasswordSerializer(serializers.Serializer):
+    """
+    Serializer for password change endpoint.
+    """
+    old_password = serializers.CharField(required=True)
+    new_password = serializers.CharField(required=True)
+    confirm_new_password = serializers.CharField(required=True)
+
+    def validate_new_password(self, value):
+        # Validação padrão do Django
+        validate_password(value)
+        # Validação adicional de força
+        validate_strong_password(value)
+        return value
+
+    def validate_old_password(self, value):
+        user = self.context['request'].user
+        if not user.check_password(value):
+            raise serializers.ValidationError("Your old password was entered incorrectly. Please enter it again.")
+        return value
+
+    def validate(self, data):
+        if data['new_password'] != data['confirm_new_password']:
+            raise serializers.ValidationError({"new_password": "The two password fields didn't match."})
+
+        # Verificar se a nova senha é diferente da antiga
+        old_password = data.get('old_password')
+        new_password = data['new_password']
+        if old_password and old_password == new_password:
+            raise serializers.ValidationError({"new_password": "A nova senha deve ser diferente da antiga."})
+
+        return data
+
+    def save(self, **kwargs):
+        password = self.validated_data['new_password']
+        user = self.context['request'].user
+        user.set_password(password)
+        user.save()
+        return user
+
+
+class AuthenticationLogSerializer(serializers.ModelSerializer):
+    user_id = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), source='user')
+
+    class Meta:
+        model = AuthenticationLog
+        fields = ('user_id', 'ip_address', 'user_agent')

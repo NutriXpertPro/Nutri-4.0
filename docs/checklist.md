@@ -77,6 +77,7 @@ Este checklist organiza todo o desenvolvimento do NutriXpertPro em **5 fases pri
 - [x] API `POST /api/v1/auth/logout/` - Invalidar token (blacklist)
 - [x] API `POST /api/v1/auth/password-reset/` - Solicitar reset de senha
 - [x] API `POST /api/v1/auth/password-reset/confirm/` - Confirmar nova senha
+- [x] API `POST /api/v1/auth/log/` - Registrar log de autenticação
 - [x] Configurar rate limiting (5 tentativas/minuto para auth)
 
 ### 2.2 Sistema de Autenticação - Frontend
@@ -129,9 +130,9 @@ Este checklist organiza todo o desenvolvimento do NutriXpertPro em **5 fases pri
 - [x] Layout Auth (centralizado, sem sidebar)
 
 ### 2.4 Dashboard Nutricionista - Backend
-- [ ] API `GET /api/v1/dashboard/stats/` - Estatísticas do dashboard
-- [ ] API `GET /api/v1/appointments/today/` - Agenda do dia (criar endpoint específico)
-- [ ] API `GET /api/v1/patients/featured/` - Paciente em foco
+- [x] API `GET /api/v1/dashboard/stats/` - Estatísticas do dashboard
+- [x] API `GET /api/v1/appointments/today/` - Agenda do dia (criar endpoint específico)
+- [x] API `GET /api/v1/patients/featured/` - Paciente em foco
 
 ### 2.5 Dashboard Nutricionista - Frontend
 
@@ -143,38 +144,40 @@ Este checklist organiza todo o desenvolvimento do NutriXpertPro em **5 fases pri
 - [x] Pacientes Ativos (badge: +N este mês, ícone azul)
 - [x] Consultas Hoje (badge: próxima às HH:MM, ícone âmbar)
 - [x] Dietas Ativas (badge: N vencem em breve, ícone verde)
-- [ ] Taxa de Adesão (badge: +N% vs mês anterior, ícone violeta)
-- [ ] Design Premium:
-  - [ ] Glassmorphism (vidro fosco)
-  - [ ] Gradientes sutis por tipo
-  - [ ] Hover effects com elevação
-  - [ ] Números animados (contador)
-  - [ ] Ícones coloridos por contexto
-  - [ ] Skeleton loading enquanto carrega
+- [x] Taxa de Adesão (badge: +N% vs mês anterior, ícone violeta)
+- [x] Design Premium:
+  - [x] Glassmorphism (vidro fosco)
+  - [x] Gradientes sutis por tipo
+  - [x] Hover effects com elevação
+  - [x] Números animados (contador)
+  - [x] Ícones coloridos por contexto
+  - [x] Skeleton loading enquanto carrega
 
 #### Agenda do Dia
-- [ ] Timeline visual com linha conectando consultas
-- [ ] Cards de consulta: horário, paciente, tipo (📍/💻), duração
-- [ ] Indicador "AGORA" para consulta atual
-- [ ] Ações: Ligar, Mensagem, Entrar (se online)
-- [ ] Link "Ver Agenda Completa" → `/calendar`
+- [x] Timeline visual com linha conectando consultas
+- [x] Cards de consulta: horário, paciente, tipo (📍/💻), duração
+- [x] Indicador "AGORA" para consulta atual
+- [x] Ações: Ligar, Mensagem, Entrar (se online)
+- [x] Link "Ver Agenda Completa" → `/calendar`
 
 #### Paciente em Foco
-- [ ] Card destacado com próximo paciente ou paciente especial
-- [ ] Foto do paciente
-- [ ] Nome e objetivo principal
-- [ ] 4 mini métricas: IMC, Gordura, Músculo, Peso (com trends ↑↓)
-- [ ] Botões: Ver Perfil, Mensagem
+- [x] Card destacado com próximo paciente ou paciente especial
+- [x] Foto do paciente
+- [x] Nome e objetivo principal
+- [x] 4 mini métricas: IMC, Gordura, Músculo, Peso (com trends ↑↓)
+- [x] Botões: Ver Perfil, Mensagem
 
 #### Indicador de Adesão (Sistema de Cores)
+> **PENDENTE:** Depende do cálculo da `adhesion_rate` no backend.
 - [ ] Verde (>80% adesão)
 - [ ] Âmbar (50-80% adesão)
 - [ ] Vermelho (<50% adesão)
 
 #### Ações Rápidas
-- [ ] 4 botões: + Novo Paciente, + Criar Dieta, + Agendar Consulta, + Anamnese
+- [x] 4 botões: + Novo Paciente, + Criar Dieta, + Agendar Consulta, + Anamnese
 
 #### Notificações de Mensagens
+> **PENDENTE:** Depende da implementação no backend para contar mensagens urgentes.
 - [ ] Badge de mensagens não respondidas há 24h+ (vermelho pulsante)
 - [ ] Preview no dropdown de notificações
 
@@ -195,11 +198,11 @@ Este checklist organiza todo o desenvolvimento do NutriXpertPro em **5 fases pri
 ### 3.1 Gestão de Pacientes - Backend
 - [x] Modelo PatientProfile com campos completos
 - [x] Views de CRUD (Django tradicional - converter para API REST)
-- [ ] API `GET /api/v1/patients/` - Listar pacientes (paginação, busca, filtros)
-- [ ] API `POST /api/v1/patients/` - Criar paciente
+- [x] API `GET /api/v1/patients/` - Listar pacientes (paginação, busca, filtros)
+- [x] API `POST /api/v1/patients/` - Criar paciente
 - [x] API `GET /api/v1/patients/{id}/` - Detalhes do paciente
 - [x] API `PATCH /api/v1/patients/{id}/` - Atualizar paciente
-- [ ] API `DELETE /api/v1/patients/{id}/` - Deletar paciente (soft delete)
+- [x] API `DELETE /api/v1/patients/{id}/` - Deletar paciente (soft delete)
 - [ ] API `GET /api/v1/patients/{id}/compare-photos/` - Comparar fotos antes/depois
 
 ### 3.2 Gestão de Pacientes - Frontend
@@ -240,53 +243,53 @@ Este checklist organiza todo o desenvolvimento do NutriXpertPro em **5 fases pri
 ### 3.5 Anamnese - Backend
 - [x] Modelo Anamnesis com 7 seções completas (~50 campos)
 - [x] Serializer já existe
-- [ ] API `GET /api/v1/anamnesis/` - Listar anamneses (geral)
+- [x] API `GET /api/v1/anamnesis/` - Listar anamneses (geral)
 - [x] API `POST /api/v1/anamnesis/standard/` - Criar anamnese padrão
 - [x] API `PATCH /api/v1/anamnesis/standard/{id}/` - Atualizar anamnese padrão
 - [x] API `GET /api/v1/anamnesis/standard/?patient={id}` - Carregar do paciente
-- [ ] Auto-save a cada 30 segundos
+- [x] Auto-save a cada 30 segundos
 
 ### 3.6 Anamnese - Frontend
-- [ ] Página Lista de Anamneses
-- [ ] Componente Wizard multi-etapa (7 seções conforme modelo)
-  - [ ] Seção 1: Identificação
-  - [ ] Seção 2: Rotina
-  - [ ] Seção 3: Nutrição e Hábitos
-  - [ ] Seção 4: Histórico de Saúde
-  - [ ] Seção 5: Objetivos
-  - [ ] Seção 6: Medidas
-  - [ ] Seção 7: Fotos
-- [ ] Barra de progresso visual (usar `get_progresso()`)
-- [ ] Navegação entre seções
-- [ ] Validação por seção
-- [ ] Auto-save com indicador visual
+- [x] Página Lista de Anamneses
+- [x] Componente Wizard multi-etapa (7 seções conforme modelo)
+  - [x] Seção 1: Identificação
+  - [x] Seção 2: Rotina
+  - [x] Seção 3: Nutrição e Hábitos
+  - [x] Seção 4: Histórico de Saúde
+  - [x] Seção 5: Objetivos
+  - [x] Seção 6: Medidas
+  - [x] Seção 7: Fotos
+- [x] Barra de progresso visual (usar `get_progresso()`)
+- [x] Navegação entre seções
+- [x] Validação por seção
+- [x] Auto-save com indicador visual
 
 ### 3.7 Calendário/Agendamento - Backend
 - [x] Modelo Appointment (paciente, data, notas)
-- [ ] Adicionar campos: duration, type (presencial/online), status, meeting_link
-- [ ] API `GET /api/v1/appointments/` - Listar consultas (filtros: data, paciente, status)
-- [ ] API `POST /api/v1/appointments/` - Criar consulta
-- [ ] API `GET /api/v1/appointments/{id}/` - Detalhes da consulta
-- [ ] API `PATCH /api/v1/appointments/{id}/` - Atualizar/reagendar
-- [ ] API `PATCH /api/v1/appointments/{id}/status/` - Mudar status
-- [ ] Validação de conflito de horário (double-booking)
-- [ ] Workflow de estados: Agendada → Confirmada → Concluída/Cancelada/Faltou
+- [x] Adicionar campos: duration, type (presencial/online), status, meeting_link
+- [x] API `GET /api/v1/appointments/` - Listar consultas (filtros: data, paciente, status)
+- [x] API `POST /api/v1/appointments/` - Criar consulta
+- [x] API `GET /api/v1/appointments/{id}/` - Detalhes da consulta
+- [x] API `PATCH /api/v1/appointments/{id}/` - Atualizar/reagendar
+- [x] API `PATCH /api/v1/appointments/{id}/status/` - Mudar status
+- [x] Validação de conflito de horário (double-booking)
+- [x] Workflow de estados: Agendada → Confirmada → Concluída/Cancelada/Faltou
 
 ### 3.8 Calendário/Agendamento - Frontend
-- [ ] Página Calendário com 3 vistas (conforme wireframe)
-  - [ ] Vista Mês (grid 7x5 com indicadores)
-  - [ ] Vista Semana (timeline hora a hora)
-  - [ ] Vista Dia (lista expandida)
-- [ ] Componente de navegação de datas (hoje, anterior, próximo)
-- [ ] Modal Criar Consulta
-  - [ ] Select de paciente com busca
-  - [ ] Date picker
-  - [ ] Time picker com horários disponíveis
-  - [ ] Select de duração (30/45/60/90 min)
-  - [ ] Select de tipo (Presencial/Online)
-  - [ ] Campo para link de meeting
-- [ ] Cards de consultas com ações (detalhes, editar, cancelar)
-- [ ] Badges de status coloridos
+- [x] Página Calendário com 3 vistas (conforme wireframe)
+  - [x] Vista Mês (grid 7x5 com indicadores)
+  - [x] Vista Semana (timeline hora a hora)
+  - [x] Vista Dia (lista expandida)
+- [x] Componente de navegação de datas (hoje, anterior, próximo)
+- [x] Modal Criar Consulta
+  - [x] Select de paciente com busca
+  - [x] Date picker
+  - [x] Time picker com horários disponíveis
+  - [x] Select de duração (30/45/60/90 min)
+  - [x] Select de tipo (Presencial/Online)
+  - [x] Campo para link de meeting
+- [x] Cards de consultas com ações (detalhes, editar, cancelar)
+- [x] Badges de status coloridos
 
 ---
 

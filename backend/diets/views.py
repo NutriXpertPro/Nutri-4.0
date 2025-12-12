@@ -14,9 +14,9 @@ from .serializers import (
 
 
 class FoodPageNumberPagination(PageNumberPagination):
-    page_size = 50
+    page_size = 20  # Reduzido para melhor desempenho
     page_size_query_param = 'page_size'
-    max_page_size = 1000 # Definir um tamanho máximo para evitar abusos
+    max_page_size = 100  # Reduzido para evitar abusos e sobrecarga
 
 class FoodSearchViewSet(viewsets.ViewSet):
     """
@@ -33,20 +33,31 @@ class FoodSearchViewSet(viewsets.ViewSet):
         source_filter = request.query_params.get('source', '').upper()
         grupo_filter = request.query_params.get('grupo', '')
         # Remove manual limit handling as pagination will take care of it
-        
+
         if len(search_query) < 2:
             return Response(
                 {"error": "A busca deve ter pelo menos 2 caracteres."},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        
+
+        # Proteção contra buscas excessivamente amplas
+        if len(search_query) > 50:
+            return Response(
+                {"error": "A busca é muito longa. Máximo de 50 caracteres."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
         results = []
-        
+
+        # Limite de resultados por fonte para evitar sobrecarga
+        MAX_RESULTS_PER_SOURCE = 200
+
         # Search TACO
         if not source_filter or source_filter == 'TACO':
             taco_qs = AlimentoTACO.objects.filter(nome__icontains=search_query)
             if grupo_filter:
                 taco_qs = taco_qs.filter(grupo__icontains=grupo_filter)
+            taco_qs = taco_qs[:MAX_RESULTS_PER_SOURCE]  # Limitar resultados
             for item in taco_qs:
                 results.append({
                     'id': item.id,
@@ -61,12 +72,13 @@ class FoodSearchViewSet(viewsets.ViewSet):
                     'unidade_caseira': item.unidade_caseira,
                     'peso_unidade_caseira_g': item.peso_unidade_caseira_g,
                 })
-        
+
         # Search TBCA
         if not source_filter or source_filter == 'TBCA':
             tbca_qs = AlimentoTBCA.objects.filter(nome__icontains=search_query)
             if grupo_filter:
                 tbca_qs = tbca_qs.filter(grupo__icontains=grupo_filter)
+            tbca_qs = tbca_qs[:MAX_RESULTS_PER_SOURCE]  # Limitar resultados
             for item in tbca_qs:
                 results.append({
                     'id': item.id,
@@ -81,12 +93,13 @@ class FoodSearchViewSet(viewsets.ViewSet):
                     'unidade_caseira': item.unidade_caseira,
                     'peso_unidade_caseira_g': item.peso_unidade_caseira_g,
                 })
-        
+
         # Search USDA
         if not source_filter or source_filter == 'USDA':
             usda_qs = AlimentoUSDA.objects.filter(nome__icontains=search_query)
             if grupo_filter:
                 usda_qs = usda_qs.filter(categoria__icontains=grupo_filter)
+            usda_qs = usda_qs[:MAX_RESULTS_PER_SOURCE]  # Limitar resultados
             for item in usda_qs:
                 results.append({
                     'id': item.id,
@@ -101,14 +114,18 @@ class FoodSearchViewSet(viewsets.ViewSet):
                     'unidade_caseira': None,
                     'peso_unidade_caseira_g': item.porcao_padrao_g,
                 })
-        
+
+        # Limitar resultados totais para evitar sobrecarga
+        if len(results) > 500:
+            results = results[:500]  # Limitar a 500 resultados totais
+
         # Sort all results
         results = sorted(results, key=lambda x: x['nome'])
-        
+
         # Paginate the results
         paginator = FoodPageNumberPagination()
         paginated_results = paginator.paginate_queryset(results, request, view=self)
-        
+
         return paginator.get_paginated_response(paginated_results)
     
     @action(detail=False, methods=['GET'])

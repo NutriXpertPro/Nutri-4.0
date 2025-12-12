@@ -1,7 +1,6 @@
 # Core Django and Server
 Django==5.2.7
 dj-database-url==2.1.0
-PyMySQL==1.1.0
 python-decouple==3.8
 python-dotenv==1.0.1
 whitenoise==6.6.0
@@ -10,7 +9,7 @@ asgiref==3.10.0
 pytz==2025.2
 tzdata==2025.2
 
-# Django Apps
+
 
 
 # DRF
@@ -21,6 +20,7 @@ drf-nested-routers==0.95.0
 Pillow==12.0.0
 
 # MariaDB/MySQL Support
+PyMySQL==1.1.0
 mysqlclient==2.2.4
 
 # Redis

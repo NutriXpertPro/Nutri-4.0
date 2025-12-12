@@ -1,3 +1,4 @@
+from rest_framework import generics
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
@@ -6,66 +7,67 @@ from django.shortcuts import get_object_or_404
 from django.db import models
 from .models import PatientProfile
 from .serializers import PatientProfileSerializer
-
-@api_view(['POST'])
-@permission_classes([IsAuthenticated])
-def patient_create(request):
-    return Response({"message": "Create Patient API em construção"}, status=status.HTTP_501_NOT_IMPLEMENTED)
+from rest_framework.pagination import PageNumberPagination
 
 
+class PatientListView(generics.ListCreateAPIView):
+    serializer_class = PatientProfileSerializer
+    permission_classes = [IsAuthenticated]
+    pagination_class = PageNumberPagination
 
-@api_view(['GET', 'POST'])
-@permission_classes([IsAuthenticated])
-def patient_list(request):
-    if request.method == 'GET':
-        # List patients for the logged-in nutritionist
-        patients = PatientProfile.objects.filter(nutritionist=request.user)
+    def get_queryset(self):
+        user = self.request.user
+        queryset = PatientProfile.objects.filter(nutritionist=user, is_active=True)
         
-        # Search filter
-        search_query = request.query_params.get('search', '')
+        search_query = self.request.query_params.get('search', '')
         if search_query:
-            patients = patients.filter(
+            queryset = queryset.filter(
                 models.Q(user__name__icontains=search_query) | 
                 models.Q(user__email__icontains=search_query)
             )
-            
-        serializer = PatientProfileSerializer(patients, many=True)
-        return Response(serializer.data)
+        return queryset
 
-    elif request.method == 'POST':
-        # Create new patient
-        serializer = PatientProfileSerializer(data=request.data, context={'request': request})
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        else:
-            print("Validation Errors:", serializer.errors)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    def perform_create(self, serializer):
+        serializer.save(nutritionist=self.request.user)
 
-@api_view(['GET', 'PUT', 'PATCH'])
-@permission_classes([IsAuthenticated])
-def patient_detail(request, pk):
-    """
-    GET: Busca um paciente específico pelo ID
-    PUT/PATCH: Atualiza dados do paciente
-    """
-    patient = get_object_or_404(
-        PatientProfile.objects.filter(nutritionist=request.user),
-        pk=pk
-    )
 
-    if request.method == 'GET':
-        serializer = PatientProfileSerializer(patient)
-        return Response(serializer.data)
+class PatientDetailView(generics.RetrieveUpdateDestroyAPIView):
+    serializer_class = PatientProfileSerializer
+    permission_classes = [IsAuthenticated]
 
-    elif request.method in ['PUT', 'PATCH']:
-        serializer = PatientProfileSerializer(patient, data=request.data, partial=True)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    def get_queryset(self):
+        return PatientProfile.objects.filter(nutritionist=self.request.user, is_active=True)
+
+    def perform_destroy(self, instance):
+        instance.is_active = False
+        instance.save()
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def compare_photos_view(request, pk):
     return Response({"message": "Compare Photos API em construção"}, status=status.HTTP_501_NOT_IMPLEMENTED)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def patient_search_view(request):
+    """
+    Searches for patients by name for autocomplete functionality.
+    """
+    query = request.query_params.get('q', '').strip()
+    
+    if len(query) < 2: # Don't search for very short strings
+        return Response([])
+
+    patients = PatientProfile.objects.filter(
+        nutritionist=request.user,
+        user__name__icontains=query
+    ).select_related('user')[:10] # Limit to 10 results
+
+    # Return a simplified structure for the autocomplete component
+    results = [
+        {"id": patient.id, "name": patient.user.name}
+        for patient in patients
+    ]
+    
+    return Response(results)

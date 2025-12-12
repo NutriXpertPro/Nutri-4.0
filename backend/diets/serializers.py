@@ -93,10 +93,10 @@ class MealSerializer(serializers.ModelSerializer):
 
 
 class DietSerializer(serializers.ModelSerializer):
-    refeicoes = MealSerializer(many=True, read_only=True)
+    meals_rel = MealSerializer(many=True, read_only=True)  # Atualizado para usar o novo related_name
     total_refeicoes = serializers.ReadOnlyField()
     tem_substituicoes = serializers.ReadOnlyField()
-    
+
     class Meta:
         model = Diet
         fields = [
@@ -105,6 +105,6 @@ class DietSerializer(serializers.ModelSerializer):
             'target_protein', 'target_carbs', 'target_fats',
             'meals', 'substitutions', 'notes',
             'is_active', 'created_at', 'updated_at',
-            'refeicoes', 'total_refeicoes', 'tem_substituicoes'
+            'meals_rel', 'total_refeicoes', 'tem_substituicoes'
         ]
         read_only_fields = ['created_at', 'updated_at']

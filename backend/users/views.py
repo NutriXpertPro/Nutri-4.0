@@ -17,8 +17,13 @@ from .serializers import (
     GoogleLoginSerializer,
     LogoutSerializer,
     PasswordResetSerializer,
-    PasswordResetConfirmSerializer
+    PasswordResetConfirmSerializer,
+    UserDetailSerializer,
+    ChangePasswordSerializer,
+    AuthenticationLogSerializer
 )
+from .models import AuthenticationLog
+
 
 User = get_user_model()
 
@@ -34,33 +39,46 @@ def dashboard_view(request):
         "user": request.user.email
     })
 
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-def me_view(request):
-    """
-    API endpoint para dados do usuário autenticado.
-    """
-    user = request.user
-    return Response({
-        "id": user.id,
-        "name": user.name,
-        "email": user.email,
-        "user_type": user.user_type,
-        "professional_title": user.professional_title,
-        "gender": user.gender,
-    })
+from rest_framework import generics
 
-@api_view(['POST'])
-@permission_classes([AllowAny])
-@throttle_classes([AuthRateThrottle])
-def nutricionista_login_view(request):
+# ... (outras importações existentes)
+
+class UserDetailView(generics.RetrieveUpdateAPIView):
     """
-    API endpoint para login de nutricionista.
-    Rate limit: 5 tentativas por minuto (scope: auth).
+    Handle retrieving (GET) and updating (PATCH) the authenticated user's details.
+    """
+    serializer_class = UserDetailSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self):
+        """
+        The object to retrieve/update is the user making the request.
+        """
+        return self.request.user
+
+class ChangePasswordView(generics.GenericAPIView):
+    """
+    An endpoint for changing password for authenticated users.
+    """
+    serializer_class = ChangePasswordSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({"detail": "Password has been changed successfully."}, status=status.HTTP_200_OK)
+
+# ... (restante do arquivo, com a antiga me_view removida)
+
+
+def common_login_logic(request, required_user_type):
+    """
+    Função auxiliar para lógica comum de login.
     """
     email = request.data.get("email")
     password = request.data.get("password")
-    
+
     if not email or not password:
         return Response(
             {"error": "Email e senha são obrigatórios"},
@@ -70,23 +88,84 @@ def nutricionista_login_view(request):
     # O Django vai usar os backends configurados automaticamente
     user = authenticate(request=request, username=email, password=password)
 
-    if user is None:
+    # Padronizar mensagem para evitar enumeração de contas
+    if user is None or user.user_type != required_user_type:
+        # Adicionando tempo de espera para prevenir ataques de timing
+        import time
+        time.sleep(0.5)  # Pequeno atraso para prevenir ataques de timing
         return Response(
-            {"error": "Email ou senha incorretos. Tente novamente."},
+            {"error": "Credenciais inválidas. Tente novamente."},
             status=status.HTTP_401_UNAUTHORIZED
         )
 
-    if user.user_type != 'nutricionista':
-        return Response(
-            {"error": "Acesso negado. Esta é uma área exclusiva para nutricionistas."},
-            status=status.HTTP_403_FORBIDDEN
-        )
+    # Registrar log de autenticação bem-sucedida
+    from .models import AuthenticationLog
+    AuthenticationLog.objects.create(
+        user=user,
+        ip_address=request.META.get('REMOTE_ADDR'),
+        user_agent=request.META.get('HTTP_USER_AGENT', '')[:255]
+    )
 
     refresh = RefreshToken.for_user(user)
     return Response({
         'refresh': str(refresh),
         'access': str(refresh.access_token),
     })
+
+def _perform_login(request, required_user_type, unauthorized_error_msg):
+    """
+    Função auxiliar para lógica de login comum.
+    """
+    email = request.data.get("email")
+    password = request.data.get("password")
+
+    if not email or not password:
+        return Response(
+            {"error": "Email e senha são obrigatórios"},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    # O Django vai usar os backends configurados automaticamente
+    user = authenticate(request=request, username=email, password=password)
+
+    # Padronizar mensagem para evitar enumeração de contas
+    if user is None or user.user_type != required_user_type:
+        # Adicionando tempo de espera para prevenir ataques de timing
+        import time
+        time.sleep(0.5)  # Pequeno atraso para prevenir ataques de timing
+        return Response(
+            {"error": unauthorized_error_msg},
+            status=status.HTTP_401_UNAUTHORIZED
+        )
+
+    # Registrar log de autenticação bem-sucedida
+    from .models import AuthenticationLog
+    AuthenticationLog.objects.create(
+        user=user,
+        ip_address=request.META.get('REMOTE_ADDR'),
+        user_agent=request.META.get('HTTP_USER_AGENT', '')[:255]
+    )
+
+    refresh = RefreshToken.for_user(user)
+    return Response({
+        'refresh': str(refresh),
+        'access': str(refresh.access_token),
+    })
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+@throttle_classes([AuthRateThrottle])
+def nutricionista_login_view(request):
+    """
+    API endpoint para login de nutricionista.
+    Rate limit: 5 tentativas por minuto (scope: auth).
+    """
+    return _perform_login(
+        request,
+        'nutricionista',
+        "Credenciais inválidas. Tente novamente."
+    )
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -121,35 +200,11 @@ def paciente_login_view(request):
     """
     API endpoint para login de paciente.
     """
-    email = request.data.get("email")
-    password = request.data.get("password")
-
-    if not email or not password:
-        return Response(
-            {"error": "Email e senha são obrigatórios"},
-            status=status.HTTP_400_BAD_REQUEST
-        )
-
-    # O Django vai usar os backends configurados automaticamente
-    user = authenticate(request=request, username=email, password=password)
-
-    if user is None:
-        return Response(
-            {"error": "Email ou senha incorretos. Tente novamente."},
-            status=status.HTTP_401_UNAUTHORIZED
-        )
-
-    if user.user_type != 'paciente':
-        return Response(
-            {"error": "Acesso negado. Esta é uma área exclusiva para pacientes."},
-            status=status.HTTP_403_FORBIDDEN
-        )
-
-    refresh = RefreshToken.for_user(user)
-    return Response({
-        'refresh': str(refresh),
-        'access': str(refresh.access_token),
-    })
+    return _perform_login(
+        request,
+        'paciente',
+        "Credenciais inválidas. Tente novamente."
+    )
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -247,24 +302,29 @@ def google_login_view(request):
     """
     from google.oauth2 import id_token
     from google.auth.transport import requests
-    
+    from google.auth.exceptions import GoogleAuthError
+
     serializer = GoogleLoginSerializer(data=request.data)
     if not serializer.is_valid():
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        
+
     token = serializer.validated_data['id_token']
-    
+
     try:
         # Verificar o token com o Google
         id_info = id_token.verify_oauth2_token(
-            token, 
-            requests.Request(), 
+            token,
+            requests.Request(),
             settings.GOOGLE_OAUTH2_CLIENT_ID
         )
-        
-        email = id_info['email']
+
+        # Validar que os campos obrigatórios estão presentes
+        email = id_info.get('email')
+        if not email:
+            return Response({"error": "Token Google inválido: email não encontrado"}, status=status.HTTP_400_BAD_REQUEST)
+
         name = id_info.get('name', '')
-        
+
         try:
             user = User.objects.get(email=email)
         except User.DoesNotExist:
@@ -275,9 +335,17 @@ def google_login_view(request):
             )
             user.set_unusable_password()
             user.save()
-            
+
+        # Registrar log de autenticação bem-sucedida
+        from .models import AuthenticationLog
+        AuthenticationLog.objects.create(
+            user=user,
+            ip_address=request.META.get('REMOTE_ADDR'),
+            user_agent=request.META.get('HTTP_USER_AGENT', '')[:255]
+        )
+
         refresh = RefreshToken.for_user(user)
-        
+
         return Response({
             "message": "Login realizado com sucesso",
             "user": {
@@ -291,11 +359,24 @@ def google_login_view(request):
                 "access": str(refresh.access_token),
             }
         }, status=status.HTTP_200_OK)
-        
+
     except ValueError as e:
-        return Response({"error": "Token Google inválido", "details": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        # ValueError é levantado quando o token é inválido ou expirado
+        return Response({"error": "Token Google inválido ou expirado", "details": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    except GoogleAuthError as e:
+        # Erro específico de autenticação Google
+        return Response({"error": "Erro na autenticação com Google", "details": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    except KeyError as e:
+        # Erro quando campos esperados não estão presentes no token
+        return Response({"error": "Token Google incompleto", "details": f"Campo ausente: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
+
     except Exception as e:
-        return Response({"error": "Erro interno no login Google", "details": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        # Qualquer outro erro inesperado
+        # Em produção, você pode querer logar o erro completo em outro lugar
+        # e retornar uma mensagem genérica para evitar vazamento de informações
+        return Response({"error": "Erro interno no login Google"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -307,48 +388,45 @@ def dashboard_stats_view(request):
     from diets.models import Diet
     from appointments.models import Appointment
     from django.utils import timezone
+    from django.db.models import Count, Q
     from datetime import timedelta
-    
+
     user = request.user
     today = timezone.now().date()
     first_day_of_month = today.replace(day=1)
-    
-    # Pacientes Ativos (Assumindo que existência de perfil = ativo)
-    active_patients = PatientProfile.objects.filter(nutritionist=user).count()
-    
-    # Novos pacientes este mês
-    new_patients_this_month = PatientProfile.objects.filter(
-        nutritionist=user,
-        created_at__gte=first_day_of_month
-    ).count()
-    
-    # Consultas Hoje
+    now = timezone.now()
+
+    # Otimizar todas as queries usando agregações e filtros combinados
+    # Pacientes Ativos e Novos este mês em uma única query
+    patient_stats = PatientProfile.objects.filter(nutritionist=user).aggregate(
+        active_patients=Count('id'),
+        new_patients_this_month=Count('id', filter=Q(created_at__date__gte=first_day_of_month))
+    )
+
+    # Consultas de hoje
     appointments_today = Appointment.objects.filter(
         user=user,
         date__date=today
     ).count()
-    
-    # Próxima consulta
+
+    # Próxima consulta (otimizada com select_related)
     next_appointment = Appointment.objects.filter(
         user=user,
-        date__gte=timezone.now()
-    ).order_by('date').first()
-    
+        date__gte=now
+    ).select_related('patient', 'patient__user').order_by('date').first()
+
     next_appointment_time = next_appointment.date.strftime('%H:%M') if next_appointment else None
-    
-    # Dietas Ativas
+
+    # Dietas ativas (otimizada)
     active_diets = Diet.objects.filter(
         patient__nutritionist=user,
         is_active=True
     ).count()
-    
-    # Dietas vencendo em breve (não temos data de validade no modelo ainda, usando simulado ou criado há X dias)
-    # Por enquanto, placeholder ou baseada na data de criação
-    
+
     return Response({
         "active_patients": {
-            "value": active_patients,
-            "trend": new_patients_this_month,
+            "value": patient_stats['active_patients'],
+            "trend": patient_stats['new_patients_this_month'],
             "trend_label": "este mês"
         },
         "appointments_today": {
@@ -357,7 +435,7 @@ def dashboard_stats_view(request):
         },
         "active_diets": {
             "value": active_diets,
-            "expiring_soon": 0 # TODO: Implementar lógica de validade
+            "expiring_soon": 0  # TODO: Implementar lógica de validade
         }
     })
 
@@ -369,24 +447,36 @@ def appointments_today_view(request):
     """
     from appointments.models import Appointment
     from django.utils import timezone
-    
+
     user = request.user
     today = timezone.now().date()
-    
+
+    # Otimizado com select_related para evitar N+1 queries
     appointments = Appointment.objects.filter(
         user=user,
         date__date=today
     ).select_related('patient', 'patient__user').order_by('date')
-    
-    data = []
-    for app in appointments:
-        data.append({
+
+    # Usando list comprehension para maior eficiência
+    data = [
+        {
             "id": app.id,
             "patient_name": app.patient.user.name,
             "time": app.date.strftime('%H:%M'),
-            "duration": 60, # TODO: Adicionar campo duration no model
-            "type": "presencial", # TODO: Adicionar campo type no model
-            "status": "confirmed" # TODO: Adicionar status
-        })
-        
+            "duration": 60,  # TODO: Adicionar campo duration no model
+            "type": "presencial",  # TODO: Adicionar campo type no model
+            "status": "confirmed"  # TODO: Adicionar status
+        }
+        for app in appointments
+    ]
+
     return Response(data)
+
+
+class AuthenticationLogView(generics.CreateAPIView):
+    """
+    API endpoint para registrar um log de autenticação bem-sucedida.
+    """
+    queryset = AuthenticationLog.objects.all()
+    serializer_class = AuthenticationLogSerializer
+    permission_classes = [AllowAny]

@@ -62,18 +62,18 @@ export function DietMealCard({
 
     const searchInputRef = useRef<HTMLInputElement>(null)
     const containerRef = useRef<HTMLDivElement>(null)
-    const quantityInputRefs = useRef<Record<number, React.RefObject<HTMLInputElement>>>(
+    const quantityInputRefs = useRef<Record<number, React.RefObject<HTMLInputElement | null>>>(
         meal.foods.reduce((acc, food) => {
-            acc[food.id] = React.createRef()
+            acc[food.id] = React.createRef<HTMLInputElement>()
             return acc
-        }, {} as Record<number, React.RefObject<HTMLInputElement>>)
+        }, {} as Record<number, React.RefObject<HTMLInputElement | null>>)
     )
 
     // Atualizar os refs quando a lista de alimentos mudar
     useEffect(() => {
         meal.foods.forEach(food => {
             if (!quantityInputRefs.current[food.id]) {
-                quantityInputRefs.current[food.id] = React.createRef()
+                quantityInputRefs.current[food.id] = React.createRef<HTMLInputElement>()
             }
         })
     }, [meal.foods]) // Mantém a dependência para garantir que novos alimentos tenham refs
@@ -126,7 +126,7 @@ export function DietMealCard({
             const timer = setTimeout(() => {
                 // Garantir que o ref existe antes de tentar focar
                 if (!quantityInputRefs.current[lastAddedFoodId]) {
-                    quantityInputRefs.current[lastAddedFoodId] = React.createRef()
+                    quantityInputRefs.current[lastAddedFoodId] = React.createRef<HTMLInputElement>()
                 }
 
                 const foodRef = quantityInputRefs.current[lastAddedFoodId]

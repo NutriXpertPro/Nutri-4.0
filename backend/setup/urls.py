@@ -13,16 +13,21 @@ from rest_framework_simplejwt.views import (
     TokenVerifyView,
 )
 from users.jwt_views import CustomTokenObtainPairView
+from users.views import UserDetailView
 
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("", lambda request: JsonResponse({"message": "Nutri 4.0 API is running"}), name="root"),
-    # API REST - Autenticação JWT
+    
+    # API REST - Autenticação JWT (Tokens)
     path("api/token/", CustomTokenObtainPairView.as_view(), name="token_obtain_pair"),
     path("api/token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
     path("api/token/verify/", TokenVerifyView.as_view(), name="token_verify"),
+    
     # Apps
-    path("api/v1/users/", include("users.urls", namespace="users")),
+    path("api/v1/auth/", include("users.urls", namespace="auth")),
+    path("api/v1/users/me/", UserDetailView.as_view(), name="user-detail"),
+    
     path("api/v1/patients/", include("patients.urls", namespace="patients")),
     path("api/v1/appointments/", include("appointments.urls", namespace="appointments")),
     path("api/v1/anamnesis/", include("anamnesis.urls", namespace="anamnesis")),

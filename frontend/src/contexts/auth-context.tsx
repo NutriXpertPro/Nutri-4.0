@@ -20,6 +20,7 @@ interface AuthContextType {
     isLoading: boolean
     login: (tokens: { access: string; refresh: string }, redirect?: boolean) => void
     logout: () => void
+    refreshUser: () => void
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -28,6 +29,7 @@ const AuthContext = createContext<AuthContextType>({
     isLoading: true,
     login: () => { },
     logout: () => { },
+    refreshUser: () => { },
 })
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -59,6 +61,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             // Erro de rede - não significa que o token é inválido
             console.warn("Could not verify token (network error)", error)
             return true // Manter autenticado em caso de erro de rede
+        }
+    }
+
+    const refreshUser = async () => {
+        const token = Cookies.get("accessToken")
+        if (token) {
+            await fetchUserProfile(token)
         }
     }
 
@@ -122,7 +131,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     return (
-        <AuthContext.Provider value={{ user, isAuthenticated, isLoading, login, logout }}>
+        <AuthContext.Provider value={{ user, isAuthenticated, isLoading, login, logout, refreshUser }}>
             {children}
         </AuthContext.Provider>
     )

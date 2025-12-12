@@ -9,6 +9,19 @@ class Appointment(models.Model):
     """
     Representa uma consulta agendada entre um nutricionista e um paciente.
     """
+    STATUS_CHOICES = [
+        ('agendada', 'Agendada'),
+        ('confirmada', 'Confirmada'),
+        ('realizada', 'Realizada'),
+        ('cancelada', 'Cancelada'),
+        ('faltou', 'Faltou'),
+    ]
+
+    TYPE_CHOICES = [
+        ('presencial', 'Presencial'),
+        ('online', 'Online'),
+    ]
+
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="appointments"
     )
@@ -16,8 +29,31 @@ class Appointment(models.Model):
         PatientProfile, on_delete=models.CASCADE, related_name="appointments"
     )
     date = models.DateTimeField()
+    duration = models.IntegerField(
+        null=True,
+        blank=True,
+        help_text="Duração da consulta em minutos"
+    )
+    type = models.CharField(
+        max_length=20,
+        choices=TYPE_CHOICES,
+        default='presencial',
+        help_text="Tipo de consulta: presencial ou online"
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='agendada',
+        help_text="Status da consulta"
+    )
+    meeting_link = models.URLField(
+        null=True,
+        blank=True,
+        help_text="Link para reunião online (se for consulta online)"
+    )
     notes = models.TextField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         ordering = ["-date"]
@@ -28,4 +64,4 @@ class Appointment(models.Model):
         do paciente e a data/hora.
         """
         date_str = self.date.strftime("%d/%m/%Y %H:%M")
-        return f"Agendamento de {self.patient.user.name} em {date_str}"
+        return f"Consulta de {self.patient.user.name} em {date_str} ({self.get_status_display()})"

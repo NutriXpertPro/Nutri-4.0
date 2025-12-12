@@ -61,6 +61,12 @@ const patientService = {
     delete: async (id: number) => {
         const response = await api.delete(`/patients/${id}/`)
         return response.data
+    },
+
+    search: async (query: string): Promise<{ id: number; name: string }[]> => {
+        if (query.length < 2) return Promise.resolve([]);
+        const response = await api.get<{ id: number; name: string }[]>(`/patients/search/?q=${encodeURIComponent(query)}`);
+        return response.data;
     }
 }
 

@@ -11,6 +11,13 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
+import os
+import sys
+from dotenv import load_dotenv
+
+load_dotenv() # Carrega as variáveis de ambiente do arquivo .env
+
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -20,12 +27,41 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-1mins4*xsteg5k@fmb-c*7i*v+0*+&d!m7n$c27x&87+mj8737'
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY')
+if not SECRET_KEY:
+    if os.environ.get('DJANGO_ENV') == 'production':
+        print("Erro: A variável DJANGO_SECRET_KEY é obrigatória em produção")
+        sys.exit(1)
+    else:
+        SECRET_KEY = 'django-insecure-development-key'  # Apenas para desenvolvimento
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get('DJANGO_DEBUG', 'False').lower() == 'true'
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = os.environ.get('DJANGO_ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
+
+# Security settings for production
+if not DEBUG:
+    # Security middleware
+    SECURE_BROWSER_XSS_FILTER = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_SECONDS = 31536000  # 1 year
+    SECURE_REDIRECT_EXEMPT = []
+    SECURE_SSL_REDIRECT = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    X_FRAME_OPTIONS = 'DENY'
+
+    # Additional security headers
+    SECURE_REFERRER_POLICY = 'same-origin'
+
+    # Check for HTTPS
+    USE_TLS = os.environ.get('USE_TLS', 'True').lower() == 'true'
+    if USE_TLS:
+        SECURE_SSL_REDIRECT = True
+        SESSION_COOKIE_SECURE = True
+        CSRF_COOKIE_SECURE = True
 
 
 # Application definition
@@ -45,6 +81,8 @@ INSTALLED_APPS = [
     # Local
     'users.apps.UsersConfig',
     'patients',
+    'appointments',
+    'notifications',
     'corsheaders',
 ]
 
@@ -59,9 +97,21 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+# Add security middleware in production
+if not DEBUG:
+    MIDDLEWARE.insert(1, 'django.middleware.common.BrokenLinkEmailsMiddleware')
+
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
+    "http://127.0.0.1:3000",
 ]
+
+# Adicionar domínios adicionais para desenvolvimento se necessário
+if DEBUG:
+    CORS_ALLOWED_ORIGINS.extend([
+        "http://localhost:8000",
+        "http://127.0.0.1:8000",
+    ])
 
 ROOT_URLCONF = 'config.urls'
 
@@ -83,14 +133,40 @@ TEMPLATES = [
 WSGI_APPLICATION = 'config.wsgi.application'
 
 
+import pymysql
+
+pymysql.install_as_MySQLdb()
+
+# Outros imports...
+
+# Database configuration with production checks
+if os.environ.get('DJANGO_ENV') == 'production':
+    # In production, ensure database credentials are provided
+    DB_NAME = os.environ.get('DB_NAME')
+    DB_USER = os.environ.get('DB_USER')
+    DB_PASSWORD = os.environ.get('DB_PASSWORD')
+    DB_HOST = os.environ.get('DB_HOST', 'localhost')
+    DB_PORT = os.environ.get('DB_PORT', '3306')
+
+    if not all([DB_NAME, DB_USER, DB_PASSWORD]):
+        print("Erro: DB_NAME, DB_USER e DB_PASSWORD são obrigatórios em produção")
+        sys.exit(1)
+else:
+    # Development defaults
+    DB_NAME = os.environ.get('DB_NAME', 'nutrixpert_db')
+    DB_USER = os.environ.get('DB_USER', 'root')
+    DB_PASSWORD = os.environ.get('DB_PASSWORD', 'NutriXpert2024')
+    DB_HOST = os.environ.get('DB_HOST', 'localhost')
+    DB_PORT = os.environ.get('DB_PORT', '3306')
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'nutrixpert_db',
-        'USER': 'root',
-        'PASSWORD': 'NutriXpert2024',
-        'HOST': 'localhost',
-        'PORT': '3306',
+        'NAME': DB_NAME,
+        'USER': DB_USER,
+        'PASSWORD': DB_PASSWORD,
+        'HOST': DB_HOST,
+        'PORT': DB_PORT,
     }
 }
 
@@ -141,7 +217,72 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTH_USER_MODEL = 'users.User'
 
 AUTHENTICATION_BACKENDS = [
-    'users.authentication.EmailBackend',
-    'django.contrib.auth.backends.ModelBackend', # Manter o backend padrão para o admin
+    'django.contrib.auth.backends.ModelBackend', # Backend padrão
+    'users.authentication.EmailBackend', # Backend de email
 ]
+
+# Final security checks
+if os.environ.get('DJANGO_ENV') == 'production':
+    # Verify that critical settings are properly configured
+    if DEBUG:
+        print("Aviso: DEBUG está ativado em produção. Isso pode ser um risco de segurança.")
+    if 'localhost' in ALLOWED_HOSTS or '127.0.0.1' in ALLOWED_HOSTS:
+        print("Aviso: localhost ou 127.0.0.1 estão na lista de ALLOWED_HOSTS em produção.")
+
+# Environment validation
+REQUIRED_ENV_VARS = [
+    'DJANGO_SECRET_KEY',
+    'DB_NAME',
+    'DB_USER',
+    'DB_PASSWORD',
+]
+
+if os.environ.get('DJANGO_ENV') == 'production':
+    missing_vars = [var for var in REQUIRED_ENV_VARS if not os.environ.get(var)]
+    if missing_vars:
+        print(f"Erro: As seguintes variáveis de ambiente são obrigatórias em produção: {', '.join(missing_vars)}")
+        sys.exit(1)
+
+REST_FRAMEWORK = {
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 10,
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    )
+}
+
+# JWT Settings
+from datetime import timedelta
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),  # Reduzido de 1 dia para 1 hora
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),    # Reduzido de 1 ano para 1 semana
+    'ROTATE_REFRESH_TOKENS': True,
+    'BLACKLIST_AFTER_ROTATION': True,
+    'UPDATE_LAST_LOGIN': False,
+
+    'ALGORITHM': 'HS256',
+    'SIGNING_KEY': os.environ.get('SIMPLE_JWT_SECRET_KEY', SECRET_KEY),
+    'VERIFYING_KEY': None,
+    'AUDIENCE': None,
+    'ISSUER': None,
+    'JWK_URL': None,
+    'LEEWAY': 0,
+
+    'AUTH_HEADER_TYPES': ('Bearer',),
+    'AUTH_HEADER_NAME': 'HTTP_AUTHORIZATION',
+    'USER_ID_FIELD': 'id',
+    'USER_ID_CLAIM': 'user_id',
+    'USER_AUTHENTICATION_RULE': 'rest_framework_simplejwt.authentication.default_user_authentication_rule',
+
+    'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
+    'TOKEN_TYPE_CLAIM': 'token_type',
+    'TOKEN_USER_CLASS': 'rest_framework_simplejwt.models.TokenUser',
+
+    'JTI_CLAIM': 'jti',
+
+    'SLIDING_TOKEN_REFRESH_EXP_CLAIM': 'refresh_exp',
+    'SLIDING_TOKEN_LIFETIME': timedelta(minutes=5),
+    'SLIDING_TOKEN_REFRESH_LIFETIME': timedelta(days=1),
+}
 

@@ -7,15 +7,13 @@ Você é um desenvolvedor de software experiente que se submete a executar esse 
 1. **Leia a documentação** na pasta `c:\Nutri 4.0\docs\` nesta ordem:
    - 1- `recomendacoes_arquitetura_enterprise.md` (decisões técnicas)
 
-   - 2- `inventario_funcionalidades.md` (65+ funcionalidades)
+   - - 2- `wireframes.md` (layouts)
 
-   - 3- `wireframes.md` (layouts)
+   - 3- `prd_product_requirements.md` (requisitos)
 
-   - 4- `prd_product_requirements.md` (requisitos)
-
-   - 5- `api_specification.md` (API)
+   - 4- `api_specification.md` (API)
    
-   - 6- `checklist.md` (tarefas e progresso)
+   - 5- `checklist.md` (tarefas e progresso)
 
 2. **Analise o checklist** e identifique o próximo ponto a ser feito.
 
@@ -37,3 +35,6 @@ Você é um desenvolvedor de software experiente que se submete a executar esse 
 - Todas as views retornam JSON via Django REST Framework
 - Autenticação via JWT (SimpleJWT)
 - O frontend Next.js consome a API
+
+
+OBSERVAÇÃO: ESTA OBRIGADO MARCAR O MEU CHECKLIST COMO FEITO APOS CONCLUIR A TAREFA.

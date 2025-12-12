@@ -1,13 +1,15 @@
 from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework.generics import ListAPIView
 from .models import Anamnesis, AnamnesisTemplate, AnamnesisResponse
 from .serializers import AnamnesisSerializer, AnamnesisTemplateSerializer, AnamnesisResponseSerializer
 
-class AnamnesisViewSet(viewsets.ModelViewSet):
+
+class AnamnesisGeneralViewSet(viewsets.ReadOnlyModelViewSet):
     """
-    Standard Anamnesis (legacy/fixed model).
-    OneToOne with Patient.
+    General Anamnesis ViewSet for listing all anamneses for a nutritionist.
+    Maps to /api/v1/anamnesis/
     """
     serializer_class = AnamnesisSerializer
     permission_classes = [permissions.IsAuthenticated]
@@ -15,11 +17,31 @@ class AnamnesisViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         # Filter patients managed by this nutritionist
         queryset = Anamnesis.objects.filter(patient__nutritionist=self.request.user)
-        
+
         patient_id = self.request.query_params.get('patient')
         if patient_id:
             queryset = queryset.filter(patient_id=patient_id)
-            
+
+        return queryset
+
+
+class AnamnesisViewSet(viewsets.ModelViewSet):
+    """
+    Standard Anamnesis (legacy/fixed model).
+    OneToOne with Patient.
+    Maps to /api/v1/anamnesis/standard/
+    """
+    serializer_class = AnamnesisSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        # Filter patients managed by this nutritionist
+        queryset = Anamnesis.objects.filter(patient__nutritionist=self.request.user)
+
+        patient_id = self.request.query_params.get('patient')
+        if patient_id:
+            queryset = queryset.filter(patient_id=patient_id)
+
         return queryset
 
     def perform_create(self, serializer):

@@ -2,6 +2,26 @@ from django.db import models
 from patients.models import PatientProfile
 from django.core.exceptions import ValidationError
 import json
+import html
+import re
+
+def sanitize_string(value):
+    """
+    Sanitiza uma string removendo ou escapando caracteres potencialmente perigosos.
+    """
+    if not isinstance(value, str):
+        return value
+
+    # Remover HTML/XML tags potencialmente perigosas
+    value = html.escape(value)
+
+    # Remover caracteres especiais que possam ser usados para injeção
+    value = re.sub(r'[<>"\']', '', value)
+
+    # Garantir que não haja caracteres de controle perigosos
+    value = re.sub(r'[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]', '', value)
+
+    return value.strip()
 
 # Validadores de esquema JSON
 def validate_meals_schema(value):
@@ -11,16 +31,35 @@ def validate_meals_schema(value):
     """
     if not isinstance(value, list):
         raise ValidationError("Meals deve ser uma lista.")
-    for meal in value:
+
+    for i, meal in enumerate(value):
         if not isinstance(meal, dict):
-            raise ValidationError("Cada refeição deve ser um objeto.")
+            raise ValidationError(f"A refeição na posição {i} deve ser um objeto.")
+
+        # Sanitizar os campos de string antes da validação
+        if 'nome' in meal:
+            meal['nome'] = sanitize_string(meal['nome'])
+        if 'horario' in meal:
+            meal['horario'] = sanitize_string(meal['horario'])
+
         if not all(k in meal for k in ['nome', 'horario', 'alimentos']):
-            raise ValidationError("Cada refeição deve ter 'nome', 'horario' e 'alimentos'.")
+            raise ValidationError(f"A refeição na posição {i} deve ter 'nome', 'horario' e 'alimentos'.")
+
         if not isinstance(meal['alimentos'], list):
-            raise ValidationError("Alimentos deve ser uma lista.")
-        for food in meal['alimentos']:
+            raise ValidationError(f"Os alimentos da refeição na posição {i} devem ser uma lista.")
+
+        for j, food in enumerate(meal['alimentos']):
+            if not isinstance(food, dict):
+                raise ValidationError(f"O alimento na posição {j} da refeição na posição {i} deve ser um objeto.")
+
+            # Sanitizar os campos de string
+            if 'nome' in food:
+                food['nome'] = sanitize_string(food['nome'])
+            if 'unidade' in food:
+                food['unidade'] = sanitize_string(food['unidade'])
+
             if not all(k in food for k in ['nome', 'quantidade', 'unidade']):
-                raise ValidationError("Cada alimento deve ter 'nome', 'quantidade' e 'unidade'.")
+                raise ValidationError(f"O alimento na posição {j} da refeição na posição {i} deve ter 'nome', 'quantidade' e 'unidade'.")
 
 def validate_substitutions_schema(value):
     """
@@ -29,16 +68,31 @@ def validate_substitutions_schema(value):
     """
     if not isinstance(value, list):
         raise ValidationError("Substitutions deve ser uma lista.")
-    for sub in value:
+
+    for i, sub in enumerate(value):
         if not isinstance(sub, dict):
-            raise ValidationError("Cada substituição deve ser um objeto.")
+            raise ValidationError(f"A substituição na posição {i} deve ser um objeto.")
+
+        # Sanitizar os campos de string
+        if 'original' in sub:
+            sub['original'] = sanitize_string(sub['original'])
+
         if not all(k in sub for k in ['original', 'options']):
-            raise ValidationError("Cada substituição deve ter 'original' e 'options'.")
+            raise ValidationError(f"A substituição na posição {i} deve ter 'original' e 'options'.")
+
         if not isinstance(sub['options'], list):
-            raise ValidationError("Options deve ser uma lista.")
-        for option in sub['options']:
+            raise ValidationError(f"As opções da substituição na posição {i} devem ser uma lista.")
+
+        for j, option in enumerate(sub['options']):
+            if not isinstance(option, dict):
+                raise ValidationError(f"A opção na posição {j} da substituição na posição {i} deve ser um objeto.")
+
+            # Sanitizar os campos de string
+            if 'name' in option:
+                option['name'] = sanitize_string(option['name'])
+
             if not all(k in option for k in ['name', 'quantity']):
-                raise ValidationError("Cada opção deve ter 'name' e 'quantity'.")
+                raise ValidationError(f"A opção na posição {j} da substituição na posição {i} deve ter 'name' e 'quantity'.")
 
 
 class AlimentoTACO(models.Model):
@@ -238,25 +292,25 @@ class Diet(models.Model):
         blank=True,
     )
     name = models.CharField(max_length=255, db_index=True)
-    
+
     # Novos campos para sistema avançado
     goal = models.TextField(blank=True, null=True, help_text="Objetivo da dieta")
     instructions = models.TextField(blank=True, null=True, help_text="Instruções e observações")
-    
+
     # Cálculos nutricionais (novos campos)
     tmb = models.IntegerField(null=True, blank=True, help_text="Taxa Metabólica Basal")
     gcdt = models.IntegerField(null=True, blank=True, help_text="Gasto Calórico Diário Total")
     target_calories = models.IntegerField(null=True, blank=True, help_text="Meta de calorias")
-    
+
     # Configurações de dieta
     diet_type = models.CharField(max_length=50, default='balanced', help_text="Tipo de dieta (balanced, lowcarb, etc)")
     calculation_method = models.CharField(max_length=50, default='mifflin', help_text="Método de cálculo (mifflin, harris, etc)")
-    
+
     # Metas de macronutrientes (novos campos em decimal para precisão)
     target_protein = models.DecimalField(max_digits=6, decimal_places=2, null=True, blank=True, help_text="Meta de proteínas em gramas")
     target_carbs = models.DecimalField(max_digits=6, decimal_places=2, null=True, blank=True, help_text="Meta de carboidratos em gramas")
     target_fats = models.DecimalField(max_digits=6, decimal_places=2, null=True, blank=True, help_text="Meta de gorduras em gramas")
-    
+
     # Campos legados (manter para compatibilidade)
     meals = models.JSONField(null=True, blank=True, validators=[validate_meals_schema])
     substitutions = models.JSONField(null=True, blank=True, validators=[validate_substitutions_schema])
@@ -268,13 +322,13 @@ class Diet(models.Model):
     tmb_calculado = models.PositiveIntegerField(null=True, blank=True, help_text="Taxa Metabólica Basal calculada (legado)")
     gcdt_calculado = models.PositiveIntegerField(null=True, blank=True, help_text="Gasto Calórico Diário Total calculado (legado)")
     formula_tmb = models.CharField(
-        max_length=20, 
+        max_length=20,
         choices=[
             ('harris-benedict', 'Harris-Benedict'),
             ('mifflin-st-jeor', 'Mifflin-St Jeor'),
             ('katch-mcardle', 'Katch-McArdle'),
         ],
-        null=True, 
+        null=True,
         blank=True
     )
     nivel_atividade = models.DecimalField(max_digits=3, decimal_places=2, null=True, blank=True, help_text="Fator de atividade física")
@@ -288,7 +342,7 @@ class Diet(models.Model):
         null=True,
         blank=True
     )
-    
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     is_active = models.BooleanField(default=True, help_text="Se o plano está ativo", db_index=True)
@@ -300,12 +354,12 @@ class Diet(models.Model):
 
     def __str__(self):
         return f"{self.name} - {self.patient.user.name}"
-    
+
     @property
     def total_refeicoes(self):
         """Retorna o número total de refeições configuradas"""
         return len(self.meals) if self.meals else 0
-    
+
     @property
     def tem_substituicoes(self):
         """Verifica se há substituições configuradas"""
@@ -314,7 +368,7 @@ class Diet(models.Model):
 
 class Meal(models.Model):
     """Modelo para refeições individuais dentro de uma dieta."""
-    diet = models.ForeignKey(Diet, on_delete=models.CASCADE, related_name='refeicoes')
+    diet = models.ForeignKey(Diet, on_delete=models.CASCADE, related_name='meals_rel')  # Usando nome que não conflita
     name = models.CharField(max_length=100, help_text="Nome da refeição (Café, Almoço, etc)")
     time = models.TimeField(help_text="Horário da refeição")
     day_of_week = models.IntegerField(
@@ -323,35 +377,35 @@ class Meal(models.Model):
     )
     order = models.IntegerField(default=0, help_text="Ordem de exibição")
     notes = models.TextField(blank=True, null=True, help_text="Orientações da refeição")
-    
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    
+
     class Meta:
         ordering = ['day_of_week', 'order', 'time']
         verbose_name = "Refeição"
         verbose_name_plural = "Refeições"
-    
+
     def __str__(self):
         dias_semana = ['SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SAB', 'DOM']
         dia = dias_semana[self.day_of_week] if 0 <= self.day_of_week <= 6 else 'N/A'
         return f"{self.name} - {dia} {self.time.strftime('%H:%M')}"
-    
+
     @property
     def total_calorias(self):
         """Calcula o total de calorias da refeição"""
         return sum(item.calories for item in self.items.all())
-    
+
     @property
     def total_proteinas(self):
         """Calcula o total de proteínas da refeição"""
         return sum(item.protein for item in self.items.all())
-    
+
     @property
     def total_carboidratos(self):
         """Calcula o total de carboidratos da refeição"""
         return sum(item.carbs for item in self.items.all())
-    
+
     @property
     def total_gorduras(self):
         """Calcula o total de gorduras da refeição"""
@@ -364,27 +418,27 @@ class FoodItem(models.Model):
     food_name = models.CharField(max_length=255, help_text="Nome do alimento")
     quantity = models.DecimalField(max_digits=8, decimal_places=2, help_text="Quantidade em unidade")
     unit = models.CharField(max_length=20, default='g', help_text="Unidade de medida (g, ml, und)")
-    
+
     # Valores nutricionais calculados (por porção)
     calories = models.DecimalField(max_digits=8, decimal_places=2, help_text="Calorias calculadas")
     protein = models.DecimalField(max_digits=8, decimal_places=2, help_text="Proteínas em g")
     carbs = models.DecimalField(max_digits=8, decimal_places=2, help_text="Carboidratos em g")
     fats = models.DecimalField(max_digits=8, decimal_places=2, help_text="Gorduras em g")
     fiber = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True, help_text="Fibras em g")
-    
+
     # Referências opcionais às bases de dados
-    taco_food = models.ForeignKey(AlimentoTACO, on_delete=models.SET_NULL, null=True, blank=True, related_name='diet_items')
-    tbca_food = models.ForeignKey(AlimentoTBCA, on_delete=models.SET_NULL, null=True, blank=True, related_name='diet_items')
-    usda_food = models.ForeignKey(AlimentoUSDA, on_delete=models.SET_NULL, null=True, blank=True, related_name='diet_items')
-    
+    taco_food = models.ForeignKey(AlimentoTACO, on_delete=models.SET_NULL, null=True, blank=True, related_name='food_items')
+    tbca_food = models.ForeignKey(AlimentoTBCA, on_delete=models.SET_NULL, null=True, blank=True, related_name='food_items')
+    usda_food = models.ForeignKey(AlimentoUSDA, on_delete=models.SET_NULL, null=True, blank=True, related_name='food_items')
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    
+
     class Meta:
         verbose_name = "Item Alimentar"
         verbose_name_plural = "Itens Alimentares"
         ordering = ['meal', 'id']
-    
+
     def __str__(self):
         return f"{self.food_name} - {self.quantity}{self.unit}"
 

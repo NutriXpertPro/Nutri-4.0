@@ -4,6 +4,12 @@ from django.contrib.auth.models import (
     PermissionsMixin,
 )
 from django.db import models
+from django.conf import settings
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+from django.core.validators import FileExtensionValidator
+from django.utils.translation import gettext_lazy as _
+import os
 
 # Create your models here.
 
@@ -38,23 +44,23 @@ class User(AbstractBaseUser, PermissionsMixin):
     """Modelo de usuário customizado que usa email como login."""
 
     USER_TYPE_CHOICES = (
-        ("nutricionista", "Nutricionista"),
-        ("paciente", "Paciente"),
-        ("admin", "Admin"),  # Adicionado para o superusuário
+        ("nutricionista", _("Nutricionista")),
+        ("paciente", _("Paciente")),
+        ("admin", _("Admin")),  # Adicionado para o superusuário
     )
 
     PROFESSIONAL_TITLE_CHOICES = [
-        ("DR", "Dr."),
-        ("DRA", "Dra."),
-        ("PHD", "PhD"),
-        ("MTR", "Mestre"),
-        ("ESP", "Especialista"),
-        ("NUT", "Nutricionista"),
+        ("DR", _("Dr.")),
+        ("DRA", _("Dra.")),
+        ("PHD", _("PhD")),
+        ("MTR", _("Mestre")),
+        ("ESP", _("Especialista")),
+        ("NUT", _("Nutricionista")),
     ]
 
     GENDER_CHOICES = [
-        ("M", "Masculino"),
-        ("F", "Feminino"),
+        ("M", _("Masculino")),
+        ("F", _("Feminino")),
     ]
 
     email = models.EmailField(unique=True)
@@ -93,3 +99,116 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     class Meta:
         ordering = ['-created_at'] # Adicionado para ordenação padrão
+
+
+def validate_image_file(value):
+    """Validador para garantir que o arquivo seja uma imagem válida e seguro."""
+    import os
+    from PIL import Image
+    from django.core.exceptions import ValidationError
+
+    # Verificar extensão do arquivo
+    ext = os.path.splitext(value.name)[1]
+    valid_extensions = ['.jpg', '.jpeg', '.png', '.gif']
+
+    if ext.lower() not in valid_extensions:
+        raise ValidationError('Formato de arquivo não suportado. Apenas JPG, JPEG, PNG e GIF são permitidos.')
+
+    # Verificar tamanho do arquivo (max 5MB)
+    if value.size > 5 * 1024 * 1024:  # 5MB
+        raise ValidationError('O arquivo é muito grande. O tamanho máximo é 5MB.')
+
+    # Verificar se é realmente uma imagem válida
+    try:
+        img = Image.open(value)
+        img.verify()
+    except:
+        raise ValidationError('Arquivo não é uma imagem válida.')
+
+
+class UserProfile(models.Model):
+    """
+    Modelo para armazenar informações de perfil adicionais, separado do modelo de autenticação.
+    """
+    THEME_CHOICES = [
+        ('light', _('Claro')),
+        ('dark', _('Escuro')),
+    ]
+
+    LANGUAGE_CHOICES = [
+        ('pt-BR', _('Português (Brasil)')),
+        ('en-US', _('Inglês (EUA)')),
+    ]
+
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="profile"
+    )
+    profile_picture = models.ImageField(
+        upload_to='profile_pics/',
+        null=True,
+        blank=True,
+        verbose_name="Foto de Perfil",
+        validators=[FileExtensionValidator(allowed_extensions=['jpg', 'jpeg', 'png', 'gif']), validate_image_file]
+    )
+    theme = models.CharField(
+        max_length=10,
+        choices=THEME_CHOICES,
+        default='light',
+        verbose_name="Tema"
+    )
+    language = models.CharField(
+        max_length=5,
+        choices=LANGUAGE_CHOICES,
+        default='pt-BR',
+        verbose_name="Idioma"
+    )
+    notifications_email = models.BooleanField(default=True, verbose_name="Notificações por Email")
+    notifications_push = models.BooleanField(default=True, verbose_name="Notificações Push")
+
+    def __str__(self):
+        return f"Perfil de {self.user.name}"
+
+    class Meta:
+        verbose_name = "Perfil de Usuário"
+        verbose_name_plural = "Perfis de Usuários"
+
+
+# Signal para criar um UserProfile automaticamente quando um User é criado
+@receiver(post_save, sender=settings.AUTH_USER_MODEL)
+def create_user_profile(sender, instance=None, created=False, **kwargs):
+    """Cria um perfil para o usuário assim que ele é registrado."""
+    if created:
+        UserProfile.objects.create(user=instance)
+
+# Signal para salvar o profile quando o user é salvo
+@receiver(post_save, sender=settings.AUTH_USER_MODEL)
+def save_user_profile(sender, instance, **kwargs):
+    """Garante que o perfil seja salvo quando o usuário for salvo."""
+    try:
+        instance.profile.save()
+    except UserProfile.DoesNotExist:
+        UserProfile.objects.create(user=instance)
+
+
+class AuthenticationLog(models.Model):
+    """
+    Registra tentativas de login bem-sucedidas.
+    """
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="login_logs"
+    )
+    timestamp = models.DateTimeField(auto_now_add=True)
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    user_agent = models.CharField(max_length=255, blank=True)
+
+    def __str__(self):
+        return f"Login de {self.user.email} em {self.timestamp}"
+
+    class Meta:
+        verbose_name = "Log de Autenticação"
+        verbose_name_plural = "Logs de Autenticação"
+        ordering = ['-timestamp']
