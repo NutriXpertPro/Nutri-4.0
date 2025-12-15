@@ -20,6 +20,16 @@ class Appointment(models.Model):
     TYPE_CHOICES = [
         ('presencial', 'Presencial'),
         ('online', 'Online'),
+        ('primeira_vez', 'Primeira Vez'),
+        ('retorno', 'Retorno'),
+        ('em_grupo', 'Em Grupo'),
+        ('pacote', 'Pacote'),
+        ('permuta', 'Permuta'),
+        ('pessoal', 'Pessoal'),
+        ('antropometria', 'Antropometria'),
+        ('amigo', 'Amigo'),
+        ('encaixe', 'Encaixe'),
+        ('teste', 'Teste'),
     ]
 
     user = models.ForeignKey(

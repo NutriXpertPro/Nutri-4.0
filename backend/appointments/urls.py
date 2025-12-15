@@ -13,4 +13,6 @@ urlpatterns = [
     path('', include(router.urls)),
     # Endpoint específico para calendário
     path('calendar/', views.calendar_view, name='calendar'),
+    # Endpoint para horários disponíveis
+    path('available-slots/<int:patient_id>/', views.available_slots, name='available-slots'),
 ]

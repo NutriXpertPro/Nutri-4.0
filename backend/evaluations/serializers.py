@@ -9,15 +9,15 @@ class EvaluationPhotoSerializer(serializers.ModelSerializer):
 
 class EvaluationSerializer(serializers.ModelSerializer):
     photos = EvaluationPhotoSerializer(many=True, read_only=True)
-    
+
     class Meta:
         model = Evaluation
         fields = [
-            'id', 'patient', 'date', 'method', 
-            'height', 'weight', 'body_fat', 'muscle_mass', 
-            'body_measurements', 'created_at', 'photos'
+            'id', 'patient', 'date', 'method',
+            'height', 'weight', 'body_fat', 'muscle_mass',
+            'bmi', 'body_measurements', 'created_at', 'photos'
         ]
-        read_only_fields = ['created_at']
+        read_only_fields = ['created_at', 'bmi']
 
     def validate_body_measurements(self, value):
         # Basic validation if needed, model already has validators

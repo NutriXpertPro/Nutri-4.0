@@ -11,6 +11,10 @@ urlpatterns = [
     path("token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
     path("token/verify/", TokenVerifyView.as_view(), name="token_verify"),
 
+    # User endpoints
+    path("me/", views.UserDetailView.as_view(), name="user_detail"),
+    path("me/change-password/", views.ChangePasswordView.as_view(), name="change_password"),
+
     # Traditional endpoints
     path("login/nutricionista/", views.nutricionista_login_view, name="nutricionista_login"),
     path("login/paciente/", views.paciente_login_view, name="patient_login"),

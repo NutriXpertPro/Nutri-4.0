@@ -64,16 +64,16 @@ export function DietMealCard({
     const containerRef = useRef<HTMLDivElement>(null)
     const quantityInputRefs = useRef<Record<number, React.RefObject<HTMLInputElement | null>>>(
         meal.foods.reduce((acc, food) => {
-            acc[food.id] = React.createRef<HTMLInputElement>()
+            acc[food.id] = React.createRef<HTMLInputElement | null>()
             return acc
-        }, {} as Record<number, React.RefObject<HTMLInputElement | null>>)
+        }, {} as Record<number, React.RefObject<HTMLInputElement | null>>);
     )
 
     // Atualizar os refs quando a lista de alimentos mudar
     useEffect(() => {
         meal.foods.forEach(food => {
             if (!quantityInputRefs.current[food.id]) {
-                quantityInputRefs.current[food.id] = React.createRef<HTMLInputElement>()
+                quantityInputRefs.current[food.id] = React.createRef<HTMLInputElement | null>()
             }
         })
     }, [meal.foods]) // Mantém a dependência para garantir que novos alimentos tenham refs

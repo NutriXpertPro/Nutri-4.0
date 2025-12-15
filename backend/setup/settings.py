@@ -199,8 +199,31 @@ SIMPLE_JWT = {
 }
 
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
+# Configuração de arquivos de mídia
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+
+# Storage para arquivos de mídia (fotos de avaliações, etc.)
+# Configuração para ambiente de desenvolvimento (arquivos locais)
+DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
+
+# Para produção, pode-se configurar django-storages com S3 ou CloudFlare R2:
+# DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+# ou
+# DEFAULT_FILE_STORAGE = 'storages.backends.cloudflare_r2.CloudFlareR2Storage'  # se disponível
+
+# Configurações específicas para django-storages (quando utilizado)
+AWS_ACCESS_KEY_ID = config('AWS_ACCESS_KEY_ID', default='')
+AWS_SECRET_ACCESS_KEY = config('AWS_SECRET_ACCESS_KEY', default='')
+AWS_STORAGE_BUCKET_NAME = config('AWS_STORAGE_BUCKET_NAME', default='')
+AWS_S3_REGION_NAME = config('AWS_S3_REGION_NAME', default='')  # ex: us-east-1
+AWS_S3_CUSTOM_DOMAIN = config('AWS_S3_CUSTOM_DOMAIN', default='')  # Para CloudFlare R2: <account_id>.r2.cloudflarestorage.com
+AWS_S3_FILE_OVERWRITE = False
+AWS_DEFAULT_ACL = 'public-read'
+AWS_S3_VERIFY = True
+AWS_LOCATION = 'media'
+AWS_QUERYSTRING_AUTH = True  # Para gerar URLs com expiração
 
 if not DEBUG:
     SECURE_SSL_REDIRECT = True

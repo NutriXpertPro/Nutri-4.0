@@ -9,6 +9,7 @@ import { PatientContextTab } from "@/components/patients/PatientContextTab"
 import { PatientAnalysisTab } from "@/components/patients/PatientAnalysisTab"
 import { PatientDietTab } from "@/components/patients/PatientDietTab"
 import { PatientAnamnesisTab } from "@/components/patients/PatientAnamnesisTab"
+import { PatientTimelineTab } from "@/components/patients/PatientTimelineTab"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent } from "@/components/ui/card"
 import { Loader2 } from "lucide-react"
@@ -115,6 +116,10 @@ export default function PatientDetailsPage() {
                             value="anamnesis"
                             className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary dark:data-[state=active]:text-primary text-muted-foreground hover:text-foreground transition-all duration-300"
                         >Anamnese</TabsTrigger>
+                        <TabsTrigger
+                            value="timeline"
+                            className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary dark:data-[state=active]:text-primary text-muted-foreground hover:text-foreground transition-all duration-300"
+                        >Timeline</TabsTrigger>
                     </TabsList>
 
                     <div className="mt-6 space-y-6">
@@ -136,6 +141,10 @@ export default function PatientDetailsPage() {
 
                         <TabsContent value="anamnesis">
                             <PatientAnamnesisTab patientId={patientId} patient={patient} />
+                        </TabsContent>
+
+                        <TabsContent value="timeline">
+                            <PatientTimelineTab patientId={patientId} />
                         </TabsContent>
                     </div>
 

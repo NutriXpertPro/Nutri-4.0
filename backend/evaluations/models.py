@@ -51,9 +51,19 @@ class Evaluation(models.Model):
     body_measurements = models.JSONField(null=True, blank=True, help_text="Medidas corporais em JSON (circunferências, dobras cutâneas, etc.)", validators=[validate_body_measurements_schema]) # Adicionado validador
     created_at = models.DateTimeField(auto_now_add=True)
 
+    # Campo para IMC (índice de massa corporal) calculado automaticamente
+    bmi = models.DecimalField(max_digits=4, decimal_places=2, null=True, blank=True,
+                              help_text="IMC calculado automaticamente a partir de peso e altura")
+
     class Meta:
         # Ordena as avaliações da mais recente para a mais antiga por padrão
         ordering = ["-date"]
+
+    def save(self, *args, **kwargs):
+        # Calcular automaticamente o IMC se altura e peso forem fornecidos
+        if self.height and self.weight and float(self.height) > 0:
+            self.bmi = float(self.weight) / (float(self.height) ** 2)
+        super().save(*args, **kwargs)
 
     def __str__(self):
         """

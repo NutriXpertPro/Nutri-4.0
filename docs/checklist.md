@@ -13,6 +13,11 @@ Este checklist organiza todo o desenvolvimento do NutriXpertPro em **5 fases pri
 
 > **⚠️ STATUS ATUAL:** O backend está ~80% implementado com models, serializers e views. O foco principal agora é a migração para API REST pura e construção do frontend SPA.
 
+> **🚨 ALERTA IMPORTANTE SOBRE DJANGO-VITE:**
+> NÃO utilize django-vite para integrar React com templates Django.
+> A arquitetura é: Django como API REST pura (headless) + Next.js como frontend SPA completamente separado.
+> O Vite mencionado nas recomendações é o bundler usado pelo Next.js, NÃO django-vite.
+
 **Estimativa Restante:** 4-6 meses (foco em frontend e polimento)
 
 ---
@@ -182,14 +187,14 @@ Este checklist organiza todo o desenvolvimento do NutriXpertPro em **5 fases pri
 - [ ] Preview no dropdown de notificações
 
 ### 2.6 Perfil do Usuário - Backend
-- [ ] API `GET /api/v1/users/me/` - Dados do usuário autenticado
-- [ ] API `PATCH /api/v1/users/me/` - Atualizar perfil
-- [ ] API `POST /api/v1/users/me/change-password/` - Trocar senha
+- [x] API `GET /api/v1/users/me/` - Dados do usuário autenticado
+- [x] API `PATCH /api/v1/users/me/` - Atualizar perfil
+- [x] API `POST /api/v1/users/me/change-password/` - Trocar senha
 
 ### 2.7 Perfil do Usuário - Frontend
-- [ ] Página de Perfil/Configurações
-- [ ] Upload de foto de perfil
-- [ ] Configurações de notificações
+- [x] Página de Perfil/Configurações
+- [x] Upload de foto de perfil
+- [x] Configurações de notificações
 
 ---
 
@@ -203,19 +208,19 @@ Este checklist organiza todo o desenvolvimento do NutriXpertPro em **5 fases pri
 - [x] API `GET /api/v1/patients/{id}/` - Detalhes do paciente
 - [x] API `PATCH /api/v1/patients/{id}/` - Atualizar paciente
 - [x] API `DELETE /api/v1/patients/{id}/` - Deletar paciente (soft delete)
-- [ ] API `GET /api/v1/patients/{id}/compare-photos/` - Comparar fotos antes/depois
+- [x] API `GET /api/v1/patients/{id}/compare-photos/` - Comparar fotos antes/depois
 
 ### 3.2 Gestão de Pacientes - Frontend
 - [x] Página Lista de Pacientes (grid de cards, busca, paginação)
 - [x] Componente PatientCard
 - [x] Modal/Página Criar Paciente (formulário multi-seção)
-- [ ] Validações de formulário (email único, telefone BR, data nascimento)
+- [x] Validações de formulário (email único, telefone BR, data nascimento)
 - [x] Página Detalhes do Paciente - Vista Dashboard
   - [x] Seção de fotos (3 ângulos: frente, lateral, costas)
   - [x] 5 cards de métricas (peso, gordura, músculo, IMC, abdômen)
   - [x] Gráfico evolução corporal (Recharts - linha)
   - [x] Gráfico radar composição
-- [ ] Página Detalhes do Paciente - Vista Timeline
+- [x] Página Detalhes do Paciente - Vista Timeline
 - [x] Correções visuais e temas em Detalhes do Paciente (Responsividade, Dark Mode)
 - [x] Integração Visual Premium em todas as abas (Visão Geral, Análise, Dieta)
 
@@ -231,14 +236,14 @@ Este checklist organiza todo o desenvolvimento do NutriXpertPro em **5 fases pri
 - [x] API `POST /api/v1/evaluations/` - Criar avaliação (multipart/form-data)
 - [x] API `GET /api/v1/evaluations/?patient={id}` - Histórico de avaliações
 - [x] API `GET /api/v1/evaluations/{id}/` - Detalhes de 1 avaliação
-- [ ] Cálculo automático de IMC
-- [ ] Storage para fotos (configurar django-storages + S3/CloudFlare R2)
+- [x] Cálculo automático de IMC
+- [x] Storage para fotos (configurar django-storages + S3/CloudFlare R2)
 
 ### 3.4 Avaliações Físicas - Frontend
 - [x] Modal/Página Criar Avaliação (formulário com upload de fotos)
 - [x] Componente de upload de múltiplas fotos
-- [ ] Histórico de avaliações na página do paciente
-- [ ] Visualização de fotos em modal (galeria)
+- [x] Histórico de avaliações na página do paciente
+- [x] Visualização de fotos em modal (galeria)
 
 ### 3.5 Anamnese - Backend
 - [x] Modelo Anamnesis com 7 seções completas (~50 campos)
@@ -299,64 +304,64 @@ Este checklist organiza todo o desenvolvimento do NutriXpertPro em **5 fases pri
 - [x] Modelo AlimentoTACO (tabela TACO)
 - [x] Modelo AlimentoTBCA (tabela TBCA - USP)
 - [x] Modelo AlimentoUSDA (USDA FoodData Central)
-- [ ] Importar dados das tabelas (verificar se já foi feito)
-- [ ] API `GET /api/v1/foods/` - Buscar alimentos (autocomplete, filtros por categoria)
-- [ ] API `POST /api/v1/foods/` - Criar alimento customizado
-- [ ] Indexação para busca rápida (já existe Index no modelo)
+- [x] Importar dados das tabelas (verificar se já foi feito)
+- [x] API `GET /api/v1/foods/` - Buscar alimentos (autocomplete, filtros por categoria)
+- [x] API `POST /api/v1/foods/` - Criar alimento customizado
+- [x] Indexação para busca rápida (já existe Index no modelo)
 
 ### 4.2 Editor de Dietas - Backend
 - [x] Modelo Diet com meals em JSON
 - [x] Validadores de schema JSON para meals e substitutions
-- [ ] API `GET /api/v1/diets/` - Listar dietas
-- [ ] API `POST /api/v1/diets/` - Criar dieta
-- [ ] API `GET /api/v1/diets/{id}/` - Detalhes da dieta
-- [ ] API `PATCH /api/v1/diets/{id}/` - Atualizar dieta
-- [ ] API `POST /api/v1/diets/{id}/generate-pdf/` - Gerar PDF
-- [ ] API `GET /api/v1/diet-templates/` - Templates pré-definidos
-- [ ] Cálculos automáticos de macros por refeição e total diário
-- [ ] Geração de PDF profissional (weasyprint ou similar)
+- [x] API `GET /api/v1/diets/` - Listar dietas
+- [x] API `POST /api/v1/diets/` - Criar dieta
+- [x] API `GET /api/v1/diets/{id}/` - Detalhes da dieta
+- [x] API `PATCH /api/v1/diets/{id}/` - Atualizar dieta
+- [x] API `POST /api/v1/diets/{id}/generate-pdf/` - Gerar PDF
+- [x] API `GET /api/v1/diet-templates/` - Templates pré-definidos
+- [x] Cálculos automáticos de macros por refeição e total diário
+- [x] Geração de PDF profissional (weasyprint ou similar)
 
 ### 4.3 Editor de Dietas - Frontend
-- [ ] Página Editor de Dietas com 5 abas (conforme wireframe)
-  - [ ] Aba Contexto do Paciente
-    - [ ] Dados básicos do paciente
-    - [ ] Objetivo
-    - [ ] Restrições alimentares (badges coloridos da anamnese)
-    - [ ] Alergias
-  - [ ] Aba Análise Nutricional
-    - [ ] TMB calculada
-    - [ ] GET sugerido
-    - [ ] Macros recomendados
-  - [ ] Aba Histórico
-    - [ ] Dietas anteriores
-    - [ ] O que funcionou/não funcionou
-  - [ ] Aba Dieta (editor principal)
-    - [ ] 6 seções de refeições
-    - [ ] Busca e adição de alimentos
-    - [ ] Cálculos automáticos por refeição
-    - [ ] Resumo diário com barras de progresso
-  - [ ] Aba Preview PDF
-- [ ] Modal de Busca de Alimentos
-  - [ ] Autocomplete
-  - [ ] Filtros por categoria
-  - [ ] Informações nutricionais
-  - [ ] Ajuste de quantidade
-- [ ] Componente Template Selector
-  - [ ] Low-Carb 1800cal
-  - [ ] Keto 1500cal
-  - [ ] Mediterrânea 2000cal
-  - [ ] Vegetariana 1700cal
-  - [ ] Hipertrofia 2500cal
-- [ ] Funcionalidade salvar rascunho
-- [ ] Funcionalidade gerar e baixar PDF
+- [x] Página Editor de Dietas com 5 abas (conforme wireframe)
+  - [x] Aba Contexto do Paciente
+    - [x] Dados básicos do paciente
+    - [x] Objetivo
+    - [x] Restrições alimentares (badges coloridos da anamnese)
+    - [x] Alergias
+  - [x] Aba Análise Nutricional
+    - [x] TMB calculada
+    - [x] GET sugerido
+    - [x] Macros recomendados
+  - [x] Aba Histórico
+    - [x] Dietas anteriores
+    - [x] O que funcionou/não funcionou
+  - [x] Aba Dieta (editor principal)
+    - [x] 6 seções de refeições
+    - [x] Busca e adição de alimentos
+    - [x] Cálculos automáticos por refeição
+    - [x] Resumo diário com barras de progresso
+  - [x] Aba Preview PDF
+- [x] Modal de Busca de Alimentos
+  - [x] Autocomplete
+  - [x] Filtros por categoria
+  - [x] Informações nutricionais
+  - [x] Ajuste de quantidade
+- [x] Componente Template Selector
+  - [x] Low-Carb 1800cal
+  - [x] Keto 1500cal
+  - [x] Mediterrânea 2000cal
+  - [x] Vegetariana 1700cal
+  - [x] Hipertrofia 2500cal
+- [x] Funcionalidade salvar rascunho
+- [x] Funcionalidade gerar e baixar PDF
 
 ### 4.4 Mensagens/Chat - Backend
 - [x] Modelo Conversation (participantes)
 - [x] Modelo Message (conversa, remetente, conteúdo, timestamp, is_read)
 - [x] Serializers já existem
-- [ ] API `GET /api/v1/conversations/` - Listar conversas
-- [ ] API `GET /api/v1/conversations/{id}/messages/` - Listar mensagens
-- [ ] API `POST /api/v1/conversations/{id}/messages/` - Enviar mensagem
+- [x] API `GET /api/v1/conversations/` - Listar conversas
+- [x] API `GET /api/v1/conversations/{id}/messages/` - Listar mensagens
+- [x] API `POST /api/v1/conversations/{id}/messages/` - Enviar mensagem
 - [ ] WebSocket `/ws/chat/{conversation_id}/` - Chat real-time (Django Channels)
 
 ### 4.5 Mensagens/Chat - Frontend
@@ -370,8 +375,8 @@ Este checklist organiza todo o desenvolvimento do NutriXpertPro em **5 fases pri
 
 ### 4.6 Exames Laboratoriais - Backend
 - [x] Modelo LabExam (paciente, nome, data, arquivo, notas)
-- [ ] API `POST /api/v1/lab-exams/` - Upload de exame (multipart/form-data)
-- [ ] API `GET /api/v1/patients/{id}/lab-exams/` - Histórico de exames
+- [x] API `POST /api/v1/lab-exams/` - Upload de exame (multipart/form-data)
+- [x] API `GET /api/v1/patients/{id}/lab-exams/` - Histórico de exames
 
 ### 4.7 Exames Laboratoriais - Frontend
 - [ ] Modal Upload de Exame
@@ -385,8 +390,8 @@ Este checklist organiza todo o desenvolvimento do NutriXpertPro em **5 fases pri
 ### 4.8 Notificações - Backend
 - [x] Modelo Notification (usuário, tipo, mensagem, is_read)
 - [x] Serializers já existem
-- [ ] API `GET /api/v1/notifications/` - Listar notificações
-- [ ] API `PATCH /api/v1/notifications/{id}/mark-read/` - Marcar como lida
+- [x] API `GET /api/v1/notifications/` - Listar notificações
+- [x] API `PATCH /api/v1/notifications/{id}/mark-read/` - Marcar como lida
 - [ ] API `POST /api/v1/notifications/settings/` - Configurar preferências
 - [ ] Celery tasks para notificações automáticas
   - [ ] Consulta em 1 hora

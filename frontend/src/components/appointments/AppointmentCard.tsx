@@ -26,7 +26,7 @@ interface AppointmentCardProps {
         patientEmail: string
         date: string
         duration: number
-        type: "presencial" | "online"
+        type: "presencial" | "online" | "primeira_vez" | "retorno" | "em_grupo" | "pacote" | "permuta" | "pessoal" | "antropometria" | "amigo" | "encaixe" | "teste"
         status: "agendada" | "confirmada" | "realizada" | "cancelada" | "faltou"
         meetingLink?: string
         notes?: string
@@ -62,7 +62,18 @@ export function AppointmentCard({
     }
 
     const getTypeIcon = (type: string) => {
-        return type === "online" ? <Video className="h-4 w-4" /> : <MapPin className="h-4 w-4" />
+        switch (type) {
+            case "online":
+                return <Video className="h-4 w-4" />;
+            case "primeira_vez":
+            case "retorno":
+            case "em_grupo":
+                return <Users className="h-4 w-4" />;
+            case "antropometria":
+                return <HeartPulse className="h-4 w-4" />;
+            default:
+                return <MapPin className="h-4 w-4" />;
+        }
     }
 
     const formatDate = (dateString: string) => {

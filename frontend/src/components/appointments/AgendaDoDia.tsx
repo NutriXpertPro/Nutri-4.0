@@ -20,14 +20,17 @@ import { format, parseISO, isToday, isAfter, isBefore, addMinutes } from "date-f
 import { ptBR } from "date-fns/locale"
 import { cn } from "@/lib/utils"
 import { AppointmentCard } from "./AppointmentCard"
+import { GoogleCalendarSync } from "./GoogleCalendarSync"
+import { PatientScheduleLink } from "./PatientScheduleLink"
 
 interface Appointment {
     id: number
+    patientId: number
     patientName: string
     patientEmail: string
     date: string
     duration: number
-    type: "presencial" | "online"
+    type: "presencial" | "online" | "primeira_vez" | "retorno" | "em_grupo" | "pacote" | "permuta" | "pessoal" | "antropometria" | "amigo" | "encaixe" | "teste"
     status: "agendada" | "confirmada" | "realizada" | "cancelada" | "faltou"
     meetingLink?: string
     notes?: string
@@ -134,7 +137,18 @@ export function AgendaDoDia({
 
     // Obter ícone com base no tipo
     const getTypeIcon = (type: string) => {
-        return type === "online" ? <Video className="h-4 w-4" /> : <MapPin className="h-4 w-4" />
+        switch (type) {
+            case "online":
+                return <Video className="h-4 w-4" />;
+            case "primeira_vez":
+            case "retorno":
+            case "em_grupo":
+                return <Users className="h-4 w-4" />;
+            case "antropometria":
+                return <HeartPulse className="h-4 w-4" />;
+            default:
+                return <MapPin className="h-4 w-4" />;
+        }
     }
 
     const displayedAppointments = showAll ? sortedAppointments : nextAppointments.slice(0, 3)
@@ -212,31 +226,40 @@ export function AgendaDoDia({
                                         )}
                                     </div>
                                     
-                                    <div className="flex items-center gap-1 ml-2">
-                                        <Button 
-                                            variant="ghost" 
-                                            size="sm" 
-                                            onClick={() => onViewAppointment?.(app.id)}
-                                            title="Visualizar"
-                                        >
-                                            <MessageSquare className="h-4 w-4" />
-                                        </Button>
-                                        <Button 
-                                            variant="ghost" 
-                                            size="sm" 
-                                            onClick={() => onEditAppointment?.(app.id)}
-                                            title="Editar"
-                                        >
-                                            <User className="h-4 w-4" />
-                                        </Button>
+                                    <div className="flex flex-col gap-1 ml-2">
+                                        <div className="flex gap-1">
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={() => onViewAppointment?.(app.id)}
+                                                title="Visualizar"
+                                            >
+                                                <MessageSquare className="h-4 w-4" />
+                                            </Button>
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={() => onEditAppointment?.(app.id)}
+                                                title="Editar"
+                                            >
+                                                <User className="h-4 w-4" />
+                                            </Button>
+                                            <PatientScheduleLink
+                                                patientId={app.patientId}
+                                                patientName={app.patientName}
+                                            />
+                                        </div>
+                                        <div className="w-52">
+                                            <GoogleCalendarSync appointment={app} />
+                                        </div>
                                     </div>
                                 </div>
                                 
                                 {app.meetingLink && app.type === "online" && (
                                     <div className="mt-2 text-sm">
-                                        <a 
-                                            href={app.meetingLink} 
-                                            target="_blank" 
+                                        <a
+                                            href={app.meetingLink}
+                                            target="_blank"
                                             rel="noopener noreferrer"
                                             className="text-primary hover:underline flex items-center gap-1"
                                         >

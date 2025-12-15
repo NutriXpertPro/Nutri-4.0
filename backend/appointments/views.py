@@ -176,3 +176,79 @@ def calendar_view(request):
 
     serializer = AppointmentSerializer(appointments, many=True)
     return Response(serializer.data)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def available_slots(request, patient_id):
+    """
+    View para obter horários disponíveis para um paciente agendar uma consulta.
+    Retorna horários livres para o nutricionista nos próximos 7 dias.
+    """
+    from datetime import timedelta
+    from django.utils import timezone
+
+    # Verificar se o paciente pertence ao nutricionista logado
+    try:
+        patient = PatientProfile.objects.get(id=patient_id, nutritionist=request.user)
+    except PatientProfile.DoesNotExist:
+        return Response(
+            {'error': 'Paciente não encontrado ou não pertence a este nutricionista.'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+
+    # Obter agendamentos existentes para o nutricionista
+    nutritionist = request.user
+    start_date = timezone.now().replace(hour=0, minute=0, second=0, microsecond=0)
+    end_date = start_date + timedelta(days=7)
+
+    existing_appointments = Appointment.objects.filter(
+        user=nutritionist,
+        date__gte=start_date,
+        date__lte=end_date
+    ).exclude(status='cancelada')
+
+    # Gerar horários disponíveis (das 8h às 18h, exceto almoço, com intervalos de 30 min)
+    available_slots = []
+    current_date = start_date
+
+    while current_date <= end_date:
+        # Horário comercial (8h às 18h, com pausa de almoço das 12h às 13h)
+        for hour in range(8, 18):
+            if hour == 12:  # Pular horário de almoço
+                continue
+
+            for minute in [0, 30]:  # Intervalos de 30 minutos
+                slot_time = current_date.replace(hour=hour, minute=minute)
+
+                # Pular horários passados no dia atual
+                if current_date.date() == timezone.now().date() and slot_time < timezone.now():
+                    continue
+
+                # Verificar se já existe agendamento para este horário (considerando duração)
+                is_available = True
+                for appointment in existing_appointments:
+                    appointment_end = appointment.date + timedelta(minutes=appointment.duration or 30)
+                    # Verificar sobreposição
+                    if (slot_time < appointment_end and slot_time + timedelta(minutes=30) > appointment.date):
+                        is_available = False
+                        break
+
+                if is_available:
+                    available_slots.append({
+                        'id': len(available_slots) + 1,
+                        'date': slot_time.isoformat(),
+                        'time': slot_time.strftime('%H:%M'),
+                        'type': 'primeira_vez',  # Pode ser personalizado conforme necessidade
+                        'available': True
+                    })
+
+        current_date += timedelta(days=1)
+
+    return Response({
+        'patient': {
+            'id': patient.id,
+            'name': patient.user.name
+        },
+        'availableSlots': available_slots
+    })

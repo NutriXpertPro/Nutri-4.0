@@ -19,13 +19,14 @@ import {
     DialogTitle,
     DialogFooter,
 } from "@/components/ui/dialog"
-import { Calendar } from "@/components/ui/calendar"
 import {
     Clock,
     MapPin,
     Video,
     Users,
-    Link
+    HeartPulse,
+    Link,
+    Calendar
 } from "lucide-react"
 import { format, setHours, setMinutes, addDays } from "date-fns"
 import { ptBR } from "date-fns/locale"
@@ -42,9 +43,21 @@ interface AppointmentFormData {
     date: Date | null
     time: string
     duration: number
-    type: "presencial" | "online"
+    type: "presencial" | "online" | "primeira_vez" | "retorno" | "em_grupo" | "pacote" | "permuta" | "pessoal" | "antropometria" | "amigo" | "encaixe" | "teste"
     meetingLink: string
     notes: string
+}
+
+interface AppointmentForEdit {
+    id: number
+    patientId?: number
+    patientName?: string
+    date: string
+    time: string
+    duration: number
+    type: "presencial" | "online" | "primeira_vez" | "retorno" | "em_grupo" | "pacote" | "permuta" | "pessoal" | "antropometria" | "amigo" | "encaixe" | "teste"
+    meetingLink?: string
+    notes?: string
 }
 
 interface CreateAppointmentModalProps {
@@ -52,17 +65,30 @@ interface CreateAppointmentModalProps {
     onOpenChange: (open: boolean) => void
     patients: Patient[]
     onSubmit: (data: Omit<AppointmentFormData, 'time'> & { hour: number; minute: number }) => void
+    onEdit?: (id: number, data: Omit<AppointmentFormData, 'time'> & { hour: number; minute: number }) => void
     defaultDate?: Date
+    appointmentToEdit?: AppointmentForEdit
 }
 
-export function CreateAppointmentModal({ 
-    open, 
-    onOpenChange, 
+export function CreateAppointmentModal({
+    open,
+    onOpenChange,
     patients,
     onSubmit,
-    defaultDate
+    onEdit,
+    defaultDate,
+    appointmentToEdit
 }: CreateAppointmentModalProps) {
-    const [formData, setFormData] = useState<AppointmentFormData>({
+    // Inicializar o formulário com dados da consulta a ser editada, se existir
+    const initialFormData: AppointmentFormData = appointmentToEdit ? {
+        patientId: appointmentToEdit.patientId || patients.find(p => p.name === appointmentToEdit.patientName)?.id || null,
+        date: appointmentToEdit.date ? new Date(appointmentToEdit.date) : defaultDate || null,
+        time: appointmentToEdit.time || "09:00",
+        duration: appointmentToEdit.duration || 60,
+        type: appointmentToEdit.type || "presencial",
+        meetingLink: appointmentToEdit.meetingLink || "",
+        notes: appointmentToEdit.notes || ""
+    } : {
         patientId: null,
         date: defaultDate || null,
         time: "09:00",
@@ -70,50 +96,81 @@ export function CreateAppointmentModal({
         type: "presencial",
         meetingLink: "",
         notes: ""
-    })
-    
-    const [selectedDate, setSelectedDate] = useState<Date | undefined>(defaultDate)
-    
+    };
+
+    const [formData, setFormData] = useState<AppointmentFormData>(initialFormData);
+
+    const [selectedDate, setSelectedDate] = useState<Date | undefined>(appointmentToEdit?.date ? new Date(appointmentToEdit.date) : defaultDate);
+
     useEffect(() => {
-        if (defaultDate) {
-            setSelectedDate(defaultDate)
+        if (defaultDate && !appointmentToEdit) {
+            setSelectedDate(defaultDate);
             setFormData(prev => ({
                 ...prev,
                 date: defaultDate
-            }))
+            }));
+        } else if (appointmentToEdit) {
+            // Atualizar o formulário quando appointmentToEdit mudar
+            setFormData({
+                patientId: appointmentToEdit.patientId || patients.find(p => p.name === appointmentToEdit.patientName)?.id || null,
+                date: appointmentToEdit.date ? new Date(appointmentToEdit.date) : defaultDate || null,
+                time: appointmentToEdit.time || "09:00",
+                duration: appointmentToEdit.duration || 60,
+                type: appointmentToEdit.type || "presencial",
+                meetingLink: appointmentToEdit.meetingLink || "",
+                notes: appointmentToEdit.notes || ""
+            });
+            setSelectedDate(appointmentToEdit.date ? new Date(appointmentToEdit.date) : defaultDate);
         }
-    }, [defaultDate])
+    }, [defaultDate, appointmentToEdit, patients]);
 
     const handleSubmit = () => {
         if (!formData.patientId || !formData.date) return
-        
+
         // Converter a string de tempo em horas e minutos
         const [hours, minutes] = formData.time.split(':').map(Number)
-        
+
         // Criar uma nova data combinando a data selecionada com a hora
         const appointmentDateTime = setHours(setMinutes(formData.date, minutes), hours)
-        
-        onSubmit({
-            patientId: formData.patientId,
-            date: appointmentDateTime,
-            hour: hours,
-            minute: minutes,
-            duration: formData.duration,
-            type: formData.type,
-            meetingLink: formData.meetingLink,
-            notes: formData.notes
-        })
-        
-        // Resetar formulário
-        setFormData({
-            patientId: null,
-            date: defaultDate || null,
-            time: "09:00",
-            duration: 60,
-            type: "presencial",
-            meetingLink: "",
-            notes: ""
-        })
+
+        if (appointmentToEdit && onEdit) {
+            // Se estiver editando, chama a função de edição
+            onEdit(appointmentToEdit.id, {
+                patientId: formData.patientId,
+                date: appointmentDateTime,
+                hour: hours,
+                minute: minutes,
+                duration: formData.duration,
+                type: formData.type,
+                meetingLink: formData.meetingLink,
+                notes: formData.notes
+            });
+        } else {
+            // Se estiver criando, chama a função de criação
+            onSubmit({
+                patientId: formData.patientId,
+                date: appointmentDateTime,
+                hour: hours,
+                minute: minutes,
+                duration: formData.duration,
+                type: formData.type,
+                meetingLink: formData.meetingLink,
+                notes: formData.notes
+            });
+        }
+
+        // Resetar formulário (exceto quando estiver editando)
+        if (!appointmentToEdit) {
+            setFormData({
+                patientId: null,
+                date: defaultDate || null,
+                time: "09:00",
+                duration: 60,
+                type: "presencial",
+                meetingLink: "",
+                notes: ""
+            });
+        }
     }
 
     const handleDateSelect = (date: Date | undefined) => {
@@ -182,16 +239,17 @@ export function CreateAppointmentModal({
                         
                         {/* Seletor de data */}
                         <div className="space-y-2">
-                            <Label>Selecione a Data</Label>
-                            <div className="border rounded-lg p-2">
-                                <Calendar
-                                    mode="single"
-                                    selected={selectedDate}
-                                    onSelect={handleDateSelect}
-                                    locale={ptBR}
-                                    initialFocus
-                                />
-                            </div>
+                            <Label htmlFor="date">Data *</Label>
+                            <Input
+                                id="date"
+                                type="date"
+                                value={selectedDate ? format(selectedDate, 'yyyy-MM-dd') : ''}
+                                onChange={(e) => {
+                                    const dateString = e.target.value;
+                                    const date = dateString ? new Date(dateString) : undefined;
+                                    handleDateSelect(isNaN(date.getTime()) ? undefined : date);
+                                }}
+                            />
                         </div>
                     </div>
                     
@@ -238,9 +296,9 @@ export function CreateAppointmentModal({
                         {/* Seletor de tipo */}
                         <div className="space-y-2">
                             <Label htmlFor="type">Tipo de Consulta *</Label>
-                            <Select 
-                                value={formData.type} 
-                                onValueChange={(value: "presencial" | "online") => setFormData(prev => ({...prev, type: value}))}
+                            <Select
+                                value={formData.type}
+                                onValueChange={(value: "presencial" | "online" | "primeira_vez" | "retorno" | "em_grupo" | "pacote" | "permuta" | "pessoal" | "antropometria" | "amigo" | "encaixe" | "teste") => setFormData(prev => ({...prev, type: value}))}
                             >
                                 <SelectTrigger>
                                     <SelectValue />
@@ -256,6 +314,66 @@ export function CreateAppointmentModal({
                                         <div className="flex items-center gap-2">
                                             <Video className="h-4 w-4" />
                                             Online
+                                        </div>
+                                    </SelectItem>
+                                    <SelectItem value="primeira_vez">
+                                        <div className="flex items-center gap-2">
+                                            <Users className="h-4 w-4" />
+                                            Primeira Vez
+                                        </div>
+                                    </SelectItem>
+                                    <SelectItem value="retorno">
+                                        <div className="flex items-center gap-2">
+                                            <Clock className="h-4 w-4" />
+                                            Retorno
+                                        </div>
+                                    </SelectItem>
+                                    <SelectItem value="em_grupo">
+                                        <div className="flex items-center gap-2">
+                                            <Users className="h-4 w-4" />
+                                            Em Grupo
+                                        </div>
+                                    </SelectItem>
+                                    <SelectItem value="pacote">
+                                        <div className="flex items-center gap-2">
+                                            <MapPin className="h-4 w-4" />
+                                            Pacote
+                                        </div>
+                                    </SelectItem>
+                                    <SelectItem value="permuta">
+                                        <div className="flex items-center gap-2">
+                                            <MapPin className="h-4 w-4" />
+                                            Permuta
+                                        </div>
+                                    </SelectItem>
+                                    <SelectItem value="pessoal">
+                                        <div className="flex items-center gap-2">
+                                            <MapPin className="h-4 w-4" />
+                                            Pessoal
+                                        </div>
+                                    </SelectItem>
+                                    <SelectItem value="antropometria">
+                                        <div className="flex items-center gap-2">
+                                            <HeartPulse className="h-4 w-4" />
+                                            Antropometria
+                                        </div>
+                                    </SelectItem>
+                                    <SelectItem value="amigo">
+                                        <div className="flex items-center gap-2">
+                                            <MapPin className="h-4 w-4" />
+                                            Amigo
+                                        </div>
+                                    </SelectItem>
+                                    <SelectItem value="encaixe">
+                                        <div className="flex items-center gap-2">
+                                            <MapPin className="h-4 w-4" />
+                                            Encaixe
+                                        </div>
+                                    </SelectItem>
+                                    <SelectItem value="teste">
+                                        <div className="flex items-center gap-2">
+                                            <MapPin className="h-4 w-4" />
+                                            Teste
                                         </div>
                                     </SelectItem>
                                 </SelectContent>
