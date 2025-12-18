@@ -87,3 +87,8 @@ class PatientProfile(models.Model):
         if self.user:
             return self.user.name
         return f"PatientProfile {self.pk}"
+
+
+# Importar modelos de diário, social e adesão (após PatientProfile para evitar problemas de referência circular)
+from .models_diary import PatientDiaryEntry, SocialLike, SocialComment
+from .models_adherence import AdherenceRecord

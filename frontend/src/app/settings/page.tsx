@@ -4,6 +4,9 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/auth-context";
 import { UserProfileForm } from "@/components/user-profile/UserProfileForm";
+import AutomationSettings from "@/components/automation/AutomationSettings";
+import BrandingSettings from "@/components/branding/BrandingSettings";
+import GoogleCalendarIntegration from "@/components/integrations/GoogleCalendarIntegration";
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -36,7 +39,12 @@ export default function SettingsPage() {
         <h2 className="text-2xl font-semibold mb-4">Informações do Perfil</h2>
         <UserProfileForm />
       </div>
-      {/* Aqui serão adicionados o upload de foto e as configurações de notificações */}
+      {/* Configurações de automação de mensagens */}
+      <AutomationSettings />
+      {/* Configurações de branding */}
+      <BrandingSettings />
+      {/* Configurações de integração com Google Calendar */}
+      <GoogleCalendarIntegration />
     </div>
   );
 }

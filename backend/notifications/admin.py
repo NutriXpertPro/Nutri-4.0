@@ -6,10 +6,10 @@ from .models import Notification
 
 @admin.register(Notification)
 class NotificationAdmin(admin.ModelAdmin):
-    list_display = ("user", "type", "message", "is_read", "sent_at")
-    list_filter = ("type", "is_read", "sent_at")
+    list_display = ("user", "notification_type", "message", "is_read", "created_at")
+    list_filter = ("notification_type", "is_read", "created_at")
     search_fields = ("user__email", "message")
-    readonly_fields = ("user", "type", "message", "sent_at")
+    readonly_fields = ("user", "title", "message", "notification_type", "created_at", "sent_at")
 
     def has_add_permission(self, request):
         # Ninguém deve poder adicionar notificações manualmente pelo admin

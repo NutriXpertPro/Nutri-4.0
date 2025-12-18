@@ -126,3 +126,90 @@ class DashboardFeaturedPatientView(APIView):
             "metrics": metrics,
             "photo": photo_url
         })
+
+
+class PatientDashboardView(APIView):
+    """
+    API para o dashboard do paciente
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        patient_user = request.user
+
+        # Encontrar o paciente correspondente
+        try:
+            patient_profile = PatientProfile.objects.get(user=patient_user)
+        except PatientProfile.DoesNotExist:
+            return Response({
+                "message": "Perfil de paciente não encontrado"
+            }, status=404)
+
+        # Obter a próxima consulta
+        now = timezone.now()
+        next_appointment = Appointment.objects.filter(
+            patient=patient_profile,
+            date__gte=now
+        ).order_by('date').first()
+
+        # Obter o plano alimentar atual
+        active_diet = Diet.objects.filter(
+            patient=patient_profile,
+            is_active=True
+        ).order_by('-created_at').first()
+
+        # Obter avaliações recentes para o gráfico de evolução
+        evaluations = Evaluation.objects.filter(
+            patient=patient_profile
+        ).order_by('-date')[:10]  # Últimas 10 avaliações
+
+        # Preparar dados das avaliações para o gráfico
+        evolution_data = []
+        for eval in evaluations:
+            evolution_data.append({
+                "date": eval.date.strftime("%d/%m/%Y"),
+                "weight": eval.weight,
+                "body_fat": eval.body_fat,
+                "muscle_mass": eval.muscle_mass,
+                "bmi": eval.bmi
+            })
+
+        # Preparar resposta
+        response_data = {
+            "patient_profile": {
+                "id": patient_profile.id,
+                "name": patient_profile.user.name,
+                "goal": patient_profile.get_goal_display() or "Saúde e Bem-estar",
+                "photo": None  # Adicione a URL da foto do paciente se disponível
+            },
+            "next_appointment": {
+                "id": next_appointment.id,
+                "date": next_appointment.date.strftime("%d/%m/%Y"),
+                "time": next_appointment.date.strftime("%H:%M"),
+                "nutritionist_name": next_appointment.nutritionist.name,
+            } if next_appointment else None,
+            "current_diet": {
+                "id": active_diet.id,
+                "name": active_diet.name or "Plano Alimentar",
+                "start_date": active_diet.created_at.strftime("%d/%m/%Y"),
+            } if active_diet else None,
+            "evolution_data": evolution_data,
+            "progress_metrics": {
+                "weight_change": 0,  # Calcular a diferença de peso desde a primeira avaliação
+                "body_fat_change": 0,  # Calcular a diferença de gordura corporal
+                "adherence_rate": 85,  # Taxa de adesão baseada em check-ins ou logs
+            }
+        }
+
+        # Calcular métricas de progresso se houver avaliações suficientes
+        if len(evaluations) >= 2:
+            first_eval = evaluations.last()  # Mais antiga
+            last_eval = evaluations.first()  # Mais recente
+
+            if first_eval.weight and last_eval.weight:
+                response_data["progress_metrics"]["weight_change"] = round(last_eval.weight - first_eval.weight, 2)
+
+            if first_eval.body_fat and last_eval.body_fat:
+                response_data["progress_metrics"]["body_fat_change"] = round(last_eval.body_fat - first_eval.body_fat, 2)
+
+        return Response(response_data)

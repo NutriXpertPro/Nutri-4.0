@@ -9,3 +9,8 @@ try:
         MySQLdb.version_info = (2, 2, 1, 'final', 0)
 except ImportError:
     pass
+
+# Inicialização do Celery
+from .celery import app as celery_app
+
+__all__ = ('celery_app',)

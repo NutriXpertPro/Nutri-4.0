@@ -389,7 +389,7 @@ export default function CalendarPage() {
     return (
         <DashboardLayout>
             {/* Background Decorativo */}
-            <div className="fixed inset-0 bg-gradient-to-br from-primary/5 via-background to-secondary/5 -z-10" />
+            <div className="fixed inset-0 bg-linear-to-br from-primary/5 via-background to-secondary/5 -z-10" />
 
             <div className="space-y-6 relative animate-in fade-in slide-in-from-bottom-4 duration-500">
                 {/* Notificações de solicitações pendentes */}
@@ -410,7 +410,7 @@ export default function CalendarPage() {
                 {/* Header Premium */}
                 <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
                     <div className="flex items-center gap-4">
-                        <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-primary/30 to-primary/10 flex items-center justify-center text-primary shadow-xl shadow-primary/20 ring-4 ring-primary/5">
+                        <div className="h-16 w-16 rounded-2xl bg-linear-to-br from-primary/30 to-primary/10 flex items-center justify-center text-primary shadow-xl shadow-primary/20 ring-4 ring-primary/5">
                             <Calendar className="h-8 w-8" />
                         </div>
                         <div>
@@ -436,9 +436,9 @@ export default function CalendarPage() {
 
                 {/* Stats Cards Premium */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <Card className="bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-xl border-border/40 hover:shadow-lg transition-all group">
+                    <Card className="bg-linear-to-br from-card/80 to-card/40 backdrop-blur-xl border-border/40 hover:shadow-lg transition-all group">
                         <CardContent className="p-5 flex items-center gap-4">
-                            <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-blue-500/20 to-blue-500/5 flex items-center justify-center group-hover:scale-110 transition-transform">
+                            <div className="h-14 w-14 rounded-2xl bg-linear-to-br from-blue-500/20 to-blue-500/5 flex items-center justify-center group-hover:scale-110 transition-transform">
                                 <Clock className="h-7 w-7 text-blue-500" />
                             </div>
                             <div>
@@ -448,9 +448,9 @@ export default function CalendarPage() {
                         </CardContent>
                     </Card>
 
-                    <Card className="bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-xl border-border/40 hover:shadow-lg transition-all group">
+                    <Card className="bg-linear-to-br from-card/80 to-card/40 backdrop-blur-xl border-border/40 hover:shadow-lg transition-all group">
                         <CardContent className="p-5 flex items-center gap-4">
-                            <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-green-500/20 to-green-500/5 flex items-center justify-center group-hover:scale-110 transition-transform">
+                            <div className="h-14 w-14 rounded-2xl bg-linear-to-br from-green-500/20 to-green-500/5 flex items-center justify-center group-hover:scale-110 transition-transform">
                                 <CheckCircle2 className="h-7 w-7 text-green-500" />
                             </div>
                             <div>
@@ -460,9 +460,9 @@ export default function CalendarPage() {
                         </CardContent>
                     </Card>
 
-                    <Card className="bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-xl border-border/40 hover:shadow-lg transition-all group">
+                    <Card className="bg-linear-to-br from-card/80 to-card/40 backdrop-blur-xl border-border/40 hover:shadow-lg transition-all group">
                         <CardContent className="p-5 flex items-center gap-4">
-                            <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-violet-500/20 to-violet-500/5 flex items-center justify-center group-hover:scale-110 transition-transform">
+                            <div className="h-14 w-14 rounded-2xl bg-linear-to-br from-violet-500/20 to-violet-500/5 flex items-center justify-center group-hover:scale-110 transition-transform">
                                 <Users className="h-7 w-7 text-violet-500" />
                             </div>
                             <div>
@@ -472,9 +472,9 @@ export default function CalendarPage() {
                         </CardContent>
                     </Card>
 
-                    <Card className="bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-xl border-border/40 hover:shadow-lg transition-all group">
+                    <Card className="bg-linear-to-br from-card/80 to-card/40 backdrop-blur-xl border-border/40 hover:shadow-lg transition-all group">
                         <CardContent className="p-5 flex items-center gap-4">
-                            <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-amber-500/20 to-amber-500/5 flex items-center justify-center group-hover:scale-110 transition-transform">
+                            <div className="h-14 w-14 rounded-2xl bg-linear-to-br from-amber-500/20 to-amber-500/5 flex items-center justify-center group-hover:scale-110 transition-transform">
                                 <AlertCircle className="h-7 w-7 text-amber-500" />
                             </div>
                             <div>

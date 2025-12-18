@@ -11,4 +11,6 @@ router.register(r'', views.NotificationViewSet, basename='notification')
 urlpatterns = [
     # URLs do ViewSet
     path('', include(router.urls)),
+    # Rota específica para as configurações de notificação
+    path('settings/', views.NotificationSettingsView.as_view(), name='notification-settings'),
 ]

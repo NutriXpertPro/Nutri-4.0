@@ -393,6 +393,137 @@ Sistema web moderno (SPA) para nutricionistas gerenciarem pacientes, dietas, con
 
 ---
 
+### 8. AVALIAÇÕES FÍSICAS - PÁGINA COMPLETA
+
+#### RF-029.1: Página de Avaliações
+- **Descrição:** Página completa para gerenciamento de avaliações físicas de todos os pacientes
+- **Prioridade:** P0
+- **Localização:** `/evaluations`
+- **Funcionalidades:**
+  - Histórico completo de avaliações de todos os pacientes
+  - Filtros avançados por paciente, data e tipo de avaliação
+  - Paginação e busca global
+  - Visualização em grid ou lista
+
+#### RF-029.2: Gráficos Evolutivos
+- **Descrição:** Visualização de tendências e progresso físico
+- **Prioridade:** P0
+- **Tipos de gráficos:**
+  - Peso (ganho/perda ao longo do tempo)
+  - Água (variação de conteúdo hídrico)
+  - Gordura (percentual e absoluto)
+  - Massa muscular (ganho/perda de tecido muscular)
+- **API:** `GET /api/v1/evaluations/evolution/`
+
+#### RF-029.3: Antropometria
+- **Descrição:** Avaliação das medidas corporais
+- **Prioridade:** P0
+- **Funcionalidades:**
+  - Gráfico de evolução das medidas antropométricas
+  - Histórico de ganhos/perdas em diferentes pontos do corpo
+  - Circunferências: braço, antebraço, coxa, cintura, quadril, abdômen, etc
+  - Comparação lado a lado de múltiplas avaliações
+- **API:** `GET /api/v1/evaluations/anthropometry/`
+
+#### RF-029.4: Gráficos de Progresso
+- **Descrição:** Visualização do progresso desde o início do tratamento
+- **Prioridade:** P0
+- **Elementos:**
+  - Data de início do atendimento
+  - Estado atual com valores numéricos
+  - Meta definida para o paciente
+  - Linha de tendência de evolução
+  - Indicadores de progresso (setas, porcentagens)
+- **API:** `GET /api/v1/evaluations/progress/`
+
+#### RF-029.5: Ficha Antropométrica Personalizada
+- **Descrição:** Permitir que o nutricionista crie fichas antropométricas personalizadas
+- **Prioridade:** P1
+- **Funcionalidades:**
+  - Interface drag-and-drop para criar formatos personalizados
+  - Campos customizáveis
+  - Templates salváveis por profissional
+- **API:** `POST/GET /api/v1/evaluation-forms/`
+
+#### RF-029.6: Upload de Exames Externos
+- **Descrição:** Opção para upload de exames de terceiros ou laboratórios externos
+- **Prioridade:** P1
+- **Funcionalidades:**
+  - Upload de arquivos PDF, JPG, PNG
+  - Anotações e marcações sobre os exames
+  - Integração com prontuário do paciente
+- **API:** `POST /api/v1/evaluations/upload-external-exam/`
+
+#### RF-029.7: Integração com App do Paciente
+- **Descrição:** Disponibilizar dados de avaliações no app do paciente
+- **Prioridade:** P0
+- **Funcionalidades:**
+  - Acesso ao histórico de avaliações
+  - Visualização de gráficos de evolução
+  - Comparação visual entre avaliações
+  - Acompanhamento de metas e progresso
+
+#### RF-029.8: Protocolos de Antropometria
+- **Descrição:** Permitir que o nutricionista escolha entre diferentes protocolos de medição de dobras cutâneas
+- **Prioridade:** P0
+- **Protocolos Disponíveis:**
+  - Jackson & Pollock (3 sítios) - Homens: Peitoral, Abdominal, Coxa
+  - Jackson & Pollock (3 sítios) - Mulheres: Tríceps, Suprailíaca, Coxa
+  - Jackson & Pollock (7 sítios): Peitoral, Abdominal, Coxa, Tríceps, Subescapular, Suprailíaca, Axilar média
+  - Durnin & Womersley (4 sítios): Bíceps, Tríceps, Subescapular, Suprailíaca
+  - Petroski (4 sítios): Tríceps, Subescapular, Suprailíaca, Panturrilha
+  - ISAK (Perfil Restrito): 8 pontos padronizados internacionais
+- **API:** `POST /api/v1/evaluations/anthropometry-protocol/`
+
+#### RF-029.9: Integração com Bioimpedância
+- **Descrição:** Integração com dados de bioimpedância para cálculos precisos
+- **Prioridade:** P0
+- **Funcionalidades:**
+  - Leitura de dados de equipamentos de bioimpedância
+  - Cálculo automático de composição corporal
+  - Correlação com outros dados antropométricos
+- **API:** `POST /api/v1/evaluations/bioimpedance-data/`
+
+#### RF-029.10: Cálculos Metabólicos Automáticos
+- **Descrição:** Realização automática de cálculos metabólicos baseados nos dados antropométricos
+- **Prioridade:** P0
+- **Cálculos:**
+  - Taxa metabólica basal (TMB)
+  - Distribuição de macronutrientes
+  - Necessidades calóricas
+  - Análise de composição corporal
+- **API:** `GET /api/v1/evaluations/metabolic-calcs/{id}/`
+
+#### RF-029.11: Perfis Metabólicos e Físicos
+- **Descrição:** Criação de perfis detalhados baseados em dados antropométricos e bioquímicos
+- **Prioridade:** P1
+- **Funcionalidades:**
+  - Perfil metabólico completo
+  - Perfil físico e composição corporal
+  - Histórico evolutivo
+  - Recomendações personalizadas
+- **API:** `GET /api/v1/evaluations/patient-profiles/{patient_id}/`
+
+#### RF-029.12: Distinção entre Pacientes Presenciais e Online
+- **Descrição:** Diferenciar protocolos e métodos de avaliação para pacientes presenciais e online
+- **Prioridade:** P1
+- **Funcionalidades:**
+  - Protocolos diferenciados para pacientes presenciais (com antropometria completa)
+  - Protocolos adaptados para pacientes online (baseados em informações auto-relatadas)
+  - Integração de exames externos para ambos os tipos
+- **API:** `PATCH /api/v1/patients/{id}/mode/` (presencial/online)
+
+#### RF-029.13: Compartilhamento em Redes Sociais
+- **Descrição:** Permitir que o paciente compartilhe sua evolução nas redes sociais
+- **Prioridade:** P2
+- **Funcionalidades:**
+  - Geração de imagens prontas para postagem
+  - Templates de compartilhamento da plataforma
+  - Controles de privacidade
+- **API:** `POST /api/v1/evaluations/{id}/social-share/`
+
+---
+
 ### 8. MENSAGENS/CHAT
 
 #### RF-030: Inbox

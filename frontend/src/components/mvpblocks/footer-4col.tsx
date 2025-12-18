@@ -32,7 +32,7 @@ const data = {
 export default function Footer4Col() {
   return (
     <footer className="border-t border-[#30363d] py-12 px-4 bg-[#0d1117] mt-16 w-full">
-      <div className="mx-auto max-w-screen-xl px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-4">
           <div className="lg:col-span-1">
             <div className="text-white flex justify-center gap-2 sm:justify-start">

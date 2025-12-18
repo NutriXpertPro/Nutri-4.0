@@ -31,6 +31,9 @@ except Exception as e:
 
 SECRET_KEY = config('SECRET_KEY', default='dev-secret-key-CHANGE-IN-PRODUCTION-!!!')
 GOOGLE_OAUTH2_CLIENT_ID = config('GOOGLE_OAUTH2_CLIENT_ID', default='')
+GOOGLE_OAUTH2_CLIENT_SECRET = config('GOOGLE_OAUTH2_CLIENT_SECRET', default='')
+BACKEND_URL = config('BACKEND_URL', default='http://localhost:8000')
+FRONTEND_URL = config('FRONTEND_URL', default='http://localhost:3000')
 DEBUG = True # Forcing DEBUG for local development
 print(f"DEBUG mode is: {DEBUG}")
 ALLOWED_HOSTS = [
@@ -66,7 +69,12 @@ INSTALLED_APPS = [
     'notifications.apps.NotificationsConfig',
     'messages.apps.MessagesConfig',
     'lab_exams.apps.LabExamsConfig',
+    'automation.apps.AutomationConfig',
+    'branding.apps.BrandingConfig',
+    'integrations.apps.IntegrationsConfig',
     'dashboard',
+    'django_celery_beat',
+    'django_celery_results',
 ]
 
 AUTHENTICATION_BACKENDS = [
@@ -199,6 +207,14 @@ SIMPLE_JWT = {
 }
 
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
+# Configurações do Celery
+CELERY_BROKER_URL = config('CELERY_BROKER_URL', default='redis://localhost:6379/0')
+CELERY_RESULT_BACKEND = config('CELERY_RESULT_BACKEND', default='redis://localhost:6379/0')
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = 'America/Sao_Paulo'
 
 # Configuração de arquivos de mídia
 MEDIA_URL = '/media/'

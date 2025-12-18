@@ -17,16 +17,16 @@ import { Switch } from "@/components/ui/switch";
 import Image from "next/image";
 
 // Define the enum values as a const array to be used for both type and validation
-const professionalTitleEnum = ["NUT", "DR", "DRA", "ESP", "MTR", "PHD", ""] as const;
-const genderEnum = ["M", "F", "O", ""] as const;
+const professionalTitleEnum = ["NUT", "DR", "DRA", "ESP", "MTR", "PHD"] as const;
+const genderEnum = ["M", "F", "O"] as const;
 const themeEnum = ["light", "dark", "system"] as const;
 const languageEnum = ["pt-BR", "en-US"] as const;
 
 // Define the Zod schema using the const arrays
 const profileFormSchema = z.object({
   name: z.string().min(2, { message: "O nome deve ter pelo menos 2 caracteres." }).max(50, { message: "O nome não pode ter mais de 50 caracteres." }),
-  professional_title: z.enum(professionalTitleEnum).optional(),
-  gender: z.enum(genderEnum).optional(),
+  professional_title: z.enum(professionalTitleEnum).or(z.literal("none")).optional().nullable(),
+  gender: z.enum(genderEnum).or(z.literal("none")).optional().nullable(),
   settings_theme: z.enum(themeEnum, { message: "Selecione um tema válido." }),
   settings_language: z.enum(languageEnum, { message: "Selecione um idioma válido." }),
   settings_notifications_email: z.boolean(),
@@ -52,18 +52,28 @@ export function UserProfileForm() {
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
     mode: "onChange",
+    defaultValues: {
+      name: "",
+      professional_title: undefined,
+      gender: undefined,
+      settings_theme: "system",
+      settings_language: "pt-BR",
+      settings_notifications_email: false,
+      settings_notifications_push: false,
+    }
   });
 
   useEffect(() => {
     if (userProfile) {
       form.reset({
         name: userProfile.name,
-        professional_title: (userProfile.professional_title || "") as typeof professionalTitleEnum[number],
-        gender: (userProfile.gender || "") as typeof genderEnum[number],
-        settings_theme: userProfile.settings.theme as typeof themeEnum[number],
-        settings_language: userProfile.settings.language as typeof languageEnum[number],
-        settings_notifications_email: userProfile.settings.notifications_email,
-        settings_notifications_push: userProfile.settings.notifications_push,
+        professional_title: userProfile.professional_title as typeof professionalTitleEnum[number] || undefined,
+        gender: userProfile.gender as typeof genderEnum[number] || undefined,
+        settings_theme: userProfile.settings.theme as typeof themeEnum[number] || "system",
+        settings_language: userProfile.settings.language as typeof languageEnum[number] || "pt-BR",
+        settings_notifications_email: userProfile.settings.notifications_email ?? false,
+        settings_notifications_push: userProfile.settings.notifications_push ?? false,
+        profile_picture: undefined, // Inicializar com undefined em vez de null para consistência
       });
       if (userProfile.profile_picture) {
         setPreviewImage(userProfile.profile_picture);
@@ -111,18 +121,18 @@ export function UserProfileForm() {
   async function onSubmit(data: ProfileFormValues) {
     const fileList = data.profile_picture as FileList | null;
     const profilePictureFile = fileList?.[0];
-    
+
     const settingsData = {
-        theme: data.settings_theme,
-        language: data.settings_language,
-        notifications_email: data.settings_notifications_email,
-        notifications_push: data.settings_notifications_push,
+      theme: data.settings_theme,
+      language: data.settings_language,
+      notifications_email: data.settings_notifications_email,
+      notifications_push: data.settings_notifications_push,
     };
 
     updateProfileMutation.mutate({
       name: data.name,
-      professional_title: data.professional_title,
-      gender: data.gender,
+      professional_title: (data.professional_title === "none" || !data.professional_title) ? null : data.professional_title,
+      gender: (data.gender === "none" || !data.gender) ? null : data.gender,
       profile_picture: data.profile_picture === null ? null : profilePictureFile,
       settings: settingsData
     });
@@ -148,49 +158,63 @@ export function UserProfileForm() {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-        <FormItem>
-          <FormLabel>Foto de Perfil</FormLabel>
-          <div className="flex items-center gap-4">
-            <div className="relative w-24 h-24 rounded-full overflow-hidden bg-muted flex items-center justify-center">
-              {previewImage ? (
-                <Image
-                  src={previewImage}
-                  alt="Foto de Perfil"
-                  layout="fill"
-                  objectFit="cover"
-                />
-              ) : (
-                <span className="text-4xl text-muted-foreground">👤</span>
-              )}
-            </div>
-            <div className="flex flex-col gap-2">
-              <Input
-                id="profile_picture_upload"
-                type="file"
-                accept="image/*"
-                onChange={handleFileChange}
-                ref={fileInputRef}
-                className="w-auto cursor-pointer"
-              />
-              {previewImage && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={handleRemoveImage}
-                  className="w-fit"
-                >
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  Remover Foto
-                </Button>
-              )}
-            </div>
-          </div>
-          <FormDescription>
-            Faça upload de uma foto para o seu perfil. Max 5MB.
-          </FormDescription>
-          <FormMessage />
-        </FormItem>
+        <FormField
+          control={form.control}
+          name="profile_picture"
+          render={({ field }) => {
+            // Campo especial para upload de arquivo, não precisamos passar field.value diretamente para o input
+            // pois o valor de um input de arquivo não pode ser definido programaticamente por motivos de segurança
+            return (
+              <FormItem>
+                <FormLabel>Foto de Perfil</FormLabel>
+                <div className="flex items-center gap-4">
+                  <div className="relative w-24 h-24 rounded-full overflow-hidden bg-muted flex items-center justify-center">
+                    {previewImage ? (
+                      <Image
+                        src={previewImage}
+                        alt="Foto de Perfil"
+                        layout="fill"
+                        objectFit="cover"
+                      />
+                    ) : (
+                      <span className="text-4xl text-muted-foreground">👤</span>
+                    )}
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <Input
+                      id="profile_picture_upload"
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => {
+                        field.onChange(e.target.files); // Atualiza o valor no formulário
+                        handleFileChange(e); // Atualiza o preview
+                      }}
+                      ref={fileInputRef}
+                      className="w-auto cursor-pointer"
+                      value={""} // Reinicia sempre o valor para evitar warnings
+                    />
+                    {previewImage && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={handleRemoveImage}
+                        className="w-fit"
+                      >
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Remover Foto
+                      </Button>
+                    )}
+                  </div>
+                </div>
+                <FormDescription>
+                  Faça upload de uma foto para o seu perfil. Max 5MB.
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            );
+          }}
+        />
 
         <FormField
           control={form.control}
@@ -215,14 +239,14 @@ export function UserProfileForm() {
           render={({ field }) => (
             <FormItem>
               <FormLabel>Título Profissional</FormLabel>
-              <Select onValueChange={field.onChange} value={field.value || ""}>
+              <Select onValueChange={field.onChange} value={field.value ?? ""}>
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione seu título" />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  <SelectItem value="">Nenhum</SelectItem>
+                  <SelectItem value="none">Nenhum</SelectItem>
                   <SelectItem value="NUT">Nutricionista</SelectItem>
                   <SelectItem value="DR">Dr.</SelectItem>
                   <SelectItem value="DRA">Dra.</SelectItem>
@@ -245,14 +269,14 @@ export function UserProfileForm() {
           render={({ field }) => (
             <FormItem>
               <FormLabel>Gênero</FormLabel>
-              <Select onValueChange={field.onChange} value={field.value || ""}>
+              <Select onValueChange={field.onChange} value={field.value ?? ""}>
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione seu gênero" />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  <SelectItem value="">Não especificar</SelectItem>
+                  <SelectItem value="none">Não especificar</SelectItem>
                   <SelectItem value="M">Masculino</SelectItem>
                   <SelectItem value="F">Feminino</SelectItem>
                   <SelectItem value="O">Outro</SelectItem>
@@ -269,7 +293,7 @@ export function UserProfileForm() {
           render={({ field }) => (
             <FormItem>
               <FormLabel>Tema da Interface</FormLabel>
-              <Select onValueChange={field.onChange} value={field.value}>
+              <Select onValueChange={field.onChange} value={field.value ?? "system"}>
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione um tema" />
@@ -295,7 +319,7 @@ export function UserProfileForm() {
           render={({ field }) => (
             <FormItem>
               <FormLabel>Idioma</FormLabel>
-              <Select onValueChange={field.onChange} value={field.value}>
+              <Select onValueChange={field.onChange} value={field.value ?? "pt-BR"}>
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione um idioma" />
@@ -329,7 +353,7 @@ export function UserProfileForm() {
               </div>
               <FormControl>
                 <Switch
-                  checked={field.value}
+                  checked={field.value ?? false}
                   onCheckedChange={field.onChange}
                 />
               </FormControl>
@@ -352,7 +376,7 @@ export function UserProfileForm() {
               </div>
               <FormControl>
                 <Switch
-                  checked={field.value}
+                  checked={field.value ?? false}
                   onCheckedChange={field.onChange}
                 />
               </FormControl>

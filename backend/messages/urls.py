@@ -12,4 +12,6 @@ router.register(r'messages', views.MessageViewSet, basename='message')
 urlpatterns = [
     # URLs dos ViewSets
     path('', include(router.urls)),
+    # Endpoint manual para inbox
+    path('inbox/', views.inbox_view, name='message-inbox'),
 ]

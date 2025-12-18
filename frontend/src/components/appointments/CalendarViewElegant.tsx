@@ -44,7 +44,7 @@ import {
 import { ptBR } from "date-fns/locale"
 import { cn } from "@/lib/utils"
 import { PatientScheduleLink } from "./PatientScheduleLink"
-import { GoogleCalendarSync } from "./GoogleCalendarSync"
+import GoogleCalendarIntegration from "@/components/integrations/GoogleCalendarIntegration"
 
 interface Appointment {
     id: number
@@ -624,6 +624,11 @@ export function CalendarViewElegant({
                                 Dia
                             </Button>
                         </div>
+                    </div>
+                </div>
+                <div className="flex justify-end mt-2">
+                    <div className="w-64">
+                        <GoogleCalendarIntegration />
                     </div>
                 </div>
                 <div className="text-center mt-2">

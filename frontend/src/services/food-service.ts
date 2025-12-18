@@ -13,6 +13,8 @@ export interface Food {
     fibra_g: number | null
     unidade_caseira?: string | null
     peso_unidade_caseira_g?: number | null
+    medidas?: Array<{ label: string; weight: number }>
+    is_favorite?: boolean
 }
 
 export interface FoodSearchResponse {
@@ -60,13 +62,19 @@ export const foodService = {
     /**
      * Search foods across all databases (TACO, TBCA, USDA)
      */
-    search: async (query: string, options?: { source?: string; grupo?: string; limit?: number }) => {
+    search: async (query: string, options?: { source?: string; grupo?: string; limit?: number; page?: number }) => {
         const params = new URLSearchParams({ search: query })
         if (options?.source) params.append('source', options.source)
         if (options?.grupo) params.append('grupo', options.grupo)
         if (options?.limit) params.append('limit', options.limit.toString())
+        if (options?.page) params.append('page', options.page.toString())
 
         const { data } = await api.get<FoodSearchResponse>(`/diets/foods/?${params}`)
+        return data
+    },
+
+    toggleFavorite: async (source: string, id: string | number, nome: string) => {
+        const { data } = await api.post('/toggle-favorite/', { source, id, nome })
         return data
     },
 

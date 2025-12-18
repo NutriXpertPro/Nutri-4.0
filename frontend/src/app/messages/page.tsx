@@ -1,48 +1,69 @@
 'use client';
 
-import React, { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/auth-context';
-import ConversationList from '@/components/organisms/ConversationList';
-import Chat from '@/components/organisms/Chat';
-import { Card, CardContent } from '@/components/ui/card';
+import WhatsAppStyleMessages from '@/components/organisms/WhatsAppStyleMessages';
+import { initializeNotificationService } from '@/services/notification-service';
 
 const MessagesPage: React.FC = () => {
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
-  const { user } = useAuth(); // Using correct context name
+  const { user } = useAuth();
+
+  // Inicializar o serviço de notificação e bloquear scroll global quando nesta página
+  useEffect(() => {
+    // Inicializar serviço de notificação
+    initializeNotificationService();
+
+    // Salvar o estilo original
+    const originalStyle = document.body.style.overflow;
+    const originalHtmlStyle = document.documentElement.style.overflow;
+
+    // Bloquear scroll global
+    document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
+
+    // Restaurar ao sair da página
+    return () => {
+      document.body.style.overflow = originalStyle;
+      document.documentElement.style.overflow = originalHtmlStyle;
+    };
+  }, []);
 
   const handleSelectConversation = (conversationId: string) => {
     setSelectedConversationId(conversationId);
   };
 
   return (
-    <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="flex overflow-hidden" style={{ height: 'calc(100vh - 4rem - 3rem)', maxHeight: 'calc(100vh - 4rem - 3rem)' }}>
       {/* Conversations List - Left Panel */}
-      <div className="w-1/3 border-r border-gray-200 dark:border-gray-700 flex flex-col">
-        <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-          <h1 className="text-xl font-bold text-gray-900 dark:text-white">Mensagens</h1>
-          <p className="text-sm text-gray-600 dark:text-gray-400">Converse com seus pacientes</p>
+      <div className="w-1/3 border-r bg-background flex flex-col" style={{ height: '100%', maxHeight: '100%', overflow: 'hidden' }}>
+        <div className="p-4 border-b flex-shrink-0">
+          <h1 className="text-xl font-bold text-foreground">Mensagens</h1>
+          <p className="text-sm text-muted-foreground">Converse com seus pacientes</p>
         </div>
-        <ConversationList
-          onSelectConversation={handleSelectConversation}
-          currentConversationId={selectedConversationId || undefined}
-        />
+        <div className="flex-1 min-h-0" style={{ overflowY: 'auto', overflowX: 'hidden' }}>
+          <WhatsAppStyleMessages
+            selectedConversationId={selectedConversationId}
+            onConversationSelect={handleSelectConversation}
+          />
+        </div>
       </div>
 
       {/* Chat Area - Right Panel */}
-      <div className="w-2/3 flex flex-col">
+      <div className="w-2/3 bg-background flex flex-col" style={{ height: '100%', maxHeight: '100%', overflow: 'hidden' }}>
         {selectedConversationId ? (
-          <Chat
+          <WhatsAppStyleMessages.ChatArea
             conversationId={selectedConversationId}
-            currentUserId={user?.id?.toString() || 'current_user_id'}
+            currentUserId={user?.id?.toString() || user?.id || 'current_user_id'}
           />
         ) : (
-          <div className="flex-1 flex items-center justify-center bg-gray-100 dark:bg-gray-800">
+          <div className="flex-1 flex items-center justify-center">
             <div className="text-center p-8">
-              <div className="mx-auto bg-gray-200 dark:bg-gray-700 rounded-full p-4 w-16 h-16 flex items-center justify-center mb-4">
+              <div className="mx-auto bg-muted rounded-full p-4 w-16 h-16 flex items-center justify-center mb-4">
                 <div className="w-8 h-8 bg-green-500 rounded-full"></div>
               </div>
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">NutriXpertPro Chat</h2>
-              <p className="text-gray-600 dark:text-gray-400 max-w-md">
+              <h2 className="text-xl font-semibold text-foreground mb-2">NutriXpertPro Chat</h2>
+              <p className="text-muted-foreground max-w-md">
                 Selecione uma conversa para começar a trocar mensagens com seu paciente.
                 Mantenha-se em contato para melhorar o acompanhamento nutricional.
               </p>

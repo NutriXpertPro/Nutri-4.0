@@ -1,17 +1,27 @@
 import api from "./api"
 
+export interface Patient {
+    id: number
+    name: string
+    email: string
+}
+
 export interface Evaluation {
     id: number
-    patient: number
+    patient: Patient
     date: string
-    method: 'ADIPOMETRO' | 'BIOIMPEDANCIA' | 'FITA_METRICA' | null
-    height: number | null
-    weight: number | null
-    body_fat: number | null
-    muscle_mass: number | null
-    body_measurements: Record<string, number> | null
+    weight: number
+    height: number
+    body_fat: number
+    muscle_mass: number
+    waist_circumference: number
+    hip_circumference: number
+    arm_circumference: number
+    method?: 'ADIPOMETRO' | 'BIOIMPEDANCIA' | 'FITA_METRICA'
+    body_measurements?: Record<string, number>
     photos: EvaluationPhoto[]
-    created_at: string
+    notes?: string
+    created_at?: string
 }
 
 export interface EvaluationPhoto {
@@ -34,13 +44,14 @@ export interface CreateEvaluationDTO {
 
 export const evaluationService = {
     listByPatient: async (patientId: number) => {
-        // We might need to filter by patient in the list endpoint
-        // Assuming the backend supports ?patient=ID filter based on the standard convention
-        // However, I didn't explicitly implement filter backend on list action yet BUT the get_queryset filters by nutritionist.
-        // I need to add filter_backends or manual filtering in get_queryset. 
-        // Let's rely on client side filtering or update backend if needed.
-        // ACTUALLY, I should update backend to allow filtering by patient_id query param like I did for Anamnesis.
+        // Filtra avaliações por paciente
         const { data } = await api.get<Evaluation[]>(`/evaluations/?patient=${patientId}`)
+        return data
+    },
+
+    listAll: async () => {
+        // Retorna todas as avaliações para a página de avaliações
+        const { data } = await api.get<Evaluation[]>(`/evaluations/`)
         return data
     },
 

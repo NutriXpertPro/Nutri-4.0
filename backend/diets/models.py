@@ -4,7 +4,24 @@ from django.core.exceptions import ValidationError
 import json
 import html
 import re
+from django.conf import settings
 
+# Modelo para Favoritos
+class FavoriteFood(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='favorite_foods')
+    food_source = models.CharField(max_length=50)  # TACO, TBCA, USDA, IBGE
+    food_id = models.CharField(max_length=100)     # ID original na tabela de origem
+    food_name = models.CharField(max_length=255)   # Nome para busca rápida (cache)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ['user', 'food_source', 'food_id']
+        indexes = [
+            models.Index(fields=['user', 'food_name']),
+        ]
+
+    def __str__(self):
+        return f"{self.food_name} ({self.food_source})"
 def sanitize_string(value):
     """
     Sanitiza uma string removendo ou escapando caracteres potencialmente perigosos.
@@ -442,3 +459,110 @@ class FoodItem(models.Model):
     def __str__(self):
         return f"{self.food_name} - {self.quantity}{self.unit}"
 
+
+# =============================================================================
+# MODELOS DE MEDIDAS CASEIRAS IBGE
+# Dados extraídos da Pesquisa de Orçamentos Familiares 2008-2009
+# 9.832 registros | 1.053 alimentos | 102 tipos de medidas
+# =============================================================================
+
+class MedidaCaseira(models.Model):
+    """
+    Modelo para armazenar tipos de medidas caseiras com pesos médios.
+    Fonte: IBGE POF 2008-2009
+    """
+    CATEGORIA_CHOICES = [
+        ('utensiilio', 'Utensílio de cozinha'),
+        ('porcao', 'Porção/Quantidade'),
+        ('unidade', 'Unidade natural'),
+        ('embalagem', 'Embalagem'),
+        ('liquido', 'Medida de líquido'),
+        ('outro', 'Outro'),
+    ]
+    
+    nome = models.CharField(max_length=100, unique=True, help_text="Nome da medida caseira (ex: Colher de sopa)")
+    peso_medio_g = models.FloatField(null=True, blank=True, help_text="Peso médio em gramas")
+    categoria = models.CharField(max_length=20, choices=CATEGORIA_CHOICES, default='outro')
+    quantidade_amostras = models.IntegerField(default=0, help_text="Número de amostras usadas para calcular a média")
+    
+    # Para líquidos
+    eh_liquido = models.BooleanField(default=False, help_text="Se a medida é tipicamente para líquidos")
+    volume_ml = models.FloatField(null=True, blank=True, help_text="Volume em ml (para líquidos)")
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['nome']
+        verbose_name = "Medida Caseira"
+        verbose_name_plural = "Medidas Caseiras"
+        indexes = [
+            models.Index(fields=['nome']),
+            models.Index(fields=['categoria']),
+        ]
+    
+    def __str__(self):
+        if self.peso_medio_g:
+            return f"{self.nome} (~{self.peso_medio_g}g)"
+        return self.nome
+
+
+class AlimentoMedidaIBGE(models.Model):
+    """
+    Modelo para armazenar conversões específicas de medidas por alimento.
+    Vincula um alimento a uma medida caseira com peso específico.
+    Fonte: IBGE POF 2008-2009
+    """
+    PREPARACAO_CHOICES = [
+        ('cru', 'Cru(a)'),
+        ('cozido', 'Cozido(a)'),
+        ('frito', 'Frito(a)'),
+        ('assado', 'Assado(a)'),
+        ('grelhado', 'Grelhado(a)/brasa/churrasco'),
+        ('refogado', 'Refogado(a)'),
+        ('empanado', 'Empanado(a)/à milanesa'),
+        ('molho_vermelho', 'Molho vermelho'),
+        ('molho_branco', 'Molho branco'),
+        ('ensopado', 'Ensopado'),
+        ('sopa', 'Sopa'),
+        ('vinagrete', 'Ao vinagrete'),
+        ('manteiga', 'Com manteiga/óleo'),
+        ('alho_oleo', 'Ao alho e óleo'),
+        ('mingau', 'Mingau'),
+        ('nao_aplica', 'Não se aplica'),
+    ]
+    
+    codigo_ibge = models.CharField(max_length=10, help_text="Código do alimento no IBGE")
+    nome_alimento = models.CharField(max_length=200, help_text="Nome do alimento")
+    
+    medida = models.ForeignKey(MedidaCaseira, on_delete=models.CASCADE, related_name='alimentos')
+    preparacao = models.CharField(max_length=20, choices=PREPARACAO_CHOICES, default='nao_aplica')
+    peso_g = models.FloatField(help_text="Peso em gramas para esta medida específica")
+    
+    # Referência opcional para alimentos nas bases TACO/TBCA/USDA
+    taco_ref = models.ForeignKey(AlimentoTACO, on_delete=models.SET_NULL, null=True, blank=True, related_name='medidas_ibge')
+    tbca_ref = models.ForeignKey(AlimentoTBCA, on_delete=models.SET_NULL, null=True, blank=True, related_name='medidas_ibge')
+    usda_ref = models.ForeignKey(AlimentoUSDA, on_delete=models.SET_NULL, null=True, blank=True, related_name='medidas_ibge')
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['nome_alimento', 'medida__nome']
+        verbose_name = "Medida de Alimento IBGE"
+        verbose_name_plural = "Medidas de Alimentos IBGE"
+        indexes = [
+            models.Index(fields=['nome_alimento']),
+            models.Index(fields=['codigo_ibge']),
+            models.Index(fields=['preparacao']),
+        ]
+        # Um alimento pode ter várias medidas, mas cada combinação alimento+medida+preparação é única
+        unique_together = ['codigo_ibge', 'medida', 'preparacao']
+    
+    def __str__(self):
+        return f"{self.nome_alimento} - {self.medida.nome} ({self.preparacao}): {self.peso_g}g"
+    
+    @property
+    def descricao_completa(self):
+        """Retorna descrição para exibição ao usuário"""
+        return f"1 {self.medida.nome} = {self.peso_g}g"

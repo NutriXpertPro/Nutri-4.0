@@ -7,6 +7,7 @@ urlpatterns = [
     # Food search
     path('foods/', views.FoodSearchViewSet.as_view({'get': 'list'}), name='food-list'),
     path('foods/grupos/', views.FoodSearchViewSet.as_view({'get': 'grupos'}), name='food-grupos'),
+    path('toggle-favorite/', views.ToggleFavoriteView.as_view(), name='toggle-favorite'),
     # Diet CRUD
     path('diets/', views.DietViewSet.as_view({'get': 'list', 'post': 'create'}), name='diet-list'),
     path('diets/<int:pk>/', views.DietViewSet.as_view({'get': 'retrieve', 'patch': 'partial_update', 'delete': 'destroy'}), name='diet-detail'),

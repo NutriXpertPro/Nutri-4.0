@@ -113,7 +113,7 @@ export default function NewPatientPage() {
     return (
         <DashboardLayout>
             {/* Background Decorativo - Gradiente do Tema */}
-            <div className="fixed inset-0 bg-gradient-to-br from-primary/5 via-background to-secondary/5 -z-10" />
+            <div className="fixed inset-0 bg-linear-to-br from-primary/5 via-background to-secondary/5 -z-10" />
 
             <div className="max-w-4xl mx-auto space-y-6 relative">
                 {/* Header */}
@@ -166,7 +166,7 @@ export default function NewPatientPage() {
                         <CardContent className="space-y-8 p-8">
 
                             {/* Upload de Foto Premium */}
-                            <div className="flex flex-col sm:flex-row items-center gap-8 p-6 rounded-2xl bg-gradient-to-br from-muted/50 to-muted/10 border border-border/50 shadow-sm relative overflow-hidden group/banner">
+                            <div className="flex flex-col sm:flex-row items-center gap-8 p-6 rounded-2xl bg-linear-to-br from-muted/50 to-muted/10 border border-border/50 shadow-sm relative overflow-hidden group/banner">
                                 <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover/banner:opacity-100 transition-opacity duration-500" />
 
                                 <div className="relative group/avatar">

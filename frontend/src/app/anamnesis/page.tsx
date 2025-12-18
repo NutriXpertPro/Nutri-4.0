@@ -25,6 +25,7 @@ import {
     Users,
     Star,
     ChevronDown,
+    ChevronLeft,
     ChevronRight,
     User,
     Calendar,
@@ -230,7 +231,7 @@ export default function AnamnesisPage() {
     if (showTemplateBuilder) {
         return (
             <DashboardLayout>
-                <div className="fixed inset-0 bg-gradient-to-br from-primary/5 via-background to-secondary/5 -z-10" />
+                <div className="fixed inset-0 bg-linear-to-br from-primary/5 via-background to-secondary/5 -z-10" />
                 <TemplateBuilder
                     onSave={handleSaveTemplate}
                     onCancel={() => {
@@ -246,7 +247,7 @@ export default function AnamnesisPage() {
     if (viewMode === "form") {
         return (
             <DashboardLayout>
-                <div className="fixed inset-0 bg-gradient-to-br from-primary/5 via-background to-secondary/5 -z-10" />
+                <div className="fixed inset-0 bg-linear-to-br from-primary/5 via-background to-secondary/5 -z-10" />
                 <div className="max-w-4xl mx-auto py-6 px-4">
                     <div className="flex items-center gap-4 mb-6">
                         <Button variant="ghost" onClick={handleCancelForm} className="gap-2">
@@ -269,13 +270,13 @@ export default function AnamnesisPage() {
     return (
         <DashboardLayout>
             {/* Background Decorativo */}
-            <div className="fixed inset-0 bg-gradient-to-br from-primary/5 via-background to-secondary/5 -z-10" />
+            <div className="fixed inset-0 bg-linear-to-br from-primary/5 via-background to-secondary/5 -z-10" />
 
             <div className="space-y-6 relative animate-in fade-in slide-in-from-bottom-4 duration-500">
                 {/* Header Premium */}
                 <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
                     <div className="flex items-center gap-4">
-                        <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-primary/30 to-primary/10 flex items-center justify-center text-primary shadow-xl shadow-primary/20 ring-4 ring-primary/5">
+                        <div className="h-16 w-16 rounded-2xl bg-linear-to-br from-primary/30 to-primary/10 flex items-center justify-center text-primary shadow-xl shadow-primary/20 ring-4 ring-primary/5">
                             <ClipboardList className="h-8 w-8" />
                         </div>
                         <div>
@@ -343,9 +344,9 @@ export default function AnamnesisPage() {
 
                 {/* Stats Cards Premium */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <Card className="bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-xl border-border/40 hover:shadow-lg transition-all group">
+                    <Card className="bg-linear-to-br from-card/80 to-card/40 backdrop-blur-xl border-border/40 hover:shadow-lg transition-all group">
                         <CardContent className="p-5 flex items-center gap-4">
-                            <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center group-hover:scale-110 transition-transform">
+                            <div className="h-14 w-14 rounded-2xl bg-linear-to-br from-primary/20 to-primary/5 flex items-center justify-center group-hover:scale-110 transition-transform">
                                 <List className="h-7 w-7 text-primary" />
                             </div>
                             <div>
@@ -355,9 +356,9 @@ export default function AnamnesisPage() {
                         </CardContent>
                     </Card>
 
-                    <Card className="bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-xl border-border/40 hover:shadow-lg transition-all group">
+                    <Card className="bg-linear-to-br from-card/80 to-card/40 backdrop-blur-xl border-border/40 hover:shadow-lg transition-all group">
                         <CardContent className="p-5 flex items-center gap-4">
-                            <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-violet-500/20 to-violet-500/5 flex items-center justify-center group-hover:scale-110 transition-transform">
+                            <div className="h-14 w-14 rounded-2xl bg-linear-to-br from-violet-500/20 to-violet-500/5 flex items-center justify-center group-hover:scale-110 transition-transform">
                                 <LayoutTemplate className="h-7 w-7 text-violet-500" />
                             </div>
                             <div>
@@ -367,9 +368,9 @@ export default function AnamnesisPage() {
                         </CardContent>
                     </Card>
 
-                    <Card className="bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-xl border-border/40 hover:shadow-lg transition-all group">
+                    <Card className="bg-linear-to-br from-card/80 to-card/40 backdrop-blur-xl border-border/40 hover:shadow-lg transition-all group">
                         <CardContent className="p-5 flex items-center gap-4">
-                            <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-amber-500/20 to-amber-500/5 flex items-center justify-center group-hover:scale-110 transition-transform">
+                            <div className="h-14 w-14 rounded-2xl bg-linear-to-br from-amber-500/20 to-amber-500/5 flex items-center justify-center group-hover:scale-110 transition-transform">
                                 <Clock className="h-7 w-7 text-amber-500" />
                             </div>
                             <div>
@@ -379,9 +380,9 @@ export default function AnamnesisPage() {
                         </CardContent>
                     </Card>
 
-                    <Card className="bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-xl border-border/40 hover:shadow-lg transition-all group">
+                    <Card className="bg-linear-to-br from-card/80 to-card/40 backdrop-blur-xl border-border/40 hover:shadow-lg transition-all group">
                         <CardContent className="p-5 flex items-center gap-4">
-                            <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-emerald-500/20 to-emerald-500/5 flex items-center justify-center group-hover:scale-110 transition-transform">
+                            <div className="h-14 w-14 rounded-2xl bg-linear-to-br from-emerald-500/20 to-emerald-500/5 flex items-center justify-center group-hover:scale-110 transition-transform">
                                 <CheckCircle2 className="h-7 w-7 text-emerald-500" />
                             </div>
                             <div>
@@ -438,11 +439,11 @@ export default function AnamnesisPage() {
                     {/* Aba Anamnese Padrão */}
                     <TabsContent value="standard" className="space-y-6 mt-6">
                         {/* Hero Card */}
-                        <Card className="bg-gradient-to-br from-primary/10 via-card to-card border-primary/20 overflow-hidden relative">
+                        <Card className="bg-linear-to-br from-primary/10 via-card to-card border-primary/20 overflow-hidden relative">
                             <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
                             <CardContent className="p-8 relative">
                                 <div className="flex flex-col lg:flex-row lg:items-center gap-6">
-                                    <div className="h-20 w-20 rounded-3xl bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center text-primary-foreground shadow-2xl shadow-primary/30">
+                                    <div className="h-20 w-20 rounded-3xl bg-linear-to-br from-primary to-primary/60 flex items-center justify-center text-primary-foreground shadow-2xl shadow-primary/30">
                                         <Sparkles className="h-10 w-10" />
                                     </div>
                                     <div className="flex-1">
@@ -481,7 +482,7 @@ export default function AnamnesisPage() {
                                         expandedSections.includes(section.id) && "ring-2 ring-primary/20"
                                     )}>
                                         <div className={cn(
-                                            "absolute inset-0 bg-gradient-to-r opacity-0 group-hover:opacity-100 transition-opacity -z-10",
+                                            "absolute inset-0 bg-linear-to-r opacity-0 group-hover:opacity-100 transition-opacity -z-10",
                                             section.color
                                         )} />
                                         <CollapsibleTrigger asChild>
@@ -490,7 +491,7 @@ export default function AnamnesisPage() {
                                                     <div className="flex items-center gap-4">
                                                         <div className={cn(
                                                             "h-12 w-12 rounded-xl flex items-center justify-center transition-all",
-                                                            `bg-gradient-to-br ${section.color}`,
+                                                            `bg-linear-to-br ${section.color}`,
                                                             expandedSections.includes(section.id) ? "scale-110 shadow-lg" : ""
                                                         )}>
                                                             {section.icon}
@@ -568,7 +569,7 @@ export default function AnamnesisPage() {
                         ) : filteredTemplates.length === 0 ? (
                             <Card className="bg-card/60 backdrop-blur-xl border-dashed border-2">
                                 <CardContent className="flex flex-col items-center justify-center py-16 text-center">
-                                    <div className="h-20 w-20 rounded-full bg-gradient-to-br from-muted to-muted/50 flex items-center justify-center mb-6">
+                                    <div className="h-20 w-20 rounded-full bg-linear-to-br from-muted to-muted/50 flex items-center justify-center mb-6">
                                         <FileText className="h-10 w-10 text-muted-foreground" />
                                     </div>
                                     <h3 className="text-xl font-semibold mb-2">Nenhum template personalizado</h3>
@@ -598,7 +599,7 @@ export default function AnamnesisPage() {
                                         <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2 group-hover:bg-primary/10 transition-colors" />
                                         <CardHeader className="pb-3 relative">
                                             <div className="flex items-start justify-between">
-                                                <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center group-hover:scale-110 transition-transform">
+                                                <div className="h-12 w-12 rounded-xl bg-linear-to-br from-primary/20 to-primary/5 flex items-center justify-center group-hover:scale-110 transition-transform">
                                                     <FileText className="h-6 w-6 text-primary" />
                                                 </div>
                                                 <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">

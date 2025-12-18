@@ -118,10 +118,8 @@ export default function LoginPage() {
             {/* Login Card */}
             <Card className="w-full max-w-md shadow-xl border border-border">
                 <CardHeader className="text-center space-y-4">
-                    {/* Logo/Brand */}
-                    <div className="mx-auto w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
-                        <span className="text-3xl">🥗</span>
-                    </div>
+                    {/* Logo/Brand Removed */}
+
                     <div>
                         <CardTitle className="text-2xl font-bold">NutriXpertPro</CardTitle>
                         <CardDescription className="mt-2">

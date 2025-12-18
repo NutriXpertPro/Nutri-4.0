@@ -25,7 +25,7 @@ export default function Hero1() {
       <div className="absolute top-0 z-[0] h-full w-full bg-neutral-900/10 bg-[radial-gradient(ellipse_20%_80%_at_50%_-20%,rgba(120,119,198,0.3),rgba(255,255,255,0))]"></div>
 
       <section className="relative z-1 w-full h-full flex items-center justify-center pb-20">
-        <div className="relative z-20 mx-auto max-w-screen-xl gap-8 px-4 text-center md:px-8 flex flex-col items-center">
+        <div className="relative z-20 mx-auto max-w-7xl gap-8 px-4 text-center md:px-8 flex flex-col items-center">
           <div className="mx-auto max-w-7xl space-y-6 text-center">
 
             <div className="mb-2 flex justify-start items-center ml-[157px]">

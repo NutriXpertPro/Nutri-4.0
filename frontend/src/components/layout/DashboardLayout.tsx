@@ -45,7 +45,7 @@ export function DashboardLayout({ children, className, hideHeader = false }: Das
                 )}
             >
                 {/* Remove inner padding wrapper if className controls it, or allow children to fill height */}
-                <div className={cn("w-full h-full", (className?.includes("p-0") || hideHeader) ? "p-0" : "p-4 lg:p-6")}>
+                <div className={cn("w-full h-full", (className?.includes("p-0") || hideHeader) ? "p-0" : "p-4 lg:p-6")} style={{ overflow: 'hidden' }}>
                     {children}
                 </div>
             </main>

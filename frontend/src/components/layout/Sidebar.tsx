@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import logo from "@/assets/logo.png";
+// import logo from "@/assets/logo.svg"; // Arquivo não existe
 import {
     Home,
     Users,
@@ -167,24 +167,31 @@ export function Sidebar({ className, collapsed, onToggle }: SidebarProps) {
             >
                 {/* Logo */}
                 <div className={cn(
-                    "flex items-center gap-3 px-4 py-2 border-b",
+                    "flex items-center gap-3 px-4 py-2 border-b h-[73px]", // Fixed height to maintain alignment if needed, or let it shrink
                     isCollapsed && "justify-center px-2"
                 )}>
-                    <img
-                        src={logo.src}
-                        width={55}
-                        height={55}
-                        className="rounded-xl bg-transparent"
-                        style={{
-                            background: 'transparent',
-                            imageRendering: 'crisp-edges',
-                            filter: 'contrast(110%) brightness(105%)'
-                        }}
-                        loading="eager"
-                        decoding="async"
-                    />
                     {!isCollapsed && (
-                        <span className="font-bold text-lg">NutriXpertPro</span>
+                        <div className="flex items-center space-x-2">
+                            <div className="w-20 h-20 rounded-xl bg-transparent overflow-hidden">
+                                <img
+                                    src="/logo.png"
+                                    alt="NutriXpertPro"
+                                    className="w-full h-full object-contain"
+                                    style={{ filter: 'contrast(110%) brightness(105%)' }}
+                                />
+                            </div>
+                            <span className="font-bold text-lg">NutriXpertPro</span>
+                        </div>
+                    )}
+                    {isCollapsed && (
+                        <div className="w-20 h-20 rounded-xl bg-transparent overflow-hidden">
+                            <img
+                                src="/logo.png"
+                                alt="NutriXpertPro"
+                                className="w-full h-full object-contain"
+                                style={{ filter: 'contrast(110%) brightness(105%)' }}
+                            />
+                        </div>
                     )}
                 </div>
 
@@ -211,6 +218,7 @@ export function Sidebar({ className, collapsed, onToggle }: SidebarProps) {
                                             isActive(item.href) && "bg-primary/10 text-primary font-medium",
                                             isCollapsed && "justify-center px-2"
                                         )}
+                                        title={isCollapsed ? item.label : undefined}
                                     >
                                         <span className={cn(
                                             "flex-shrink-0",

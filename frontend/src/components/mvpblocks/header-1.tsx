@@ -6,6 +6,7 @@ import { Menu, X, ChevronDown, ArrowRight, Search } from 'lucide-react';
 import Link from 'next/link';
 import { useTheme } from 'next-themes';
 import { Button } from "@/components/ui/button";
+import Image from 'next/image';
 import logo from "@/assets/logo.png";
 
 interface NavItem {
@@ -68,7 +69,7 @@ export default function Header1() {
         <div className="flex h-20 items-center justify-between">
           <div className="flex items-center gap-8">
             <motion.div
-              className="flex items-center space-x-2"
+              className="flex items-center space-x-2 pt-1"
               whileHover={{ scale: 1.05 }}
               transition={{ type: 'spring', stiffness: 400, damping: 10 }}
             >
@@ -77,19 +78,18 @@ export default function Header1() {
                 href="/"
                 className="flex items-center space-x-2"
               >
-                <img
-                  src={logo.src}
+                <Image
+                  src={logo}
                   alt="Nutri Xpert Pro"
-                  width={55}
-                  height={55}
-                  className="rounded-xl bg-transparent"
+                  width={80}
+                  height={40}
+                  className="rounded-xl bg-transparent object-contain"
                   style={{
                     background: 'transparent',
                     imageRendering: 'crisp-edges',
                     filter: 'contrast(110%) brightness(105%)'
                   }}
-                  loading="eager"
-                  decoding="async"
+                  priority
                 />
               </Link>
             </motion.div>

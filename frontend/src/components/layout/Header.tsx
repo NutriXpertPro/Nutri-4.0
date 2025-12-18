@@ -29,39 +29,13 @@ import {
 import { useTheme } from "next-themes"
 import { useColor } from "@/components/color-provider"
 import { useAuth } from "@/contexts/auth-context"
+import api from "@/services/api";
+import { notificationService } from "@/services/notification-service";
 
 interface HeaderProps {
     className?: string
     sidebarCollapsed?: boolean
 }
-
-// Mock notifications - será substituído por dados da API
-const mockNotifications = [
-    {
-        id: 1,
-        type: "message",
-        icon: <MessageSquare className="h-4 w-4 text-blue-500" />,
-        title: "Maria Silva enviou mensagem",
-        time: "há 5 min",
-        isUrgent: true, // Mensagem não respondida 24h+
-    },
-    {
-        id: 2,
-        type: "appointment",
-        icon: <Calendar className="h-4 w-4 text-amber-500" />,
-        title: "Consulta com João em 1 hora",
-        time: "há 30 min",
-        isUrgent: false,
-    },
-    {
-        id: 3,
-        type: "diet",
-        icon: <UtensilsCrossed className="h-4 w-4 text-green-500" />,
-        title: "Dieta de Ana vence em 3 dias",
-        time: "há 2h",
-        isUrgent: false,
-    },
-]
 
 export function Header({ className, sidebarCollapsed }: HeaderProps) {
     const router = useRouter()
@@ -70,6 +44,8 @@ export function Header({ className, sidebarCollapsed }: HeaderProps) {
     const { user, logout } = useAuth()
     const [mounted, setMounted] = React.useState(false)
     const [searchFocused, setSearchFocused] = React.useState(false)
+    const [notifications, setNotifications] = React.useState<any[]>([]);
+    const [unreadCount, setUnreadCount] = React.useState(0);
 
     React.useEffect(() => {
         setMounted(true)
@@ -79,7 +55,42 @@ export function Header({ className, sidebarCollapsed }: HeaderProps) {
         console.log('Header renderizado')
     }, [])
 
-    const unreadCount = mockNotifications.length
+    // Carregar notificações e contagem não lida - Desativado temporariamente devido a erro no backend
+    /* React.useEffect(() => {
+        const fetchNotifications = async () => {
+            try {
+                const response = await api.get('/notifications');
+                const allNotifications = response.data;
+
+                // Pegar as 5 mais recentes para mostrar no dropdown
+                const recentNotifications = allNotifications.slice(0, 5);
+
+                // Atualizar estado
+                setNotifications(recentNotifications);
+
+                // Calcular quantidade de não lidas
+                const unread = allNotifications.filter((n: any) => !n.is_read).length;
+                setUnreadCount(unread);
+
+                // Atualizar badge no serviço de notificações
+                notificationService.updateNotificationBadge(unread);
+            } catch (error) {
+                console.error('Erro ao carregar notificações:', error);
+                // Em caso de erro, definir contagem como 0 para evitar confusão
+                setUnreadCount(0);
+                notificationService.updateNotificationBadge(0);
+            }
+        };
+
+        if (user) {
+            fetchNotifications();
+
+            // Configurar polling para atualizações (a cada 30 segundos)
+            const interval = setInterval(fetchNotifications, 30000);
+
+            return () => clearInterval(interval);
+        }
+    }, [user]); */
 
     return (
         <header
@@ -96,11 +107,7 @@ export function Header({ className, sidebarCollapsed }: HeaderProps) {
             <div className="flex items-center justify-between h-full px-4 lg:px-6">
                 {/* Left: Logo (mobile) + Search */}
                 <div className="flex items-center gap-4 flex-1">
-                    {/* Logo for mobile (hidden on desktop where sidebar shows it) */}
-                    <div className="flex items-center gap-2 lg:hidden ml-10">
-                        <span className="text-xl">🥗</span>
-                        <span className="font-bold text-sm">NutriXpert</span>
-                    </div>
+                    {/* Logo/Brand Removed */}
 
                     {/* Search Bar */}
                     <div className={cn(
@@ -119,7 +126,7 @@ export function Header({ className, sidebarCollapsed }: HeaderProps) {
                                 "transition-all duration-200"
                             )}
                             onFocus={() => setSearchFocused(true)}
-                            onBlur={() => setSearchFocused(false)}
+                            onBlur={() => setSearchFocus(false)}
                         />
                         <kbd className="absolute right-3 top-1/2 -translate-y-1/2 hidden md:inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground bg-muted rounded">
                             ⌘K
@@ -166,87 +173,109 @@ export function Header({ className, sidebarCollapsed }: HeaderProps) {
                         ))}
                     </div>
 
-                    {/* Notifications */}
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="relative rounded-full">
-                                <Bell className="h-4 w-4" />
-                                {unreadCount > 0 && (
-                                    <Badge
-                                        variant="destructive"
-                                        className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-[10px] animate-pulse"
-                                    >
-                                        {unreadCount}
-                                    </Badge>
-                                )}
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-80">
-                            <DropdownMenuLabel className="flex items-center justify-between">
-                                <span>Notificações</span>
-                                <Button variant="link" size="sm" className="h-auto p-0 text-xs">
+                    {/* Notifications - Desativado temporariamente devido a erro no backend */}
+                    {/* {mounted && (
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="relative rounded-full">
+                                    <Bell className="h-4 w-4" />
+                                    {unreadCount > 0 && (
+                                        <Badge
+                                            variant="destructive"
+                                            className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-[10px] animate-pulse"
+                                        >
+                                            {unreadCount}
+                                        </Badge>
+                                    )}
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-80">
+                                <DropdownMenuLabel className="flex items-center justify-between">
+                                    <span>Notificações</span>
+                                    <Button
+                                    variant="link"
+                                    size="sm"
+                                    className="h-auto p-0 text-xs"
+                                    onClick={() => router.push('/notifications')}
+                                >
                                     Ver todas
                                 </Button>
-                            </DropdownMenuLabel>
-                            <DropdownMenuSeparator />
-                            {mockNotifications.map((notification) => (
-                                <DropdownMenuItem
-                                    key={notification.id}
-                                    className={cn(
-                                        "flex items-start gap-3 p-3 cursor-pointer",
-                                        notification.isUrgent && "bg-destructive/5 border-l-2 border-destructive"
-                                    )}
-                                >
-                                    <span className="mt-0.5">{notification.icon}</span>
-                                    <div className="flex-1 min-w-0">
-                                        <p className={cn(
-                                            "text-sm truncate",
-                                            notification.isUrgent && "font-medium text-destructive"
-                                        )}>
-                                            {notification.title}
-                                        </p>
-                                        <p className="text-xs text-muted-foreground">
-                                            {notification.time}
-                                        </p>
-                                    </div>
-                                </DropdownMenuItem>
-                            ))}
-                        </DropdownMenuContent>
-                    </DropdownMenu>
+                                </DropdownMenuLabel>
+                                <DropdownMenuSeparator />
+                                {notifications.map((notification) => (
+                                    <DropdownMenuItem
+                                        key={notification.id}
+                                        className={cn(
+                                            "flex items-start gap-3 p-3 cursor-pointer",
+                                            !notification.is_read && "bg-accent"
+                                        )}
+                                    >
+                                        <span className="mt-0.5">
+                                            {notification.type === 'message' ? (
+                                                <MessageSquare className="h-4 w-4 text-blue-500" />
+                                            ) : notification.type === 'appointment' ? (
+                                                <Calendar className="h-4 w-4 text-amber-500" />
+                                            ) : notification.type === 'diet' ? (
+                                                <UtensilsCrossed className="h-4 w-4 text-green-500" />
+                                            ) : (
+                                                <Bell className="h-4 w-4 text-gray-500" />
+                                            )}
+                                        </span>
+                                        <div className="flex-1 min-w-0">
+                                            <p className={cn(
+                                                "text-sm truncate",
+                                                !notification.is_read && "font-medium text-foreground"
+                                            )}>
+                                                {notification.title}
+                                            </p>
+                                            <p className="text-xs text-muted-foreground">
+                                                {new Date(notification.sent_at || notification.created_at).toLocaleString('pt-BR')}
+                                            </p>
+                                        </div>
+                                        {!notification.is_read && (
+                                            <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                                        )}
+                                    </DropdownMenuItem>
+                                ))}
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    )} */}
 
                     {/* Profile Dropdown */}
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" className="flex items-center gap-2 px-2">
-                                <Avatar className="h-8 w-8">
-                                    <AvatarImage src={user?.avatar} />
-                                    <AvatarFallback className="bg-primary text-primary-foreground text-sm">
-                                        {user?.name?.substring(0, 2).toUpperCase() || "NP"}
-                                    </AvatarFallback>
-                                </Avatar>
-                                <span className="hidden md:block text-sm font-medium max-w-[120px] truncate">
-                                    {user?.name || "Nutricionista"}
-                                </span>
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-56">
-                            <DropdownMenuLabel>Minha Conta</DropdownMenuLabel>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem onClick={() => router.push("/profile")}>
-                                <User className="mr-2 h-4 w-4" />
-                                Perfil
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => router.push("/settings")}>
-                                <Settings className="mr-2 h-4 w-4" />
-                                Configurações
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem onClick={logout} className="text-destructive focus:text-destructive">
-                                <LogOut className="mr-2 h-4 w-4" />
-                                Sair
-                            </DropdownMenuItem>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
+                    {mounted && (
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" className="flex items-center gap-2 px-2">
+                                    <Avatar className="h-8 w-8">
+                                        <AvatarImage src={user?.avatar} />
+                                        <AvatarFallback className="bg-primary text-primary-foreground text-sm">
+                                            {user?.name?.substring(0, 2).toUpperCase() || "NP"}
+                                        </AvatarFallback>
+                                    </Avatar>
+                                    <span className="hidden md:block text-sm font-medium max-w-[120px] truncate">
+                                        {user?.name || "Nutricionista"}
+                                    </span>
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-56">
+                                <DropdownMenuLabel>Minha Conta</DropdownMenuLabel>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem onClick={() => router.push("/profile")}>
+                                    <User className="mr-2 h-4 w-4" />
+                                    Perfil
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => router.push("/settings")}>
+                                    <Settings className="mr-2 h-4 w-4" />
+                                    Configurações
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem onClick={logout} className="text-destructive focus:text-destructive">
+                                    <LogOut className="mr-2 h-4 w-4" />
+                                    Sair
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    )}
                 </div>
             </div>
         </header>

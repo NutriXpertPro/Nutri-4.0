@@ -61,7 +61,7 @@ export default function Pricing1() {
                 <div className="absolute inset-0 bg-gradient-to-r from-purple-500 to-pink-500 blur-[100px] rounded-full mix-blend-screen animate-pulse" style={{ animationDuration: '4s' }}></div>
             </div>
 
-            <div className="mx-auto max-w-screen-xl px-4 md:px-8 relative z-10">
+            <div className="mx-auto max-w-7xl px-4 md:px-8 relative z-10">
                 <div className="text-center max-w-3xl mx-auto mb-16">
                     <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl md:text-5xl mb-4">
                         Planos que cabem no seu <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-emerald-500">crescimento</span>

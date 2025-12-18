@@ -38,4 +38,17 @@ django-filter==23.5
 
 # Google Auth
 google-auth==2.29.0
+google-auth-oauthlib==1.2.0
+google-auth-httplib2==0.1.1
+google-api-python-client==2.118.0
 requests==2.31.0
+
+# Ollama Cloud API
+ollama==0.3.3
+pydantic==2.10.3
+
+# Celery
+celery==5.4.0
+django-celery-beat==2.6.0
+django-celery-results==2.5.1
+redis==5.0.1

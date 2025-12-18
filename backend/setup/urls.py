@@ -36,6 +36,9 @@ urlpatterns = [
     path("api/v1/notifications/", include("notifications.urls", namespace="notification")),
     path("api/v1/messages/", include("messages.urls", namespace="messages")),
     path("api/v1/lab_exams/", include("lab_exams.urls", namespace="lab_exams")),
+    path("api/v1/automation/", include("automation.urls", namespace="automation")),
+    path("api/v1/branding/", include("branding.urls", namespace="branding")),
+    path("api/v1/integrations/", include("integrations.urls", namespace="integrations")),
     path("api/v1/dashboard/", include("dashboard.urls")),
 ]
 
