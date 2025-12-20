@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
-import { Trash2, Plus, GripVertical, Check, ChevronsUpDown, Search, Loader2, Utensils, RefreshCw, X, ChevronDown, ChevronUp, Copy, Maximize2, Minimize2, Flame, Folder, ArrowRight, Star, Clock, Coffee, Salad, Apple, Soup, Moon, PieChart, FileText, Eye } from 'lucide-react'
+import { Trash2, Plus, GripVertical, Check, ChevronsUpDown, Search, Loader2, Utensils, RefreshCw, X, ChevronDown, ChevronUp, Copy, Maximize2, Minimize2, Flame, Folder, ArrowRight, Star, Clock, Coffee, Salad, Apple, Soup, Moon, PieChart, FileText, Eye, Settings } from 'lucide-react'
 import { useDebounce } from '@/hooks/use-debounce'
 import { useQuery } from '@tanstack/react-query'
 import { cn } from "@/lib/utils"
