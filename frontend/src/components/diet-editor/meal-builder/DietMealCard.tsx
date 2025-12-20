@@ -279,6 +279,9 @@ export function DietMealCard({
                                     <Eye className="w-3.5 h-3.5" />
                                     <span className="hidden sm:inline">Preview</span>
                                 </Button>
+                                <Button variant="ghost" size="sm" className="h-8 w-8 bg-muted/30 text-foreground hover:bg-primary/20 transition-all border border-border/30" title="Gerenciar Templates">
+                                    <Settings className="w-3.5 h-3.5" />
+                                </Button>
                                 <Button variant="ghost" size="sm" className="h-8 w-8 bg-destructive/10 text-destructive hover:bg-destructive hover:text-white transition-all border border-destructive/30 shadow-lg shadow-destructive/10" onClick={() => { if (confirm('Excluir esta refeição inteira?')) onDelete(); }} title="Excluir Refeição">
                                     <Trash2 className="w-3.5 h-3.5" />
                                 </Button>
