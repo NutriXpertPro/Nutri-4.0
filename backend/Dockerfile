@@ -10,11 +10,15 @@ RUN apt-get update && apt-get install -y \
     pkg-config \
     default-libmysqlclient-dev \
     build-essential \
+    libssl-dev \
+    libffi-dev \
     && rm -rf /var/lib/apt/lists/*
+
 
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+# Run migrations and start Gunicorn
+CMD ["gunicorn", "setup.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "3", "--timeout", "120"]

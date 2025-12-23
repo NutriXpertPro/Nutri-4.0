@@ -4,6 +4,7 @@ import * as React from "react"
 import { cn } from "@/lib/utils"
 import { Card, CardContent } from "@/components/ui/card"
 import { LucideIcon } from "lucide-react"
+import { IconWrapper } from "@/components/ui/IconWrapper"
 
 interface StatCardProps {
     title: string
@@ -52,34 +53,6 @@ function useCountUp(end: number, duration: number = 1500) {
     return count
 }
 
-const variantStyles = {
-    blue: {
-        gradient: "from-blue-500/10 via-transparent to-transparent",
-        iconBg: "bg-blue-500/10",
-        iconColor: "text-blue-500",
-    },
-    amber: {
-        gradient: "from-amber-500/10 via-transparent to-transparent",
-        iconBg: "bg-amber-500/10",
-        iconColor: "text-amber-500",
-    },
-    green: {
-        gradient: "from-green-500/10 via-transparent to-transparent",
-        iconBg: "bg-green-500/10",
-        iconColor: "text-green-500",
-    },
-    violet: {
-        gradient: "from-violet-500/10 via-transparent to-transparent",
-        iconBg: "bg-violet-500/10",
-        iconColor: "text-violet-500",
-    },
-    theme: {
-        gradient: "from-primary/10 via-transparent to-transparent",
-        iconBg: "bg-primary/10",
-        iconColor: "text-primary",
-    },
-}
-
 export function StatCard({
     title,
     value,
@@ -91,47 +64,39 @@ export function StatCard({
 }: StatCardProps) {
     const numericValue = typeof value === "number" ? value : parseInt(value.toString()) || 0
     const animatedValue = useCountUp(numericValue)
-    const styles = variantStyles[variant]
+
+    // Map variant to IconWrapper variant
+    const iconVariant = variant === "theme" ? "default" : variant
 
     return (
         <Card
+            variant="glass"
             className={cn(
-                "relative overflow-hidden transition-all duration-300 ease-out",
-                "hover:shadow-lg hover:-translate-y-1",
-                // Glassmorphism
-                "bg-card/80 backdrop-blur-sm border-border/50",
+                "group relative overflow-hidden",
                 className
             )}
         >
-            {/* Gradient Background */}
-            <div
-                className={cn(
-                    "absolute inset-0 bg-gradient-to-br opacity-50",
-                    styles.gradient
-                )}
-            />
-
             <CardContent className="relative p-6">
                 <div className="flex items-start justify-between">
                     {/* Content */}
                     <div className="space-y-2">
-                        <p className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
+                        <p className="text-data-label">
                             {title}
                         </p>
-                        <p className="text-4xl font-bold tracking-tight">
+                        <p className="text-data-value text-4xl !font-normal">
                             {typeof value === "string" && value.includes("%")
                                 ? `${animatedValue}%`
                                 : animatedValue}
                         </p>
                         {(trend || subtitle) && (
-                            <div className="flex items-center gap-2 text-sm">
+                            <div className="flex items-center gap-2">
                                 {trend && (
                                     <span
                                         className={cn(
-                                            "font-medium",
+                                            "text-xs px-1.5 py-0.5 rounded-full flex items-center gap-0.5",
                                             trend.isPositive !== false
-                                                ? "text-green-500"
-                                                : "text-red-500"
+                                                ? "bg-green-500/10 text-green-500"
+                                                : "bg-red-500/10 text-red-500"
                                         )}
                                     >
                                         {trend.isPositive !== false ? "+" : ""}
@@ -139,7 +104,7 @@ export function StatCard({
                                         {trend.isPositive !== false ? "↑" : "↓"}
                                     </span>
                                 )}
-                                <span className="text-muted-foreground">
+                                <span className="text-subtitle text-[11px]">
                                     {trend?.label || subtitle}
                                 </span>
                             </div>
@@ -147,14 +112,13 @@ export function StatCard({
                     </div>
 
                     {/* Icon */}
-                    <div
-                        className={cn(
-                            "flex items-center justify-center w-12 h-12 rounded-xl",
-                            styles.iconBg
-                        )}
-                    >
-                        <Icon className={cn("h-6 w-6", styles.iconColor)} />
-                    </div>
+                    <IconWrapper
+                        icon={Icon}
+                        variant={iconVariant as any}
+                        size="xl"
+                        glow
+                        className="group-hover:scale-110 group-hover:rotate-3 transition-transform"
+                    />
                 </div>
             </CardContent>
         </Card>
@@ -164,13 +128,13 @@ export function StatCard({
 // Skeleton version for loading state
 export function StatCardSkeleton() {
     return (
-        <Card className="relative overflow-hidden">
+        <Card variant="glass" className="relative overflow-hidden">
             <CardContent className="p-6">
                 <div className="flex items-start justify-between">
                     <div className="space-y-3">
-                        <div className="h-4 w-24 bg-muted animate-pulse rounded" />
+                        <div className="h-3 w-24 bg-muted animate-pulse rounded" />
                         <div className="h-10 w-16 bg-muted animate-pulse rounded" />
-                        <div className="h-4 w-32 bg-muted animate-pulse rounded" />
+                        <div className="h-3 w-32 bg-muted animate-pulse rounded" />
                     </div>
                     <div className="w-12 h-12 bg-muted animate-pulse rounded-xl" />
                 </div>

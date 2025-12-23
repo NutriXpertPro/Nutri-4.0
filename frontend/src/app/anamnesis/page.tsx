@@ -52,6 +52,7 @@ import { cn } from "@/lib/utils"
 import { TemplateBuilder } from "@/components/anamnesis/TemplateBuilder"
 import { AnamnesisList } from "@/components/anamnesis/AnamnesisList"
 import { WizardAnamnesisForm } from "@/components/anamnesis/WizardAnamnesisForm"
+import { CsvTemplateImporter } from "@/components/anamnesis/CsvTemplateImporter"
 import {
     Dialog,
     DialogContent,
@@ -137,8 +138,6 @@ export default function AnamnesisPage() {
     const [expandedSections, setExpandedSections] = React.useState<string[]>(["identificacao"])
     const [showTemplateBuilder, setShowTemplateBuilder] = React.useState(false)
     const [editingTemplate, setEditingTemplate] = React.useState<AnamnesisTemplate | null>(null)
-    const [importJson, setImportJson] = React.useState("")
-    const [importDialogOpen, setImportDialogOpen] = React.useState(false)
     const [viewMode, setViewMode] = React.useState<"list" | "form">("list") // Para alternar entre lista e formulário
 
     const queryClient = useQueryClient()
@@ -184,23 +183,7 @@ export default function AnamnesisPage() {
         createTemplateMutation.mutate(templateData)
     }
 
-    const handleImportTemplate = () => {
-        try {
-            const parsed = JSON.parse(importJson)
-            if (!parsed.title || !parsed.questions) {
-                throw new Error("Formato inválido")
-            }
-            createTemplateMutation.mutate({
-                title: parsed.title,
-                description: parsed.description || "",
-                questions: parsed.questions
-            })
-            setImportJson("")
-            setImportDialogOpen(false)
-        } catch (e) {
-            alert("Erro ao importar: JSON inválido ou formato incorreto")
-        }
-    }
+    // Função de importação JSON removida - usando importação CSV via componente CsvTemplateImporter
 
     const handleDuplicateTemplate = (template: AnamnesisTemplate) => {
         createTemplateMutation.mutate({
@@ -276,59 +259,23 @@ export default function AnamnesisPage() {
                 {/* Header Premium */}
                 <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
                     <div className="flex items-center gap-4">
-                        <div className="h-16 w-16 rounded-2xl bg-linear-to-br from-primary/30 to-primary/10 flex items-center justify-center text-primary shadow-xl shadow-primary/20 ring-4 ring-primary/5">
-                            <ClipboardList className="h-8 w-8" />
-                        </div>
                         <div>
-                            <h1 className="text-3xl font-bold tracking-tight text-foreground bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
+                            <h1 className="text-3xl tracking-tight text-foreground bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
                                 Central de Anamneses
                             </h1>
-                            <p className="text-muted-foreground mt-1">
+                            <p className="text-muted-foreground mt-1 flex items-center gap-2">
+                                <FileText className="h-4 w-4 text-orange-500" />
                                 Gerencie questionários, templates personalizados e respostas dos pacientes
                             </p>
                         </div>
                     </div>
 
                     <div className="flex flex-wrap gap-3">
-                        <Dialog open={importDialogOpen} onOpenChange={setImportDialogOpen}>
-                            <DialogTrigger asChild>
-                                <Button variant="outline" className="gap-2 hover:border-primary/50">
-                                    <FileUp className="h-4 w-4" />
-                                    Importar
-                                </Button>
-                            </DialogTrigger>
-                            <DialogContent className="sm:max-w-lg">
-                                <DialogHeader>
-                                    <DialogTitle className="flex items-center gap-2">
-                                        <Upload className="h-5 w-5 text-primary" />
-                                        Importar Template
-                                    </DialogTitle>
-                                    <DialogDescription>
-                                        Cole o JSON do template que deseja importar
-                                    </DialogDescription>
-                                </DialogHeader>
-                                <div className="space-y-4 py-4">
-                                    <Textarea
-                                        placeholder='{"title": "Meu Template", "description": "...", "questions": [...]}'
-                                        value={importJson}
-                                        onChange={(e) => setImportJson(e.target.value)}
-                                        className="min-h-[200px] font-mono text-sm"
-                                    />
-                                    <p className="text-xs text-muted-foreground">
-                                        O JSON deve conter: title (texto), description (opcional), questions (array de perguntas)
-                                    </p>
-                                </div>
-                                <DialogFooter>
-                                    <Button variant="outline" onClick={() => setImportDialogOpen(false)}>
-                                        Cancelar
-                                    </Button>
-                                    <Button onClick={handleImportTemplate} disabled={!importJson.trim()}>
-                                        <Download className="mr-2 h-4 w-4" />
-                                        Importar
-                                    </Button>
-                                </DialogFooter>
-                            </DialogContent>
-                        </Dialog>
+                        <CsvTemplateImporter
+                            onImport={(templateData) => {
+                                createTemplateMutation.mutate(templateData)
+                            }}
+                        />
 
                         <Button onClick={handleNewAnamnesis} className="gap-2 shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all">
                             <Plus className="h-4 w-4" />
@@ -345,49 +292,49 @@ export default function AnamnesisPage() {
                 {/* Stats Cards Premium */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                     <Card className="bg-linear-to-br from-card/80 to-card/40 backdrop-blur-xl border-border/40 hover:shadow-lg transition-all group">
-                        <CardContent className="p-5 flex items-center gap-4">
-                            <div className="h-14 w-14 rounded-2xl bg-linear-to-br from-primary/20 to-primary/5 flex items-center justify-center group-hover:scale-110 transition-transform">
-                                <List className="h-7 w-7 text-primary" />
+                        <CardContent className="p-5 flex items-start justify-between">
+                            <div className="space-y-2">
+                                <p className="text-data-label">Anamneses</p>
+                                <p className="text-data-value text-4xl !font-normal">24</p>
                             </div>
-                            <div>
-                                <p className="text-3xl font-bold">24</p>
-                                <p className="text-sm text-muted-foreground">Anamneses</p>
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    <Card className="bg-linear-to-br from-card/80 to-card/40 backdrop-blur-xl border-border/40 hover:shadow-lg transition-all group">
-                        <CardContent className="p-5 flex items-center gap-4">
-                            <div className="h-14 w-14 rounded-2xl bg-linear-to-br from-violet-500/20 to-violet-500/5 flex items-center justify-center group-hover:scale-110 transition-transform">
-                                <LayoutTemplate className="h-7 w-7 text-violet-500" />
-                            </div>
-                            <div>
-                                <p className="text-3xl font-bold">{templates?.length || 0}</p>
-                                <p className="text-sm text-muted-foreground">Templates Criados</p>
+                            <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center">
+                                <List className="h-6 w-6 text-primary" />
                             </div>
                         </CardContent>
                     </Card>
 
                     <Card className="bg-linear-to-br from-card/80 to-card/40 backdrop-blur-xl border-border/40 hover:shadow-lg transition-all group">
-                        <CardContent className="p-5 flex items-center gap-4">
-                            <div className="h-14 w-14 rounded-2xl bg-linear-to-br from-amber-500/20 to-amber-500/5 flex items-center justify-center group-hover:scale-110 transition-transform">
-                                <Clock className="h-7 w-7 text-amber-500" />
+                        <CardContent className="p-5 flex items-start justify-between">
+                            <div className="space-y-2">
+                                <p className="text-data-label">Templates Criados</p>
+                                <p className="text-data-value text-4xl !font-normal">{templates?.length || 0}</p>
                             </div>
-                            <div>
-                                <p className="text-3xl font-bold">8</p>
-                                <p className="text-sm text-muted-foreground">Pendentes</p>
+                            <div className="h-12 w-12 rounded-xl bg-violet-500/10 flex items-center justify-center">
+                                <LayoutTemplate className="h-6 w-6 text-violet-500" />
                             </div>
                         </CardContent>
                     </Card>
 
                     <Card className="bg-linear-to-br from-card/80 to-card/40 backdrop-blur-xl border-border/40 hover:shadow-lg transition-all group">
-                        <CardContent className="p-5 flex items-center gap-4">
-                            <div className="h-14 w-14 rounded-2xl bg-linear-to-br from-emerald-500/20 to-emerald-500/5 flex items-center justify-center group-hover:scale-110 transition-transform">
-                                <CheckCircle2 className="h-7 w-7 text-emerald-500" />
+                        <CardContent className="p-5 flex items-start justify-between">
+                            <div className="space-y-2">
+                                <p className="text-data-label">Pendentes</p>
+                                <p className="text-data-value text-4xl !font-normal">8</p>
                             </div>
-                            <div>
-                                <p className="text-3xl font-bold">16</p>
-                                <p className="text-sm text-muted-foreground">Completas</p>
+                            <div className="h-12 w-12 rounded-xl bg-destructive/10 flex items-center justify-center">
+                                <Clock className="h-6 w-6 text-destructive" />
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    <Card className="bg-linear-to-br from-card/80 to-card/40 backdrop-blur-xl border-border/40 hover:shadow-lg transition-all group">
+                        <CardContent className="p-5 flex items-start justify-between">
+                            <div className="space-y-2">
+                                <p className="text-data-label">Completas</p>
+                                <p className="text-data-value text-4xl !font-normal">16</p>
+                            </div>
+                            <div className="h-12 w-12 rounded-xl bg-emerald-500/10 flex items-center justify-center">
+                                <CheckCircle2 className="h-6 w-6 text-emerald-500" />
                             </div>
                         </CardContent>
                     </Card>
@@ -397,15 +344,15 @@ export default function AnamnesisPage() {
                 <Tabs defaultValue="list" className="space-y-6">
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                         <TabsList className="bg-muted/30 backdrop-blur-sm p-1 rounded-xl">
-                            <TabsTrigger value="list" className="gap-2 data-[state=active]:bg-primary/10 data-[state=active]:text-primary rounded-lg">
+                            <TabsTrigger value="list" className="gap-2 data-[state=active]:bg-primary/10 data-[state=active]:text-primary rounded-lg font-normal">
                                 <List className="h-4 w-4" />
                                 Lista de Anamneses
                             </TabsTrigger>
-                            <TabsTrigger value="standard" className="gap-2 data-[state=active]:bg-primary/10 data-[state=active]:text-primary rounded-lg">
+                            <TabsTrigger value="standard" className="gap-2 data-[state=active]:bg-primary/10 data-[state=active]:text-primary rounded-lg font-normal">
                                 <Star className="h-4 w-4" />
                                 Anamnese Padrão
                             </TabsTrigger>
-                            <TabsTrigger value="templates" className="gap-2 data-[state=active]:bg-primary/10 data-[state=active]:text-primary rounded-lg">
+                            <TabsTrigger value="templates" className="gap-2 data-[state=active]:bg-primary/10 data-[state=active]:text-primary rounded-lg font-normal">
                                 <LayoutTemplate className="h-4 w-4" />
                                 Templates
                                 {(templates?.length || 0) > 0 && (
@@ -448,11 +395,11 @@ export default function AnamnesisPage() {
                                     </div>
                                     <div className="flex-1">
                                         <div className="flex items-center gap-2 mb-2">
-                                            <h2 className="text-2xl font-bold">Anamnese Padrão Completa</h2>
+                                            <h2 className="text-2xl font-normal">Anamnese Padrão Completa</h2>
                                             <Badge className="bg-primary/20 text-primary hover:bg-primary/30">Recomendado</Badge>
                                         </div>
                                         <p className="text-muted-foreground max-w-2xl">
-                                            Questionário completo com <strong>7 seções</strong> e <strong>campos condicionais inteligentes</strong> que se adaptam às respostas do paciente. Inclui identificação, rotina, nutrição, histórico de saúde, objetivos, medidas e registro fotográfico.
+                                            Questionário completo com 7 seções e campos condicionais inteligentes que se adaptam às respostas do paciente. Inclui identificação, rotina, nutrição, histórico de saúde, objetivos, medidas e registro fotográfico.
                                         </p>
                                     </div>
                                     <div className="flex flex-col gap-2">
@@ -577,10 +524,11 @@ export default function AnamnesisPage() {
                                         Crie templates personalizados para diferentes tipos de consulta, acompanhamento ou especialidades.
                                     </p>
                                     <div className="flex gap-3">
-                                        <Button variant="outline" onClick={() => setImportDialogOpen(true)}>
-                                            <Upload className="mr-2 h-4 w-4" />
-                                            Importar Template
-                                        </Button>
+                                        <CsvTemplateImporter
+                                            onImport={(templateData) => {
+                                                createTemplateMutation.mutate(templateData)
+                                            }}
+                                        />
                                         <Button onClick={() => setShowTemplateBuilder(true)}>
                                             <Plus className="mr-2 h-4 w-4" />
                                             Criar do Zero

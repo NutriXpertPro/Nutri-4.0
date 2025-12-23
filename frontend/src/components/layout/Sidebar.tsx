@@ -93,7 +93,7 @@ export function Sidebar({ className, collapsed, onToggle }: SidebarProps) {
         },
         {
             icon: <MessageSquare className="h-5 w-5" />,
-            label: "Mensagens",
+            label: "Xpert Messenger",
             href: "/messages",
             badge: mockBadges.messages,
             badgeVariant: "destructive", // Vermelho para mensagens não lidas
@@ -167,32 +167,27 @@ export function Sidebar({ className, collapsed, onToggle }: SidebarProps) {
             >
                 {/* Logo */}
                 <div className={cn(
-                    "flex items-center gap-3 px-4 py-2 border-b h-[73px]", // Fixed height to maintain alignment if needed, or let it shrink
-                    isCollapsed && "justify-center px-2"
+                    "flex items-center border-b h-20",
+                    isCollapsed ? "justify-center px-2" : "justify-center"
                 )}>
-                    {!isCollapsed && (
-                        <div className="flex items-center space-x-2">
-                            <div className="w-20 h-20 rounded-xl bg-transparent overflow-hidden">
-                                <img
-                                    src="/logo.png"
-                                    alt="NutriXpertPro"
-                                    className="w-full h-full object-contain"
-                                    style={{ filter: 'contrast(110%) brightness(105%)' }}
-                                />
-                            </div>
-                            <span className="font-bold text-lg">NutriXpertPro</span>
-                        </div>
-                    )}
-                    {isCollapsed && (
-                        <div className="w-20 h-20 rounded-xl bg-transparent overflow-hidden">
+                    <Link href="/dashboard" className="flex items-center group">
+                        <div className="relative w-28 h-28 flex-shrink-0">
                             <img
                                 src="/logo.png"
-                                alt="NutriXpertPro"
-                                className="w-full h-full object-contain"
+                                alt="Logo"
+                                className="w-full h-full object-contain group-hover:scale-110 transition-transform"
                                 style={{ filter: 'contrast(110%) brightness(105%)' }}
                             />
                         </div>
-                    )}
+                        {!isCollapsed && (
+                            <div 
+                                className="text-lg font-bold tracking-tighter transition-colors ml-[-12px] text-foreground"
+                                suppressHydrationWarning
+                            >
+                                Nutri<span className="text-emerald-500">Xpert</span>Pro
+                            </div>
+                        )}
+                    </Link>
                 </div>
 
                 {/* Navigation Items */}

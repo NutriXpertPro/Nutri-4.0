@@ -56,6 +56,51 @@ class FoodSearchViewSet(viewsets.ViewSet):
     """
     permission_classes = [IsAuthenticated]
     
+    @classmethod
+    def ensure_cache(cls):
+        """Cache global para evitar N+1 queries no IBGE com dados nutricionais"""
+        if not hasattr(cls, 'IBGE_CACHE') or not cls.IBGE_CACHE:
+            try:
+                # Carrega medidas IBGE
+                items = AlimentoMedidaIBGE.objects.select_related('medida').all()
+                
+                # Para dados nutricionais no IBGE, fazemos match com TBCA
+                tbca_lookup = {
+                    item.nome.lower(): item 
+                    for item in AlimentoTBCA.objects.all().only(
+                        'nome', 'energia_kcal', 'proteina_g', 'lipidios_g', 'carboidrato_g', 'fibra_g'
+                    )
+                }
+                
+                cache = {}
+                for item in items:
+                    name = item.nome_alimento
+                    md5_id = hashlib.md5(name.encode('utf-8')).hexdigest()
+                    if md5_id not in cache:
+                        name_lower = name.lower()
+                        nutri = tbca_lookup.get(name_lower)
+                        if not nutri:
+                            simplified = name_lower.split(',')[0]
+                            nutri = tbca_lookup.get(simplified)
+                            
+                        cache[md5_id] = {
+                            'id': md5_id, # Adicionado ID explícito
+                            'nome': name,
+                            'nome_lower': name_lower,
+                            'medida_nome': item.medida.nome,
+                            'peso_g': item.peso_g,
+                            'energia_kcal': nutri.energia_kcal if nutri else 0,
+                            'proteina_g': nutri.proteina_g if nutri else 0,
+                            'lipidios_g': nutri.lipidios_g if nutri else 0,
+                            'carboidrato_g': nutri.carboidrato_g if nutri else 0,
+                            'fibra_g': nutri.fibra_g if nutri else 0,
+                            'grupo': 'Medida Caseira (IBGE)'
+                        }
+                cls.IBGE_CACHE = cache
+                print(f"IBGE Cache loaded with nutrition: {len(cache)} items")
+            except Exception as e:
+                print(f"Error loading IBGE cache: {e}")
+
     def list(self, request):
         """
         GET /api/v1/foods/?search=arroz&source=TACO&limit=50
@@ -64,7 +109,6 @@ class FoodSearchViewSet(viewsets.ViewSet):
         search_query = request.query_params.get('search', '').strip()
         source_filter = request.query_params.get('source', '').upper()
         grupo_filter = request.query_params.get('grupo', '')
-        # Remove manual limit handling as pagination will take care of it
 
         if len(search_query) < 2:
             return Response(
@@ -80,41 +124,17 @@ class FoodSearchViewSet(viewsets.ViewSet):
             )
 
         # Mapa de favoritos do usuário para lookup O(1)
-        # Formato: "SOURCE_ID" -> True
         user_fav_keys = set()
         ibge_fav_names = set()
         if request.user.is_authenticated:
             favs = FavoriteFood.objects.filter(user=request.user)
             for f in favs:
-                # Normaliza chave: "TACO_1", "IBGE_123456"
                 user_fav_keys.add(f"{f.food_source}_{f.food_id}")
                 if f.food_source == 'IBGE':
                     ibge_fav_names.add(f.food_name)
 
         results = []
-
-        # Cache global simples para evitar N+1 queries no IBGE
-        # Isso carrega +- 10k itens na memória (muito leve) e evita 30-100 queries por request
-        if not hasattr(FoodSearchViewSet, 'IBGE_CACHE'):
-            FoodSearchViewSet.IBGE_CACHE = []
-            
-        def ensure_cache():
-            if not FoodSearchViewSet.IBGE_CACHE:
-                try:
-                    # Carrega tudo de uma vez (aprox 10k rows) - muito rápido
-                    items = AlimentoMedidaIBGE.objects.select_related('medida').all()
-                    cache = []
-                    for item in items:
-                        cache.append({
-                            'nome_alimento': item.nome_alimento,
-                            'nome_lower': item.nome_alimento.lower(),
-                            'medida_nome': item.medida.nome,
-                            'peso_g': item.peso_g
-                        })
-                    FoodSearchViewSet.IBGE_CACHE = cache
-                    print(f"IBGE Cache loaded: {len(cache)} items")
-                except Exception as e:
-                    print(f"Error loading IBGE cache: {e}")
+        self.ensure_cache()
 
         def get_measure_data(food_name):
             """
@@ -124,7 +144,7 @@ class FoodSearchViewSet(viewsets.ViewSet):
             if not food_name: return None, None, []
             
             # Garante que o cache está carregado
-            ensure_cache()
+            self.ensure_cache()
             
             # Limpeza do nome
             parts = food_name.split(',')
@@ -139,7 +159,7 @@ class FoodSearchViewSet(viewsets.ViewSet):
 
             # Busca no CACHE (em memória)
             # 1. Filtra matches
-            matches = [m for m in FoodSearchViewSet.IBGE_CACHE if search_term in m['nome_lower']]
+            matches = [m for m in FoodSearchViewSet.IBGE_CACHE.values() if search_term in m['nome_lower']]
             
             # Excluir medidas triviais
             matches = [m for m in matches if m['medida_nome'] not in ['Grama', 'Quilo', 'Miligrama']]
@@ -147,7 +167,7 @@ class FoodSearchViewSet(viewsets.ViewSet):
             if not matches:
                 first_word = clean_name.split()[0].lower()
                 if len(first_word) > 3:
-                    matches = [m for m in FoodSearchViewSet.IBGE_CACHE if first_word in m['nome_lower']]
+                    matches = [m for m in FoodSearchViewSet.IBGE_CACHE.values() if first_word in m['nome_lower']]
                     matches = [m for m in matches if m['medida_nome'] not in ['Grama', 'Quilo', 'Miligrama']]
 
             available_measures = []
@@ -513,6 +533,92 @@ class FoodSearchViewSet(viewsets.ViewSet):
         all_grupos = sorted(taco_grupos | tbca_grupos | usda_grupos)
         
         return Response({'grupos': all_grupos})
+
+    @action(detail=False, methods=['GET'])
+    def favorites(self, request):
+        """
+        GET /api/v1/diets/foods/favorites/
+        Retorna a lista de alimentos favoritos do usuário com dados nutricionais completos.
+        """
+        if not request.user.is_authenticated:
+            return Response({'results': []})
+
+        # Garantir cache carregado (especialmente para IBGE)
+        self.ensure_cache()
+
+        favorites = FavoriteFood.objects.filter(user=request.user).order_by('-created_at')
+        results = []
+
+        for fav in favorites:
+            food_data = self._get_food_data(fav.food_source, fav.food_id)
+            if food_data:
+                food_data['is_favorite'] = True
+                results.append(food_data)
+
+        return Response({'results': results})
+
+    def _get_food_data(self, source, food_id):
+        """Busca dados de um alimento específico em qualquer uma das fontes."""
+        try:
+            if source == 'TACO':
+                food = AlimentoTACO.objects.get(codigo=food_id)
+                return {
+                    'id': food.codigo,
+                    'nome': food.nome,
+                    'energia_kcal': food.energia_kcal,
+                    'proteina_g': food.proteina_g,
+                    'lipidios_g': food.lipidios_g,
+                    'carboidrato_g': food.carboidrato_g,
+                    'fibra_g': food.fibra_g,
+                    'grupo': food.grupo,
+                    'source': 'TACO'
+                }
+            elif source == 'TBCA':
+                food = AlimentoTBCA.objects.get(codigo=food_id)
+                return {
+                    'id': food.codigo,
+                    'nome': food.nome,
+                    'energia_kcal': food.energia_kcal,
+                    'proteina_g': food.proteina_g,
+                    'lipidios_g': food.lipidios_g,
+                    'carboidrato_g': food.carboidrato_g,
+                    'fibra_g': food.fibra_g,
+                    'grupo': food.grupo,
+                    'source': 'TBCA'
+                }
+            elif source == 'USDA':
+                food = AlimentoUSDA.objects.get(fdc_id=food_id)
+                return {
+                    'id': food.fdc_id,
+                    'nome': food.nome,
+                    'energia_kcal': food.energia_kcal,
+                    'proteina_g': food.proteina_g,
+                    'lipidios_g': food.lipidios_g,
+                    'carboidrato_g': food.carboidrato_g,
+                    'fibra_g': food.fibra_g,
+                    'grupo': food.categoria,
+                    'source': 'USDA'
+                }
+            elif source == 'IBGE':
+                # Para IBGE, os dados completos vêm do cache
+                # Acessa o cache da classe diretamente
+                cache = getattr(FoodSearchViewSet, 'IBGE_CACHE', {})
+                if food_id in cache:
+                    data = cache[food_id]
+                    return {
+                        'id': food_id,
+                        'nome': data['nome'],
+                        'energia_kcal': data['energia_kcal'],
+                        'proteina_g': data['proteina_g'],
+                        'lipidios_g': data['lipidios_g'],
+                        'carboidrato_g': data['carboidrato_g'],
+                        'fibra_g': data.get('fibra_g', 0),
+                        'grupo': data.get('grupo', 'IBGE'),
+                        'source': 'IBGE'
+                    }
+        except Exception:
+            pass
+        return None
 
 
 class DietViewSet(viewsets.ModelViewSet):

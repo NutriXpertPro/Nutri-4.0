@@ -11,5 +11,8 @@ urlpatterns = [
     # Photos
     path('photos/', views.EvaluationPhotoViewSet.as_view({'get': 'list'}), name='evaluation-photo-list'),
     path('photos/<int:pk>/', views.EvaluationPhotoViewSet.as_view({'get': 'retrieve', 'delete': 'destroy'}), name='evaluation-photo-detail'),
+    # External Exams
+    path('external-exams/upload/', views.ExternalExamUploadView.as_view(), name='external-exam-upload'),
+    path('external-exams/', views.ExternalExamListView.as_view(), name='external-exam-list'),
 ]
 

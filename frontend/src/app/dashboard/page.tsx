@@ -147,9 +147,9 @@ export default function DashboardPage() {
         <DashboardLayout>
             {/* Saudação */}
             <div className="mb-8">
-                <h1 className="text-3xl font-bold">{getGreeting()}</h1>
-                <p className="text-muted-foreground mt-1 flex items-center gap-2">
-                    <Calendar className="h-4 w-4" />
+                <h1 className="text-h1 capitalize font-normal">{getGreeting()}</h1>
+                <p className="text-subtitle mt-1 flex items-center gap-2">
+                    <Calendar className="h-4 w-4 text-amber-500" />
                     {formatDate()}
                 </p>
             </div>

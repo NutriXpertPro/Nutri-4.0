@@ -88,6 +88,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -207,6 +208,17 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = 'static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
+# Enable WhiteNoise compression and caching support
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
@@ -225,9 +237,13 @@ AUTHENTICATION_BACKENDS = [
 if os.environ.get('DJANGO_ENV') == 'production':
     # Verify that critical settings are properly configured
     if DEBUG:
-        print("Aviso: DEBUG está ativado em produção. Isso pode ser um risco de segurança.")
+        print("Erro: DEBUG não deve estar ativado em produção. Saindo...")
+        import sys
+        sys.exit(1)
     if 'localhost' in ALLOWED_HOSTS or '127.0.0.1' in ALLOWED_HOSTS:
-        print("Aviso: localhost ou 127.0.0.1 estão na lista de ALLOWED_HOSTS em produção.")
+        print("Erro: localhost ou 127.0.0.1 não devem estar na lista de ALLOWED_HOSTS em produção. Saindo...")
+        import sys
+        sys.exit(1)
 
 # Environment validation
 REQUIRED_ENV_VARS = [

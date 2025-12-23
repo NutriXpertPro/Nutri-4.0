@@ -2,9 +2,8 @@ from django.db import models
 from patients.models import PatientProfile
 from django.core.exceptions import ValidationError
 import json
-import html
-import re
 from django.conf import settings
+from utils.sanitization import sanitize_string
 
 # Modelo para Favoritos
 class FavoriteFood(models.Model):
@@ -22,24 +21,6 @@ class FavoriteFood(models.Model):
 
     def __str__(self):
         return f"{self.food_name} ({self.food_source})"
-def sanitize_string(value):
-    """
-    Sanitiza uma string removendo ou escapando caracteres potencialmente perigosos.
-    """
-    if not isinstance(value, str):
-        return value
-
-    # Remover HTML/XML tags potencialmente perigosas
-    value = html.escape(value)
-
-    # Remover caracteres especiais que possam ser usados para injeção
-    value = re.sub(r'[<>"\']', '', value)
-
-    # Garantir que não haja caracteres de controle perigosos
-    value = re.sub(r'[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]', '', value)
-
-    return value.strip()
-
 # Validadores de esquema JSON
 def validate_meals_schema(value):
     """
@@ -382,6 +363,18 @@ class Diet(models.Model):
         """Verifica se há substituições configuradas"""
         return bool(self.substitutions and len(self.substitutions) > 0)
 
+    def save(self, *args, **kwargs):
+        """Sanitizar campos de texto antes de salvar"""
+        if self.name:
+            self.name = sanitize_string(self.name)
+        if self.goal:
+            self.goal = sanitize_string(self.goal)
+        if self.instructions:
+            self.instructions = sanitize_string(self.instructions)
+        if self.notes:
+            self.notes = sanitize_string(self.notes)
+        super().save(*args, **kwargs)
+
 
 class Meal(models.Model):
     """Modelo para refeições individuais dentro de uma dieta."""
@@ -407,6 +400,14 @@ class Meal(models.Model):
         dias_semana = ['SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SAB', 'DOM']
         dia = dias_semana[self.day_of_week] if 0 <= self.day_of_week <= 6 else 'N/A'
         return f"{self.name} - {dia} {self.time.strftime('%H:%M')}"
+
+    def save(self, *args, **kwargs):
+        """Sanitizar campos de texto antes de salvar"""
+        if self.name:
+            self.name = sanitize_string(self.name)
+        if self.notes:
+            self.notes = sanitize_string(self.notes)
+        super().save(*args, **kwargs)
 
     @property
     def total_calorias(self):
@@ -455,6 +456,14 @@ class FoodItem(models.Model):
         verbose_name = "Item Alimentar"
         verbose_name_plural = "Itens Alimentares"
         ordering = ['meal', 'id']
+
+    def save(self, *args, **kwargs):
+        """Sanitizar campos de texto antes de salvar"""
+        if self.food_name:
+            self.food_name = sanitize_string(self.food_name)
+        if self.unit:
+            self.unit = sanitize_string(self.unit)
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.food_name} - {self.quantity}{self.unit}"
@@ -566,3 +575,25 @@ class AlimentoMedidaIBGE(models.Model):
     def descricao_completa(self):
         """Retorna descrição para exibição ao usuário"""
         return f"1 {self.medida.nome} = {self.peso_g}g"
+
+
+class DietViewLog(models.Model):
+    """
+    Registra cada vez que um paciente visualiza seu plano alimentar.
+    Usado como um proxy para medir o engajamento e a adesão.
+    """
+    patient = models.ForeignKey(PatientProfile, on_delete=models.CASCADE, related_name='diet_view_logs')
+    diet = models.ForeignKey(Diet, on_delete=models.CASCADE, related_name='view_logs')
+    viewed_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-viewed_at']
+        verbose_name = "Log de Visualização de Dieta"
+        verbose_name_plural = "Logs de Visualização de Dieta"
+        indexes = [
+            models.Index(fields=['patient', 'viewed_at']),
+            models.Index(fields=['diet']),
+        ]
+
+    def __str__(self):
+        return f"{self.patient.user.name} visualizou {self.diet.name} em {self.viewed_at.strftime('%Y-%m-%d %H:%M')}"

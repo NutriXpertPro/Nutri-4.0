@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Calendar, MapPin, Video, Phone, MessageSquare, ChevronRight } from "lucide-react"
+import { Calendar, MapPin, Video, ChevronRight, ExternalLink } from "lucide-react"
 
 export interface Appointment {
     id: string
@@ -25,151 +25,102 @@ interface AgendaDoDiaProps {
     className?: string
 }
 
-// Mock data - será substituído por dados da API
-const mockAppointments: Appointment[] = [
-    {
-        id: "1",
-        time: "09:00",
-        patientName: "Maria Silva",
-        type: "presencial",
-        duration: 60,
-        description: "Avaliação Inicial",
-    },
-    {
-        id: "2",
-        time: "10:30",
-        patientName: "João Santos",
-        type: "online",
-        duration: 45,
-        description: "Retorno Online",
-    },
-    {
-        id: "3",
-        time: "14:30",
-        patientName: "Ana Costa",
-        type: "presencial",
-        duration: 60,
-        description: "Ajuste de Dieta",
-        isNow: true,
-    },
-    {
-        id: "4",
-        time: "16:00",
-        patientName: "Carlos Oliveira",
-        type: "online",
-        duration: 30,
-        description: "Acompanhamento",
-    },
-]
-
-export function AgendaDoDia({ appointments = mockAppointments, className }: AgendaDoDiaProps) {
+export function AgendaDoDia({ appointments = [], className }: AgendaDoDiaProps) {
     return (
-        <Card className={cn("h-full", className)}>
-            <CardHeader className="flex flex-row items-center justify-between pb-3">
-                <CardTitle className="flex items-center gap-2 text-lg">
-                    <Calendar className="h-5 w-5 text-primary" />
-                    Agenda de Hoje
-                </CardTitle>
-                <Badge variant="secondary" className="font-normal">
-                    {appointments.length} consultas
-                </Badge>
+        <Card className={cn("h-full flex flex-col", className)}>
+            <CardHeader className="flex flex-row items-center justify-between pb-3 space-y-0">
+                <div className="flex items-center gap-2">
+                    <CardTitle className="flex items-center gap-2 text-lg !font-normal">
+                        <Calendar className="h-5 w-5 text-amber-500" />
+                        Agenda de Hoje
+                    </CardTitle>
+                    <Badge variant="secondary" className="!font-normal">
+                        {appointments.length}
+                    </Badge>
+                </div>
+                <Button variant="ghost" size="sm" className="h-8 gap-1 text-muted-foreground hover:text-primary text-xs" asChild>
+                    <Link href="/calendar">
+                        Ver Agenda
+                        <ExternalLink className="h-3 w-3" />
+                    </Link>
+                </Button>
             </CardHeader>
-            <CardContent className="space-y-1">
-                {/* Timeline */}
-                <div className="relative">
-                    {/* Linha vertical da timeline */}
-                    <div className="absolute left-[19px] top-2 bottom-2 w-0.5 bg-border" />
+            <CardContent className="flex-1 overflow-y-auto pr-1">
+                {appointments.length === 0 ? (
+                    <div className="h-full flex flex-col items-center justify-center text-center p-4 text-muted-foreground">
+                        <p className="text-sm">Nenhum agendamento para hoje.</p>
+                    </div>
+                ) : (
+                    <div className="relative space-y-0">
+                        {/* Linha vertical da timeline */}
+                        <div className="absolute left-[19px] top-2 bottom-2 w-0.5 bg-border" />
 
-                    {appointments.map((appointment, index) => (
-                        <div
-                            key={appointment.id}
-                            className={cn(
-                                "relative flex items-start gap-4 py-3 pl-10",
-                                appointment.isNow && "bg-primary/5 -mx-6 px-6 pl-16 rounded-lg"
-                            )}
-                        >
-                            {/* Timeline dot */}
+                        {appointments.map((appointment) => (
                             <div
+                                key={appointment.id}
                                 className={cn(
-                                    "absolute left-3 top-5 w-3 h-3 rounded-full border-2 bg-background",
-                                    appointment.isNow
-                                        ? "border-primary bg-primary animate-pulse"
-                                        : "border-muted-foreground"
+                                    "relative flex items-start gap-4 py-3 pl-10 group transition-colors rounded-lg hover:bg-muted/40",
+                                    appointment.isNow && "bg-primary/5 -mx-2 px-8 pl-10"
                                 )}
-                            />
+                            >
+                                {/* Timeline dot */}
+                                <div
+                                    className={cn(
+                                        "absolute left-3 top-5 w-3 h-3 rounded-full border-2 bg-background z-10",
+                                        appointment.isNow
+                                            ? "border-primary bg-primary animate-pulse"
+                                            : "border-muted-foreground group-hover:border-primary/50 transition-colors"
+                                    )}
+                                />
 
-                            {/* Time */}
-                            <div className="flex-shrink-0 w-12 text-sm font-medium">
-                                {appointment.time}
-                            </div>
+                                {/* Time */}
+                                <div className="flex-shrink-0 w-12 pt-0.5 text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">
+                                    {appointment.time}
+                                </div>
 
-                            {/* Content */}
-                            <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2">
-                                    <Avatar className="h-8 w-8">
-                                        <AvatarImage src={appointment.patientAvatar} />
-                                        <AvatarFallback className="text-xs bg-muted">
-                                            {appointment.patientName.substring(0, 2).toUpperCase()}
-                                        </AvatarFallback>
-                                    </Avatar>
-                                    <div className="flex-1 min-w-0">
-                                        <p className="font-medium text-sm truncate">
-                                            {appointment.patientName}
-                                        </p>
-                                        <p className="text-xs text-muted-foreground truncate">
-                                            {appointment.description}
-                                        </p>
+                                {/* Content */}
+                                <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-3">
+                                        <Avatar className="h-9 w-9 border border-border/50">
+                                            <AvatarImage src={appointment.patientAvatar} />
+                                            <AvatarFallback className="text-xs bg-muted !font-normal text-muted-foreground">
+                                                {appointment.patientName.substring(0, 2).toUpperCase()}
+                                            </AvatarFallback>
+                                        </Avatar>
+                                        <div className="flex-1 min-w-0">
+                                            <p className="!font-normal text-sm truncate text-foreground group-hover:text-primary transition-colors">
+                                                {appointment.patientName}
+                                            </p>
+                                            <div className="flex items-center gap-2 mt-0.5">
+                                                <Badge
+                                                    variant="outline"
+                                                    className={cn(
+                                                        "h-5 px-1.5 gap-1 text-[10px] font-normal border-border/50",
+                                                        appointment.type === "online"
+                                                            ? "text-blue-600 bg-blue-50/50"
+                                                            : "text-green-600 bg-green-50/50"
+                                                    )}
+                                                >
+                                                    {appointment.type === "online" ? (
+                                                        <Video className="h-2.5 w-2.5" />
+                                                    ) : (
+                                                        <MapPin className="h-2.5 w-2.5" />
+                                                    )}
+                                                    {appointment.type === "online" ? "Online" : "Presencial"}
+                                                </Badge>
+                                                {appointment.isNow && (
+                                                    <span className="text-[10px] font-medium text-primary animate-pulse">
+                                                        Em andamento
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-
-                            {/* Type & Duration Badge */}
-                            <div className="flex items-center gap-2 flex-shrink-0">
-                                <Badge
-                                    variant="outline"
-                                    className={cn(
-                                        "gap-1 text-xs",
-                                        appointment.type === "online"
-                                            ? "border-blue-500/50 text-blue-600"
-                                            : "border-green-500/50 text-green-600"
-                                    )}
-                                >
-                                    {appointment.type === "online" ? (
-                                        <Video className="h-3 w-3" />
-                                    ) : (
-                                        <MapPin className="h-3 w-3" />
-                                    )}
-                                    {appointment.duration}min
-                                </Badge>
-                            </div>
-
-                            {/* AGORA indicator */}
-                            {appointment.isNow && (
-                                <Badge className="absolute right-6 top-1/2 -translate-y-1/2 bg-primary animate-pulse">
-                                    AGORA
-                                </Badge>
-                            )}
-                        </div>
-                    ))}
-                </div>
-
-                {/* Actions */}
-                <div className="flex items-center gap-2 pt-4 border-t mt-4">
-                    <Button size="sm" variant="ghost" className="flex-1 gap-2">
-                        <Phone className="h-4 w-4" />
-                        Ligar
-                    </Button>
-                    <Button size="sm" variant="ghost" className="flex-1 gap-2">
-                        <MessageSquare className="h-4 w-4" />
-                        Mensagem
-                    </Button>
-                    <Button size="sm" variant="outline" className="flex-1 gap-2" asChild>
-                        <Link href="/calendar">
-                            Ver Agenda
-                            <ChevronRight className="h-4 w-4" />
-                        </Link>
-                    </Button>
-                </div>
+                        ))}
+                    </div>
+                )}
             </CardContent>
         </Card>
     )
@@ -178,18 +129,19 @@ export function AgendaDoDia({ appointments = mockAppointments, className }: Agen
 // Skeleton for loading
 export function AgendaDoDiaSkeleton() {
     return (
-        <Card>
-            <CardHeader className="pb-3">
+        <Card className="h-full">
+            <CardHeader className="pb-3 flex flex-row justify-between items-center">
                 <div className="h-6 w-36 bg-muted animate-pulse rounded" />
+                <div className="h-6 w-20 bg-muted animate-pulse rounded" />
             </CardHeader>
             <CardContent className="space-y-4">
                 {[1, 2, 3].map((i) => (
                     <div key={i} className="flex items-center gap-4">
                         <div className="h-4 w-12 bg-muted animate-pulse rounded" />
-                        <div className="h-8 w-8 bg-muted animate-pulse rounded-full" />
+                        <div className="h-9 w-9 bg-muted animate-pulse rounded-full" />
                         <div className="flex-1 space-y-2">
-                            <div className="h-4 w-24 bg-muted animate-pulse rounded" />
-                            <div className="h-3 w-16 bg-muted animate-pulse rounded" />
+                            <div className="h-4 w-32 bg-muted animate-pulse rounded" />
+                            <div className="h-3 w-20 bg-muted animate-pulse rounded" />
                         </div>
                     </div>
                 ))}

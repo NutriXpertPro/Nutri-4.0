@@ -44,6 +44,7 @@ import {
 import { ptBR } from "date-fns/locale"
 import { cn } from "@/lib/utils"
 import { PatientScheduleLink } from "./PatientScheduleLink"
+import { GoogleCalendarSync } from "./GoogleCalendarSync"
 import GoogleCalendarIntegration from "@/components/integrations/GoogleCalendarIntegration"
 
 interface Appointment {
@@ -245,7 +246,7 @@ export function CalendarViewElegant({
                                 if (draggedAppointment) {
                                     appointmentId = draggedAppointment.id;
                                     console.log('Drop usando estado, ID:', appointmentId);
-                                    
+
                                     // PRESERVAR O HORÁRIO ORIGINAL:
                                     // Pegamos a hora original do agendamento arrastado
                                     const originalDate = parseISO(draggedAppointment.date);
@@ -262,9 +263,9 @@ export function CalendarViewElegant({
                                     try {
                                         const appData = JSON.parse(e.dataTransfer.getData('appointment-data'));
                                         if (appData && appData.date) {
-                                             const originalDate = parseISO(appData.date);
-                                             newDate.setHours(originalDate.getHours());
-                                             newDate.setMinutes(originalDate.getMinutes());
+                                            const originalDate = parseISO(appData.date);
+                                            newDate.setHours(originalDate.getHours());
+                                            newDate.setMinutes(originalDate.getMinutes());
                                         }
                                     } catch (err) {
                                         console.warn('Não foi possível recuperar horário original via dataTransfer');
@@ -328,7 +329,7 @@ export function CalendarViewElegant({
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center gap-1 flex-1 min-w-0">
                                             <GripVertical className="h-2.5 w-2.5 text-muted-foreground cursor-grab" />
-                                            <div className="font-medium truncate">{app.patientName}</div>
+                                            <div className="truncate">{app.patientName}</div>
                                             {getTypeIcon(app.type)}
                                         </div>
                                         <div className="flex gap-1 ml-1">
@@ -421,12 +422,12 @@ export function CalendarViewElegant({
                                     setHoveredDay(null);
                                 }}
                             >
-                                <h4 className="font-semibold mb-2">Consultas em {format(cloneDay, "dd/MM/yyyy", { locale: ptBR })}</h4>
+                                <h4 className="mb-2">Consultas em {format(cloneDay, "dd/MM/yyyy", { locale: ptBR })}</h4>
                                 <div className="space-y-2 max-h-60 overflow-y-auto">
                                     {dayAppointments.map((app) => (
                                         <div key={app.id} className="border-l-4 p-3 rounded-r bg-muted border-l-primary">
                                             <div className="flex justify-between">
-                                                <span className="font-medium">{app.patientName}</span>
+                                                <span>{app.patientName}</span>
                                                 <Badge variant="outline" className="text-xs capitalize">
                                                     {app.status}
                                                 </Badge>
@@ -545,7 +546,7 @@ export function CalendarViewElegant({
                 <div className="flex justify-center mb-4">
                     <Clock className="h-12 w-12" />
                 </div>
-                <p className="text-lg font-medium">Visualização semanal em breve</p>
+                <p className="text-lg">Visualização semanal em breve</p>
                 <p className="text-sm">Aprimorando a experiência de visualização</p>
             </div>
         )
@@ -558,7 +559,7 @@ export function CalendarViewElegant({
                 <div className="flex justify-center mb-4">
                     <Sun className="h-12 w-12" />
                 </div>
-                <p className="text-lg font-medium">Visualização diária em breve</p>
+                <p className="text-lg">Visualização diária em breve</p>
                 <p className="text-sm">Aprimorando a experiência de visualização</p>
             </div>
         )
@@ -566,15 +567,14 @@ export function CalendarViewElegant({
 
     return (
         <Card className="overflow-hidden bg-gradient-to-br from-card to-card/70 backdrop-blur-xl border-border/50 shadow-xl shadow-primary/5 relative">
-            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary via-blue-500 to-purple-500" />
             <CardHeader className="p-6 bg-gradient-to-r from-primary/5 to-secondary/5 relative">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <div className="flex items-center gap-3">
-                        <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary/30 to-primary/10 flex items-center justify-center text-primary">
+                        <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-amber-500/30 to-amber-500/10 flex items-center justify-center text-amber-500">
                             <CalendarIcon className="h-5 w-5" />
                         </div>
                         <div>
-                            <h2 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/70">
+                            <h2 className="text-xl bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/70">
                                 Agenda de Consultas
                             </h2>
                             <p className="text-sm text-muted-foreground">
@@ -632,14 +632,14 @@ export function CalendarViewElegant({
                     </div>
                 </div>
                 <div className="text-center mt-2">
-                    <h3 className="text-lg font-semibold bg-clip-text text-transparent bg-gradient-to-r from-primary to-blue-500">
+                    <h3 className="text-lg bg-clip-text text-transparent bg-gradient-to-r from-primary to-blue-500">
                         {format(currentDate, "LLLL yyyy", { locale: ptBR })}
                     </h3>
                 </div>
             </CardHeader>
             <CardContent className="p-6 pt-2">
                 <div className="space-y-4">
-                    <div className="grid grid-cols-7 gap-3 text-center text-sm font-medium text-muted-foreground">
+                    <div className="grid grid-cols-7 gap-3 text-center text-sm text-muted-foreground">
                         <div className="flex items-center justify-center">Dom</div>
                         <div className="flex items-center justify-center">Seg</div>
                         <div className="flex items-center justify-center">Ter</div>

@@ -2,10 +2,10 @@ import api from "./api"
 
 // Types
 export interface Food {
-    id: number
+    id: number | string
     nome: string
     grupo: string
-    source: 'TACO' | 'TBCA' | 'USDA'
+    source: 'TACO' | 'TBCA' | 'USDA' | 'IBGE'
     energia_kcal: number
     proteina_g: number
     lipidios_g: number
@@ -62,19 +62,25 @@ export const foodService = {
     /**
      * Search foods across all databases (TACO, TBCA, USDA)
      */
-    search: async (query: string, options?: { source?: string; grupo?: string; limit?: number; page?: number }) => {
+    search: async (query: string, options?: { source?: string; grupo?: string; limit?: number; page?: number; page_size?: number }) => {
         const params = new URLSearchParams({ search: query })
         if (options?.source) params.append('source', options.source)
         if (options?.grupo) params.append('grupo', options.grupo)
         if (options?.limit) params.append('limit', options.limit.toString())
         if (options?.page) params.append('page', options.page.toString())
+        if (options?.page_size) params.append('page_size', options.page_size.toString())
 
         const { data } = await api.get<FoodSearchResponse>(`/diets/foods/?${params}`)
         return data
     },
 
     toggleFavorite: async (source: string, id: string | number, nome: string) => {
-        const { data } = await api.post('/toggle-favorite/', { source, id, nome })
+        const { data } = await api.post('/diets/toggle-favorite/', { source, id, nome })
+        return data
+    },
+
+    getFavorites: async () => {
+        const { data } = await api.get<FoodSearchResponse>('/diets/foods/favorites/')
         return data
     },
 

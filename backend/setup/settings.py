@@ -6,44 +6,42 @@ import os
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# FORCAR CARREGAMENTO MANUAL DO .ENV
+# Configuração do python-decouple
+from decouple import config, Csv
+
+# Tenta carregar .env local se existir, apenas para debug/dev local explícito se necessário
+# Mas em produção confiamos no config padrão que lê os.environ
 try:
-    from decouple import Config, RepositoryEnv
+    from decouple import Config, RepositoryEnv, undefined
     env_path = BASE_DIR / '.env'
-    print(f".env file location: {env_path}")
-    
     if env_path.exists():
-        env_config = Config(RepositoryEnv(env_path))
-        def config(key, default=None, cast=None, **kwargs):
-            if cast:
-                return env_config(key, default=default, cast=cast)
-            return env_config(key, default=default)
-        Csv = lambda x: x.split(',')
-        print(".env loaded successfully!")
-    else:
-        print(f"❌ .env not found at: {env_path}")
-        raise FileNotFoundError(f'.env not found at: {env_path}')
-except Exception as e:
-    print(f"Error loading .env: {e}")
-    def config(key, default=None, cast=None, **kwargs):
-        return cast(default) if cast else default
-    Csv = lambda x: x.split(',')
+        print(f"Loading .env from {env_path}")
+        file_config = Config(RepositoryEnv(env_path))
+        # Sobrescreve config apenas se .env existir
+        def config(key, default=undefined, cast=undefined, **kwargs):
+            # Prioriza env vars do sistema se setadas (opcional), ou usa arquivo
+            # Aqui mantemos comportamento do arquivo sobrescrever ou ser a fonte
+            # Se cast for undefined, não passamos ele para evitar sobrescrever o padrão da lib (que é undefined)
+            # Se default for undefined, idem.
+            return file_config(key, default=default, cast=cast)
+except Exception:
+    pass
+# Se não entrar no if acima ou der erro, 'config' continua sendo o importado de decouple
+# que lê nativamente de os.environ
+
 
 SECRET_KEY = config('SECRET_KEY', default='dev-secret-key-CHANGE-IN-PRODUCTION-!!!')
 GOOGLE_OAUTH2_CLIENT_ID = config('GOOGLE_OAUTH2_CLIENT_ID', default='')
 GOOGLE_OAUTH2_CLIENT_SECRET = config('GOOGLE_OAUTH2_CLIENT_SECRET', default='')
 BACKEND_URL = config('BACKEND_URL', default='http://localhost:8000')
 FRONTEND_URL = config('FRONTEND_URL', default='http://localhost:3000')
-DEBUG = True # Forcing DEBUG for local development
+DEBUG = config('DEBUG', default=False, cast=bool)
 print(f"DEBUG mode is: {DEBUG}")
-ALLOWED_HOSTS = [
-    'localhost',
-    '127.0.0.1',
-    '0.0.0.0',  # Permite qualquer IP (útil para desenvolvimento)
-]
+ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='*', cast=Csv())
 
 # Permissive CORS for development
-CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_ALL_ORIGINS = False
+CORS_ALLOW_CREDENTIALS = True
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -96,12 +94,9 @@ MIDDLEWARE = [
 ]
 
 # CORS Configuration
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-    "http://localhost:8000",
-    "http://127.0.0.1:8000",
-]
+CORS_ALLOWED_ORIGINS = config('CORS_ALLOWED_ORIGINS', 
+                             default="http://localhost:3000,http://127.0.0.1:3000", 
+                             cast=Csv())
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_HEADERS = [
     'accept',
@@ -115,16 +110,41 @@ CORS_ALLOW_HEADERS = [
     'x-requested-with',
 ]
 
+CSRF_TRUSTED_ORIGINS = config('CSRF_TRUSTED_ORIGINS', 
+                             default="http://localhost:3000,http://127.0.0.1:3000", 
+                             cast=Csv())
+
 ROOT_URLCONF = 'setup.urls'
 
 TEMPLATES = [{'BACKEND':'django.template.backends.django.DjangoTemplates','DIRS':[],'APP_DIRS':True,'OPTIONS':{'context_processors':['django.template.context_processors.request','django.contrib.auth.context_processors.auth','django.contrib.messages.context_processors.messages',]},}]
 
 WSGI_APPLICATION = 'setup.wsgi.application'
 
-DATABASE_URL_FROM_ENV = config('DATABASE_URL',default='mysql://root:password@localhost:3306/nutri_xpert_dev')
+print("DEBUG: Lendo configurações de banco de dados...")
+DATABASE_URL_FROM_ENV = config('DATABASE_URL', default=None)
+
+if not DATABASE_URL_FROM_ENV:
+    print("CRITICAL ERROR: DATABASE_URL not found in environment variables!")
+    import os
+    print(f"Available Environment Variables: {list(os.environ.keys())}")
+    # Fallback inseguro apenas para garantir que não quebre silenciosamente tentando localhost sem aviso
+    DATABASE_URL_FROM_ENV = 'mysql://root:password@localhost:3306/nutri_xpert_dev'
+else:
+    print(f"DEBUG: DATABASE_URL found: {DATABASE_URL_FROM_ENV[:15]}... (masked)")
+
 if DATABASE_URL_FROM_ENV.startswith('mysql+pymysql://'):
     DATABASE_URL_FROM_ENV = DATABASE_URL_FROM_ENV.replace('mysql+pymysql://','mysql://',1)
-DATABASES = {'default':dj_database_url.parse(DATABASE_URL_FROM_ENV)}
+elif DATABASE_URL_FROM_ENV.startswith('postgres://'):
+    # dj_database_url handles postgres:// fine, but it's good to be aware
+    pass
+
+DATABASES = {
+    'default': dj_database_url.config(
+        default=DATABASE_URL_FROM_ENV,
+        conn_max_age=600,
+        conn_health_checks=True,
+    )
+}
 
 # Redis Cache (with fallback to local memory for CI)
 REDIS_URL = config('REDIS_URL', default='')
@@ -156,8 +176,14 @@ USE_TZ = True
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
-if not DEBUG:
-    STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+STORAGES = {
+    "default": {
+        "BACKEND": config('DEFAULT_FILE_STORAGE', default='django.core.files.storage.FileSystemStorage'),
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage" if not DEBUG else "django.contrib.staticfiles.storage.StaticFilesStorage",
+    },
+}
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTH_USER_MODEL = 'users.User'

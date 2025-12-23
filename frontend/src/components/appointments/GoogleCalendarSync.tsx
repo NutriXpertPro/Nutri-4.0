@@ -79,7 +79,7 @@ export function GoogleCalendarSync({ appointment }: GoogleCalendarSyncProps) {
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <CalendarIcon className="h-5 w-5 text-primary" />
-          <h3 className="font-medium">Google Calendar</h3>
+          <h3>Google Calendar</h3>
         </div>
         
         {syncStatus === "synced" && (

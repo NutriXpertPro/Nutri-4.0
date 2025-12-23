@@ -144,7 +144,7 @@ export function InlineFoodInput({ onAddFood }: InlineFoodInputProps) {
                                             className="w-full text-left px-3 py-2 rounded-md hover:bg-slate-800 flex items-center justify-between group transition-colors"
                                         >
                                             <div className="flex-1 min-w-0 mr-4">
-                                                <p className="text-sm font-medium text-slate-300 truncate group-hover:text-indigo-400">
+                                                <p className="text-sm text-slate-300 truncate group-hover:text-indigo-400">
                                                     {food.nome}
                                                 </p>
                                                 <div className="flex gap-3 text-xs text-slate-500">
@@ -153,9 +153,9 @@ export function InlineFoodInput({ onAddFood }: InlineFoodInputProps) {
                                                     <span>C: {food.carboidrato_g}g</span>
                                                 </div>
                                             </div>
-                                            <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${food.source === 'TACO' ? 'bg-green-900/30 text-green-400' :
-                                                    food.source === 'TBCA' ? 'bg-blue-900/30 text-blue-400' :
-                                                        'bg-purple-900/30 text-purple-400'
+                                            <span className={`text-[10px] px-1.5 py-0.5 rounded ${food.source === 'TACO' ? 'bg-green-900/30 text-green-400' :
+                                                food.source === 'TBCA' ? 'bg-blue-900/30 text-blue-400' :
+                                                    'bg-purple-900/30 text-purple-400'
                                                 }`}>
                                                 {food.source}
                                             </span>
@@ -214,11 +214,10 @@ export function InlineFoodInput({ onAddFood }: InlineFoodInputProps) {
                         size="sm"
                         onClick={handleAdd}
                         disabled={quantity === '' || (typeof quantity === 'number' && quantity <= 0)}
-                        className={`h-9 w-9 p-0 text-white ${
-                            (quantity === '' || (typeof quantity === 'number' && quantity <= 0))
-                            ? 'bg-gray-400 cursor-not-allowed'
-                            : 'bg-indigo-600 hover:bg-indigo-700'
-                        }`}
+                        className={`h-9 w-9 p-0 text-white ${(quantity === '' || (typeof quantity === 'number' && quantity <= 0))
+                                ? 'bg-gray-400 cursor-not-allowed'
+                                : 'bg-indigo-600 hover:bg-indigo-700'
+                            }`}
                     >
                         <Plus className="h-4 w-4" />
                     </Button>

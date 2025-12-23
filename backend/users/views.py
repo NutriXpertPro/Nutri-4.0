@@ -1,16 +1,17 @@
+import os
+import time
+from django.conf import settings
+from django.contrib.auth import get_user_model, authenticate
+from django.contrib.auth.tokens import default_token_generator
+from django.core.mail import send_mail
+from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+from django.utils.encoding import force_bytes, force_str
+from rest_framework import status, generics
 from rest_framework.decorators import api_view, permission_classes, throttle_classes
-from .throttles import AuthRateThrottle
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
-from rest_framework import status
-from django.contrib.auth import get_user_model, authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
-from django.contrib.auth.tokens import default_token_generator
-from django.core.mail import send_mail
-from django.conf import settings
-from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
-from django.utils.encoding import force_bytes, force_str
 
 from .serializers import (
     NutritionistRegistrationSerializer, 
@@ -23,7 +24,7 @@ from .serializers import (
     AuthenticationLogSerializer
 )
 from .models import AuthenticationLog
-
+from .throttles import AuthRateThrottle
 
 User = get_user_model()
 
@@ -39,9 +40,6 @@ def dashboard_view(request):
         "user": request.user.email
     })
 
-from rest_framework import generics
-
-# ... (outras importações existentes)
 
 class UserDetailView(generics.RetrieveUpdateAPIView):
     """
@@ -69,48 +67,6 @@ class ChangePasswordView(generics.GenericAPIView):
         serializer.save()
         return Response({"detail": "Password has been changed successfully."}, status=status.HTTP_200_OK)
 
-# ... (restante do arquivo, com a antiga me_view removida)
-
-
-def common_login_logic(request, required_user_type):
-    """
-    Função auxiliar para lógica comum de login.
-    """
-    email = request.data.get("email")
-    password = request.data.get("password")
-
-    if not email or not password:
-        return Response(
-            {"error": "Email e senha são obrigatórios"},
-            status=status.HTTP_400_BAD_REQUEST
-        )
-
-    # O Django vai usar os backends configurados automaticamente
-    user = authenticate(request=request, username=email, password=password)
-
-    # Padronizar mensagem para evitar enumeração de contas
-    if user is None or user.user_type != required_user_type:
-        # Adicionando tempo de espera para prevenir ataques de timing
-        import time
-        time.sleep(0.5)  # Pequeno atraso para prevenir ataques de timing
-        return Response(
-            {"error": "Credenciais inválidas. Tente novamente."},
-            status=status.HTTP_401_UNAUTHORIZED
-        )
-
-    # Registrar log de autenticação bem-sucedida
-    from .models import AuthenticationLog
-    AuthenticationLog.objects.create(
-        user=user,
-        ip_address=request.META.get('REMOTE_ADDR'),
-        user_agent=request.META.get('HTTP_USER_AGENT', '')[:255]
-    )
-
-    refresh = RefreshToken.for_user(user)
-    return Response({
-        'refresh': str(refresh),
-        'access': str(refresh.access_token),
-    })
 
 def _perform_login(request, required_user_type, unauthorized_error_msg):
     """
@@ -130,13 +86,15 @@ def _perform_login(request, required_user_type, unauthorized_error_msg):
 
     # Padronizar mensagem para evitar enumeração de contas
     if user is None or user.user_type != required_user_type:
-        # Adicionando tempo de espera para prevenir ataques de timing
-        import time
-        time.sleep(0.5)  # Pequeno atraso para prevenir ataques de timing
+        # Adicionando tempo de espera constante para prevenir ataques de timing
+        time.sleep(0.5)  # Atraso constante para todos os logins falhos
         return Response(
             {"error": unauthorized_error_msg},
             status=status.HTTP_401_UNAUTHORIZED
         )
+    else:
+        # Adicionando tempo de espera também para logins bem-sucedidos para manter consistência de tempo
+        time.sleep(0.5)  # Atraso constante para todos os requests
 
     # Registrar log de autenticação bem-sucedida
     from .models import AuthenticationLog
@@ -147,10 +105,31 @@ def _perform_login(request, required_user_type, unauthorized_error_msg):
     )
 
     refresh = RefreshToken.for_user(user)
-    return Response({
+    response = Response({
         'refresh': str(refresh),
         'access': str(refresh.access_token),
     })
+
+    # Set HttpOnly cookies for Next.js middleware compatibility
+    # Use secure=True if running in production (behind HTTPS proxy)
+    is_secure = settings.SECURE_SSL_REDIRECT or (not settings.DEBUG)
+    response.set_cookie(
+        'accessToken',
+        str(refresh.access_token),
+        httponly=True,
+        secure=is_secure,
+        samesite='Lax',
+        max_age=3600  # 1 hour
+    )
+    response.set_cookie(
+        'refreshToken',
+        str(refresh),
+        httponly=True,
+        secure=is_secure,
+        samesite='Lax',
+        max_age=7 * 24 * 3600  # 7 days
+    )
+    return response
 
 
 @api_view(['POST'])
@@ -255,7 +234,8 @@ class PasswordResetView(APIView):
             if user:
                 token = default_token_generator.make_token(user)
                 uid = urlsafe_base64_encode(force_bytes(user.pk))
-                reset_link = f"http://localhost:3000/auth/reset-password/{uid}/{token}/"  # Frontend URL
+                frontend_url = os.environ.get('FRONTEND_URL', 'http://localhost:3000')
+                reset_link = f"{frontend_url}/auth/reset-password/{uid}/{token}/"
                 
                 # Enviar email (simulado no console em dev)
                 try:
@@ -362,20 +342,24 @@ def google_login_view(request):
 
     except ValueError as e:
         # ValueError é levantado quando o token é inválido ou expirado
-        return Response({"error": "Token Google inválido ou expirado", "details": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        print(f"Erro de validação no login Google: {str(e)}")  # Log interno, não exposto ao usuário
+        return Response({"error": "Token Google inválido ou expirado"}, status=status.HTTP_400_BAD_REQUEST)
 
     except GoogleAuthError as e:
         # Erro específico de autenticação Google
-        return Response({"error": "Erro na autenticação com Google", "details": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        print(f"Erro de autenticação Google: {str(e)}")  # Log interno, não exposto ao usuário
+        return Response({"error": "Erro na autenticação com Google"}, status=status.HTTP_400_BAD_REQUEST)
 
     except KeyError as e:
         # Erro quando campos esperados não estão presentes no token
-        return Response({"error": "Token Google incompleto", "details": f"Campo ausente: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
+        print(f"Campo ausente no token Google: {str(e)}")  # Log interno, não exposto ao usuário
+        return Response({"error": "Token Google incompleto"}, status=status.HTTP_400_BAD_REQUEST)
 
     except Exception as e:
         # Qualquer outro erro inesperado
         # Em produção, você pode querer logar o erro completo em outro lugar
         # e retornar uma mensagem genérica para evitar vazamento de informações
+        print(f"Erro interno no login Google: {str(e)}")  # Log interno, não exposto ao usuário
         return Response({"error": "Erro interno no login Google"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(['GET'])
@@ -463,9 +447,9 @@ def appointments_today_view(request):
             "id": app.id,
             "patient_name": app.patient.user.name,
             "time": app.date.strftime('%H:%M'),
-            "duration": 60,  # TODO: Adicionar campo duration no model
-            "type": "presencial",  # TODO: Adicionar campo type no model
-            "status": "confirmed"  # TODO: Adicionar status
+            "duration": app.duration or 60,  # Usar o campo real ou valor padrão
+            "type": app.type or "presencial",  # Usar o campo real ou valor padrão
+            "status": app.status or "agendada"  # Usar o campo real ou valor padrão
         }
         for app in appointments
     ]
@@ -473,10 +457,17 @@ def appointments_today_view(request):
     return Response(data)
 
 
-class AuthenticationLogView(generics.CreateAPIView):
+class AuthenticationLogView(APIView):
     """
     API endpoint para registrar um log de autenticação bem-sucedida.
     """
-    queryset = AuthenticationLog.objects.all()
-    serializer_class = AuthenticationLogSerializer
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        # Apenas permitir criação de logs para o usuário autenticado
+        serializer = AuthenticationLogSerializer(data=request.data, context={'request': request})
+        if serializer.is_valid():
+            # Associar automaticamente ao usuário autenticado
+            serializer.save(user=request.user)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

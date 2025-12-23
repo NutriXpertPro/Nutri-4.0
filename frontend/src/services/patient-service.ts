@@ -12,6 +12,8 @@ export interface Patient {
     service_type?: 'ONLINE' | 'PRESENCIAL'
     start_date?: string
     created_at: string
+    target_weight?: number
+    target_body_fat?: number
 }
 
 export interface CreatePatientDTO {

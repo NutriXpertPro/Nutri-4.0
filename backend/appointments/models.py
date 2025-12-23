@@ -1,6 +1,7 @@
 from django.db import models
 from django.conf import settings
 from patients.models import PatientProfile
+from utils.sanitization import sanitize_string
 
 # Create your models here.
 
@@ -64,6 +65,12 @@ class Appointment(models.Model):
     notes = models.TextField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    def save(self, *args, **kwargs):
+        """Sanitizar campos de texto antes de salvar"""
+        if self.notes:
+            self.notes = sanitize_string(self.notes)
+        super().save(*args, **kwargs)
 
     class Meta:
         ordering = ["-date"]

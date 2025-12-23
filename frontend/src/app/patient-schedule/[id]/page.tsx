@@ -8,7 +8,7 @@ import { Calendar, Clock, MapPin, Video, CheckCircle, User } from "lucide-react"
 import { format, setHours, setMinutes, isBefore, parseISO } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import { toast } from "sonner"
-import { api } from "@/services/api" // Supondo que você tenha um arquivo de configuração para a API
+import api from "@/services/api" // Supondo que você tenha um arquivo de configuração para a API
 
 interface AppointmentSlot {
   id: number
@@ -49,7 +49,7 @@ export default function PatientSchedulePage({ params }: { params: { id: string }
 
     fetchData()
   }, [params.id])
-  
+
   const handleSchedule = async () => {
     if (!selectedSlot) {
       toast.error("Selecione um horário para agendar")
@@ -84,7 +84,7 @@ export default function PatientSchedulePage({ params }: { params: { id: string }
       toast.error("Erro ao agendar consulta. Por favor, tente novamente.")
     }
   }
-  
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-muted">
@@ -95,7 +95,7 @@ export default function PatientSchedulePage({ params }: { params: { id: string }
       </div>
     )
   }
-  
+
   if (!data) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-muted">
@@ -120,7 +120,7 @@ export default function PatientSchedulePage({ params }: { params: { id: string }
     }, {} as Record<string, AppointmentSlot[]>)
 
   const sortedDates = Object.keys(groupedSlots).sort()
-  
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 to-secondary/5 p-4">
       <div className="max-w-4xl mx-auto py-8">
@@ -180,7 +180,7 @@ export default function PatientSchedulePage({ params }: { params: { id: string }
                     )}
                   </div>
                 </div>
-                
+
                 <div className="space-y-4">
                   <h3 className="text-lg font-medium">Resumo da Consulta</h3>
                   {selectedSlot ? (
@@ -214,8 +214,8 @@ export default function PatientSchedulePage({ params }: { params: { id: string }
                             </div>
                           </div>
                           <div className="pt-2">
-                            <Button 
-                              className="w-full" 
+                            <Button
+                              className="w-full"
                               onClick={handleSchedule}
                             >
                               <CheckCircle className="h-4 w-4 mr-2" />
@@ -232,7 +232,7 @@ export default function PatientSchedulePage({ params }: { params: { id: string }
                   )}
                 </div>
               </div>
-              
+
               <div className="pt-4 border-t">
                 <p className="text-sm text-muted-foreground text-center">
                   Após confirmar o agendamento, o nutricionista será notificado para aprovação.

@@ -13,21 +13,23 @@ interface TemplateListProps {
     onCreateTemplate: () => void
 }
 
+import { IconWrapper } from "@/components/ui/IconWrapper"
+
 export function TemplateList({ templates, onSelectTemplate, onCreateTemplate }: TemplateListProps) {
     return (
-        <div className="space-y-6">
-            <div className="flex items-center justify-between">
+        <div className="space-y-8 pb-10">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-1">
                 <div>
-                    <h3 className="text-lg font-medium">Modelos de Anamnese</h3>
-                    <p className="text-sm text-muted-foreground">Selecione um questionário para aplicar ou crie um novo.</p>
+                    <p className="text-[10px] font-black text-primary uppercase tracking-[0.2em] mb-1">Aplicação de Questionário</p>
+                    <h3 className="text-2xl font-black tracking-tight text-foreground">Modelos de Anamnese</h3>
                 </div>
-                <Button onClick={onCreateTemplate} className="gap-2 shadow-lg hover:shadow-primary/20 transition-all">
+                <Button onClick={onCreateTemplate} className="h-12 px-8 rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-xl shadow-primary/20 hover:scale-105 transition-all gap-3">
                     <Plus className="h-4 w-4" />
                     Novo Modelo
                 </Button>
             </div>
 
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                 {/* Standard Template Card */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
@@ -35,31 +37,38 @@ export function TemplateList({ templates, onSelectTemplate, onCreateTemplate }: 
                     transition={{ duration: 0.3 }}
                 >
                     <Card
-                        className="group cursor-pointer hover:border-primary/50 transition-all hover:shadow-xl hover:-translate-y-1 relative overflow-hidden h-full"
+                        variant="glass"
+                        className="group cursor-pointer border-none bg-primary/[0.03] ring-1 ring-primary/20 hover:ring-primary/40 transition-all hover:shadow-2xl hover:shadow-primary/10 hover:-translate-y-2 relative overflow-hidden h-full flex flex-col pt-4 shadow-xl"
                         onClick={() => onSelectTemplate('STANDARD')}
                     >
-                        <div className="absolute top-0 right-0 p-16 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
-                                <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
-                                    <Star className="h-5 w-5" />
+                        <div className="absolute top-0 right-0 p-16 bg-primary/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 opacity-50" />
+                        <CardHeader className="pb-4">
+                            <div className="flex items-center gap-4">
+                                <IconWrapper icon={Star} variant="blue" size="md" className="shadow-lg" />
+                                <div className="space-y-0.5">
+                                    <p className="text-[9px] font-black text-primary uppercase tracking-widest">Recomendado</p>
+                                    <CardTitle className="text-lg font-black tracking-tight">Anamnese Padrão</CardTitle>
                                 </div>
-                                <span>Anamnese Padrão</span>
-                            </CardTitle>
-                            <CardDescription>
-                                Questionário completo e detalhado (Recomendado)
-                            </CardDescription>
+                            </div>
                         </CardHeader>
-                        <CardContent>
-                            <ul className="text-sm text-muted-foreground list-disc pl-4 space-y-1">
-                                <li>Dados Clínicos</li>
-                                <li>Rotina Alimentar</li>
-                                <li>Histórico de Saúde</li>
-                                <li>Metas e Objetivos</li>
-                            </ul>
-                            <div className="mt-4 flex justify-end">
-                                <Button variant="ghost" size="sm" className="group-hover:text-primary gap-1">
-                                    Selecionar <ArrowRight className="h-4 w-4" />
+                        <CardContent className="flex-1 flex flex-col">
+                            <CardDescription className="text-sm font-bold text-muted-foreground/80 mb-6 leading-relaxed">
+                                Questionário completo cobrindo todos os pilares da saúde nutricional.
+                            </CardDescription>
+
+                            <div className="space-y-2 mb-8 flex-1">
+                                {['Dados Clínicos', 'Rotina Alimentar', 'Histórico de Saúde', 'Metas e Objetivos'].map((item) => (
+                                    <div key={item} className="flex items-center gap-2 text-xs font-bold text-foreground">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-primary/40" />
+                                        {item}
+                                    </div>
+                                ))}
+                            </div>
+
+                            <div className="pt-4 border-t border-primary/10 flex justify-between items-center">
+                                <span className="text-[10px] font-black uppercase tracking-widest text-primary/40">Default Template</span>
+                                <Button variant="ghost" size="sm" className="h-9 rounded-xl font-black text-[10px] uppercase tracking-widest group-hover:bg-primary group-hover:text-white transition-all gap-2">
+                                    Selecionar <ArrowRight className="h-3.5 w-3.5" />
                                 </Button>
                             </div>
                         </CardContent>
@@ -75,27 +84,30 @@ export function TemplateList({ templates, onSelectTemplate, onCreateTemplate }: 
                         transition={{ duration: 0.3, delay: index * 0.1 + 0.1 }}
                     >
                         <Card
-                            className="group cursor-pointer hover:border-primary/50 transition-all hover:shadow-xl hover:-translate-y-1 relative overflow-hidden h-full"
+                            variant="glass"
+                            className="group cursor-pointer border-none bg-background/40 hover:bg-background/60 transition-all hover:shadow-2xl hover:-translate-y-2 relative overflow-hidden h-full flex flex-col pt-4 shadow-xl"
                             onClick={() => onSelectTemplate(template)}
                         >
-                            <CardHeader>
-                                <CardTitle className="flex items-center gap-2">
-                                    <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition-colors">
-                                        <FileText className="h-5 w-5" />
+                            <CardHeader className="pb-4">
+                                <div className="flex items-center gap-4">
+                                    <IconWrapper icon={FileText} variant="ghost" size="md" className="bg-muted/30 text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary shadow-sm" />
+                                    <div className="space-y-0.5 min-w-0">
+                                        <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest opacity-40">Personalizado</p>
+                                        <CardTitle className="text-lg font-black tracking-tight truncate">{template.title}</CardTitle>
                                     </div>
-                                    <span className="truncate">{template.title}</span>
-                                </CardTitle>
-                                <CardDescription className="line-clamp-2 min-h-[40px]">
-                                    {template.description || "Sem descrição"}
-                                </CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="text-sm text-muted-foreground mb-4">
-                                    {template.questions.length} questões personalizadas
                                 </div>
-                                <div className="mt-auto flex justify-end">
-                                    <Button variant="ghost" size="sm" className="group-hover:text-primary gap-1">
-                                        Selecionar <ArrowRight className="h-4 w-4" />
+                            </CardHeader>
+                            <CardContent className="flex-1 flex flex-col">
+                                <CardDescription className="text-sm font-bold text-muted-foreground/80 mb-6 line-clamp-2 leading-relaxed">
+                                    {template.description || "Sem descrição disponível para este modelo."}
+                                </CardDescription>
+
+                                <div className="mt-auto pt-4 border-t border-border/10 flex justify-between items-center">
+                                    <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/30">
+                                        {template.questions.length} questões
+                                    </span>
+                                    <Button variant="ghost" size="sm" className="h-9 rounded-xl font-black text-[10px] uppercase tracking-widest group-hover:bg-primary group-hover:text-white transition-all gap-2">
+                                        Selecionar <ArrowRight className="h-3.5 w-3.5" />
                                     </Button>
                                 </div>
                             </CardContent>

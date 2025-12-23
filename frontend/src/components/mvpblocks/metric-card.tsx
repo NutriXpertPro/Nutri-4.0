@@ -1,6 +1,7 @@
 // components/mvpblocks/metric-card.tsx
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { TrendingDown, TrendingUp } from 'lucide-react';
+import { cn } from "@/lib/utils";
 
 interface MetricCardProps {
   title: string;

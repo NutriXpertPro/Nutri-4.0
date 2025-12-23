@@ -8,6 +8,7 @@ import { AgendaDoDia } from "@/components/appointments/AgendaDoDia"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { IconWrapper } from "@/components/ui/IconWrapper"
 import api from "@/services/api"
 import { toast } from "sonner"
 import { Input } from "@/components/ui/input"
@@ -29,7 +30,10 @@ import {
     Video,
     HeartPulse,
     Bell,
-    Search
+    Search,
+    Phone,
+    MessageSquare,
+    ChevronRight
 } from "lucide-react"
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
@@ -407,26 +411,20 @@ export default function CalendarPage() {
                     />
                 )}
 
-                {/* Header Premium */}
+                {/* Header */}
                 <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-                    <div className="flex items-center gap-4">
-                        <div className="h-16 w-16 rounded-2xl bg-linear-to-br from-primary/30 to-primary/10 flex items-center justify-center text-primary shadow-xl shadow-primary/20 ring-4 ring-primary/5">
-                            <Calendar className="h-8 w-8" />
-                        </div>
-                        <div>
-                            <h1 className="text-3xl font-bold tracking-tight text-foreground bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
-                                Agenda de Consultas
-                            </h1>
-                            <p className="text-muted-foreground mt-1">
-                                Gerencie suas consultas e horários
-                            </p>
-                        </div>
+                    <div>
+                        <h1 className="text-h1 capitalize font-normal">Agenda de consultas</h1>
+                        <p className="text-subtitle mt-1 flex items-center gap-2">
+                            <Calendar className="h-4 w-4 text-amber-500" />
+                            {new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+                        </p>
                     </div>
 
                     <div className="flex flex-wrap gap-3">
                         <Button
                             onClick={() => setShowCreateModal(true)}
-                            className="gap-2 shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all"
+                            className="gap-2"
                         >
                             <Plus className="h-4 w-4" />
                             Nova Consulta
@@ -434,52 +432,44 @@ export default function CalendarPage() {
                     </div>
                 </div>
 
-                {/* Stats Cards Premium */}
+                {/* Stats Cards */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <Card className="bg-linear-to-br from-card/80 to-card/40 backdrop-blur-xl border-border/40 hover:shadow-lg transition-all group">
-                        <CardContent className="p-5 flex items-center gap-4">
-                            <div className="h-14 w-14 rounded-2xl bg-linear-to-br from-blue-500/20 to-blue-500/5 flex items-center justify-center group-hover:scale-110 transition-transform">
-                                <Clock className="h-7 w-7 text-blue-500" />
-                            </div>
+                    <Card variant="glass">
+                        <CardContent className="p-6 flex items-center gap-4">
+                            <IconWrapper icon={Clock} variant="blue" size="lg" />
                             <div>
-                                <p className="text-3xl font-bold">{appointments.filter(a => a.status === 'agendada').length}</p>
-                                <p className="text-sm text-muted-foreground">Agendadas</p>
+                                <p className="text-data-value font-normal">{appointments.filter(a => a.status === 'agendada').length}</p>
+                                <p className="text-data-label font-normal">Agendadas</p>
                             </div>
                         </CardContent>
                     </Card>
 
-                    <Card className="bg-linear-to-br from-card/80 to-card/40 backdrop-blur-xl border-border/40 hover:shadow-lg transition-all group">
-                        <CardContent className="p-5 flex items-center gap-4">
-                            <div className="h-14 w-14 rounded-2xl bg-linear-to-br from-green-500/20 to-green-500/5 flex items-center justify-center group-hover:scale-110 transition-transform">
-                                <CheckCircle2 className="h-7 w-7 text-green-500" />
-                            </div>
+                    <Card variant="glass">
+                        <CardContent className="p-6 flex items-center gap-4">
+                            <IconWrapper icon={CheckCircle2} variant="green" size="lg" />
                             <div>
-                                <p className="text-3xl font-bold">{appointments.filter(a => a.status === 'confirmada').length}</p>
-                                <p className="text-sm text-muted-foreground">Confirmadas</p>
+                                <p className="text-data-value font-normal">{appointments.filter(a => a.status === 'confirmada').length}</p>
+                                <p className="text-data-label font-normal">Confirmadas</p>
                             </div>
                         </CardContent>
                     </Card>
 
-                    <Card className="bg-linear-to-br from-card/80 to-card/40 backdrop-blur-xl border-border/40 hover:shadow-lg transition-all group">
-                        <CardContent className="p-5 flex items-center gap-4">
-                            <div className="h-14 w-14 rounded-2xl bg-linear-to-br from-violet-500/20 to-violet-500/5 flex items-center justify-center group-hover:scale-110 transition-transform">
-                                <Users className="h-7 w-7 text-violet-500" />
-                            </div>
+                    <Card variant="glass">
+                        <CardContent className="p-6 flex items-center gap-4">
+                            <IconWrapper icon={Users} variant="violet" size="lg" />
                             <div>
-                                <p className="text-3xl font-bold">{appointments.filter(a => new Date(a.date) > new Date()).length}</p>
-                                <p className="text-sm text-muted-foreground">Hoje</p>
+                                <p className="text-data-value font-normal">{appointments.filter(a => new Date(a.date) > new Date()).length}</p>
+                                <p className="text-data-label font-normal">Hoje</p>
                             </div>
                         </CardContent>
                     </Card>
 
-                    <Card className="bg-linear-to-br from-card/80 to-card/40 backdrop-blur-xl border-border/40 hover:shadow-lg transition-all group">
-                        <CardContent className="p-5 flex items-center gap-4">
-                            <div className="h-14 w-14 rounded-2xl bg-linear-to-br from-amber-500/20 to-amber-500/5 flex items-center justify-center group-hover:scale-110 transition-transform">
-                                <AlertCircle className="h-7 w-7 text-amber-500" />
-                            </div>
+                    <Card variant="glass">
+                        <CardContent className="p-6 flex items-center gap-4">
+                            <IconWrapper icon={AlertCircle} variant="amber" size="lg" />
                             <div>
-                                <p className="text-3xl font-bold">{appointments.filter(a => a.status === 'faltou' || a.status === 'cancelada').length}</p>
-                                <p className="text-sm text-muted-foreground">Pendentes</p>
+                                <p className="text-data-value font-normal">{appointments.filter(a => a.status === 'faltou' || a.status === 'cancelada').length}</p>
+                                <p className="text-data-label font-normal">Pendentes</p>
                             </div>
                         </CardContent>
                     </Card>
@@ -616,12 +606,15 @@ export default function CalendarPage() {
                     </div>
                     <div>
                         <AgendaDoDia
-                            appointments={filteredAppointments}
-                            onAddAppointment={handleDateSelect}
-                            onEditAppointment={handleEditAppointment}
-                            onDeleteAppointment={handleDeleteAppointment}
-                            onViewAppointment={handleAppointmentSelect}
-                            onStatusChange={handleStatusChange}
+                            appointments={filteredAppointments.map(app => ({
+                                id: app.id.toString(),
+                                time: format(new Date(app.date), 'HH:mm'),
+                                patientName: app.patientName,
+                                type: app.type === 'online' ? 'online' : 'presencial',
+                                duration: app.duration,
+                                description: app.notes || getTypeLabel(app.type),
+                                isNow: false
+                            }))}
                         />
                     </div>
                 </div>
@@ -634,7 +627,7 @@ export default function CalendarPage() {
                 patients={patients}
                 onSubmit={handleCreateAppointment}
                 onEdit={handleUpdateAppointment}
-                appointmentToEdit={formDataForEdit}
+                appointmentToEdit={formDataForEdit || undefined}
                 defaultDate={selectedDate || undefined}
             />
         </DashboardLayout>

@@ -1,5 +1,6 @@
 from django.db import models
 from django.conf import settings
+from utils.sanitization import sanitize_string
 
 
 class Notification(models.Model):
@@ -25,6 +26,14 @@ class Notification(models.Model):
     is_read = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     sent_at = models.DateTimeField(null=True, blank=True)
+
+    def save(self, *args, **kwargs):
+        """Sanitizar campos de texto antes de salvar"""
+        if self.title:
+            self.title = sanitize_string(self.title)
+        if self.message:
+            self.message = sanitize_string(self.message)
+        super().save(*args, **kwargs)
 
     class Meta:
         ordering = ['-created_at']

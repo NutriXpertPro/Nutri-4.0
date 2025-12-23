@@ -52,7 +52,7 @@ const BrandingSettings = () => {
         setLoading(true);
         const response = await api.get('/branding/branding/me');
         setBranding(response.data);
-        
+
         if (response.data.logo) {
           setLogoPreview(response.data.logo);
         }
@@ -95,14 +95,14 @@ const BrandingSettings = () => {
   const handleSave = async () => {
     try {
       const formData = new FormData();
-      
+
       // Adicionar campos de texto
       Object.entries(branding).forEach(([key, value]) => {
         if (key !== 'logo' && key !== 'id') {
           formData.append(key, String(value));
         }
       });
-      
+
       // Adicionar arquivo de logo se existir
       if (fileInputRef.current?.files?.[0]) {
         formData.append('logo', fileInputRef.current.files[0]);
@@ -113,7 +113,7 @@ const BrandingSettings = () => {
           'Content-Type': 'multipart/form-data',
         },
       });
-      
+
       setBranding(response.data);
       setIsEditing(false);
     } catch (error) {
@@ -137,7 +137,10 @@ const BrandingSettings = () => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Configurações de Branding</CardTitle>
+        <CardTitle className="flex items-center gap-2">
+          <Palette className="h-5 w-5 text-primary" />
+          Configurações de Branding
+        </CardTitle>
         <CardDescription>
           Personalize sua identidade visual na plataforma
         </CardDescription>
@@ -147,7 +150,7 @@ const BrandingSettings = () => {
           {/* Coluna Esquerda - Identidade Visual */}
           <div className="space-y-6">
             <div>
-              <label htmlFor="logo-upload" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+              <label htmlFor="logo-upload" className="text-sm font-normal leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
                 Logo do Consultório
               </label>
               <div className="mt-2 flex items-center space-x-4">
@@ -205,7 +208,7 @@ const BrandingSettings = () => {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label htmlFor="primary-color" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                <label htmlFor="primary-color" className="text-sm font-normal leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
                   Cor Primária
                 </label>
                 <div className="flex items-center space-x-2 mt-1">
@@ -225,7 +228,7 @@ const BrandingSettings = () => {
               </div>
 
               <div>
-                <label htmlFor="secondary-color" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                <label htmlFor="secondary-color" className="text-sm font-normal leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
                   Cor Secundária
                 </label>
                 <div className="flex items-center space-x-2 mt-1">
@@ -250,7 +253,7 @@ const BrandingSettings = () => {
           <div className="space-y-6">
             <div className="space-y-4">
               <div>
-                <label htmlFor="business-name" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                <label htmlFor="business-name" className="text-sm font-normal leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
                   Nome Comercial
                 </label>
                 <div className="relative mt-1">
@@ -267,7 +270,7 @@ const BrandingSettings = () => {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label htmlFor="crn-number" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                  <label htmlFor="crn-number" className="text-sm font-normal leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
                     Número do CRN
                   </label>
                   <Input
@@ -280,7 +283,7 @@ const BrandingSettings = () => {
                 </div>
 
                 <div>
-                  <label htmlFor="license" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                  <label htmlFor="license" className="text-sm font-normal leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
                     Licença Profissional
                   </label>
                   <Input
@@ -294,7 +297,7 @@ const BrandingSettings = () => {
               </div>
 
               <div>
-                <label htmlFor="phone" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                <label htmlFor="phone" className="text-sm font-normal leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
                   Telefone
                 </label>
                 <div className="relative mt-1">
@@ -310,7 +313,7 @@ const BrandingSettings = () => {
               </div>
 
               <div>
-                <label htmlFor="address" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                <label htmlFor="address" className="text-sm font-normal leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
                   Endereço
                 </label>
                 <div className="relative mt-1">
@@ -331,7 +334,7 @@ const BrandingSettings = () => {
         {/* Seção de Assinatura e Documentos */}
         <div className="mt-6 space-y-6">
           <div>
-            <label htmlFor="email-signature" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+            <label htmlFor="email-signature" className="text-sm font-normal leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
               Assinatura de E-mail
             </label>
             <Textarea
@@ -346,7 +349,7 @@ const BrandingSettings = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label htmlFor="document-header" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+              <label htmlFor="document-header" className="text-sm font-normal leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
                 Cabeçalho de Documentos
               </label>
               <Textarea
@@ -360,7 +363,7 @@ const BrandingSettings = () => {
             </div>
 
             <div>
-              <label htmlFor="document-footer" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+              <label htmlFor="document-footer" className="text-sm font-normal leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
                 Rodapé de Documentos
               </label>
               <Textarea

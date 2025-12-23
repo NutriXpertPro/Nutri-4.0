@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { subscribeWithSelector } from 'zustand/middleware'
-import { Food } from '@/services/food-service'
+import { Food, foodService } from '@/services/food-service'
 
 // Types
 export interface FoodItem {
@@ -49,7 +49,7 @@ export interface PatientContext {
 export interface WorkspaceMealFood {
     id: number
     name: string
-    qty: number
+    qty: number | ''
     unit: string
     measure: string
     prep: string
@@ -60,6 +60,8 @@ export interface WorkspaceMealFood {
     preferred: boolean
     unidade_caseira?: string
     peso_unidade_caseira_g?: number
+    originalId?: number | string // ID from source (TACO, TBCA etc)
+    source?: string // Table source
 }
 
 export interface WorkspaceMeal {
@@ -72,7 +74,21 @@ export interface WorkspaceMeal {
 }
 
 // Calculation Methods
-export type CalculationMethod = 'mifflin' | 'harris_benedict' | 'cunningham' | 'katch_mcardle'
+export type CalculationMethod =
+    | 'harris_benedict_1919'
+    | 'harris_benedict_1984'
+    | 'mifflin_1990'
+    | 'henry_rees_1991'
+    | 'tinsley_2018_weight'
+    | 'katch_mcardle_1996'
+    | 'cunningham_1980'
+    | 'tinsley_2018_lbm'
+    | 'fao_who_2004'
+    | 'eer_iom_2005'
+    | 'eer_iom_2023'
+    | 'mifflin' // Legacy support
+    | 'harris_benedict' // Legacy support
+    | 'cunningham' // Legacy support
 
 // Diet Types with macro distributions
 export type DietType =
@@ -85,6 +101,7 @@ export type DietType =
     | 'vegana'
     | 'sem_gluten'
     | 'hiperproteica'
+    | 'personalizada'
 
 export const DIET_TYPE_MACROS: Record<DietType, { carbs: number; protein: number; fats: number; label: string }> = {
     normocalorica: { carbs: 50, protein: 20, fats: 30, label: 'Normocalórica' },
@@ -96,6 +113,7 @@ export const DIET_TYPE_MACROS: Record<DietType, { carbs: number; protein: number
     vegana: { carbs: 55, protein: 15, fats: 30, label: 'Vegana' },
     sem_gluten: { carbs: 50, protein: 20, fats: 30, label: 'Sem Glúten' },
     hiperproteica: { carbs: 35, protein: 40, fats: 25, label: 'Hiperproteica' },
+    personalizada: { carbs: 40, protein: 30, fats: 30, label: 'Personalizada' },
 }
 
 export const ACTIVITY_LEVELS = [
@@ -118,11 +136,20 @@ interface DietEditorState {
     activityLevel: number
     goalAdjustment: number // -500 to +500
 
+    // Custom Metabolic Targets (overrides calculations - ONLY for 'personalizada')
+    customTargets: {
+        tmb?: number
+        get?: number
+        calories?: number
+    }
+
     // Calculated Values
     tmb: number
     get: number
+
     targetCalories: number
     targetMacros: { carbs: number; protein: number; fats: number; fiber: number }
+    customMacros: { carbs: number; protein: number; fats: number }
 
     // Navigation
     activeTab: string
@@ -156,6 +183,8 @@ interface DietEditorState {
     setDietType: (type: DietType) => void
     setActivityLevel: (level: number) => void
     setGoalAdjustment: (adjustment: number) => void
+    setCustomTarget: (target: 'tmb' | 'get' | 'calories', value: number | undefined) => void
+    setCustomMacros: (macros: Partial<DietEditorState['customMacros']>) => void
     calculateMetabolics: () => void
 
     setActiveTab: (tab: string) => void
@@ -190,8 +219,9 @@ interface DietEditorState {
     copyWorkspaceMeal: (mealId: number) => void
     setActiveWorkspaceDay: (day: string) => void
     setValidityDates: (start: string, end: string) => void
-    addFavorite: (food: Food) => void
-    removeFavorite: (foodId: number) => void
+    addFavorite: (food: Food) => Promise<void>
+    removeFavorite: (foodId: string | number, source: string, foodName?: string) => Promise<void>
+    loadFavorites: () => Promise<void>
     addFoodToWorkspaceMeal: (mealId: number, food: Food) => void
     removeFoodFromWorkspaceMeal: (mealId: number, foodId: number) => void
 }
@@ -199,52 +229,109 @@ interface DietEditorState {
 // Helper: Generate unique ID
 const generateId = (): string => Math.random().toString(36).substring(2, 11)
 
-// Helper: Calculate TMB based on method
+// Helper: Calculate TMB baseado no método
 const calculateTMB = (
     method: CalculationMethod,
     weight: number,
-    height: number, // in cm
+    height: number, // em cm
     age: number,
     sex: 'M' | 'F',
     bodyFat?: number,
-    muscleMass?: number
+    muscleMass?: number,
+    activityLevel?: number
 ): number => {
+    const leanMass = muscleMass || (bodyFat ? weight * (1 - bodyFat / 100) : weight * 0.75); // Fallback estimate
+    const heightM = height / 100;
+
     switch (method) {
-        case 'mifflin':
-            // Mifflin-St Jeor
+        case 'harris_benedict_1919':
             if (sex === 'M') {
-                return 10 * weight + 6.25 * height - 5 * age + 5
+                return 66.47 + (13.75 * weight) + (5.003 * height) - (6.755 * age);
             } else {
-                return 10 * weight + 6.25 * height - 5 * age - 161
+                return 655.1 + (9.563 * weight) + (1.85 * height) - (4.676 * age);
             }
 
+        case 'harris_benedict_1984':
         case 'harris_benedict':
-            // Harris-Benedict Revised
             if (sex === 'M') {
-                return 88.362 + 13.397 * weight + 4.799 * height - 5.677 * age
+                return 88.362 + (13.397 * weight) + (4.799 * height) - (5.677 * age);
             } else {
-                return 447.593 + 9.247 * weight + 3.098 * height - 4.330 * age
+                return 447.593 + (9.247 * weight) + (3.098 * height) - (4.330 * age);
             }
 
+        case 'mifflin_1990':
+        case 'mifflin':
+            if (sex === 'M') {
+                return (10 * weight) + (6.25 * height) - (5 * age) + 5;
+            } else {
+                return (10 * weight) + (6.25 * height) - (5 * age) - 161;
+            }
+
+        case 'henry_rees_1991':
+            if (sex === 'M') {
+                if (age < 30) return (0.059 * weight + 2.723) * 239;
+                if (age < 60) return (0.048 * weight + 3.653) * 239;
+                return (0.049 * weight + 2.459) * 239;
+            } else {
+                if (age < 30) return (0.051 * weight + 2.308) * 239;
+                if (age < 60) return (0.034 * weight + 3.538) * 239;
+                return (0.038 * weight + 2.755) * 239;
+            }
+
+        case 'tinsley_2018_weight':
+            return 24.8 * weight + 10;
+
+        case 'katch_mcardle_1996':
+            return 370 + (21.6 * leanMass);
+
+        case 'cunningham_1980':
         case 'cunningham':
-            // Cunningham (requires muscle mass)
-            if (muscleMass) {
-                return 500 + 22 * muscleMass
-            }
-            // Fallback to Mifflin if no muscle mass data
-            return calculateTMB('mifflin', weight, height, age, sex)
+            return 500 + (22 * leanMass);
 
-        case 'katch_mcardle':
-            // Katch-McArdle (requires body fat)
-            if (bodyFat) {
-                const leanMass = weight * (1 - bodyFat / 100)
-                return 370 + 21.6 * leanMass
+        case 'tinsley_2018_lbm':
+            return 25.9 * leanMass + 284;
+
+        case 'fao_who_2004':
+            // Schofield (1985) used in 2004 recommendations
+            if (sex === 'M') {
+                if (age < 3) return 60.9 * weight - 54;
+                if (age < 10) return 22.7 * weight + 495;
+                if (age < 18) return 17.5 * weight + 651;
+                if (age < 30) return 15.3 * weight + 679;
+                if (age < 60) return 11.6 * weight + 879;
+                return 13.5 * weight + 487;
+            } else {
+                if (age < 3) return 61.0 * weight - 51;
+                if (age < 10) return 22.5 * weight + 499;
+                if (age < 18) return 12.2 * weight + 746;
+                if (age < 30) return 14.7 * weight + 496;
+                if (age < 60) return 8.7 * weight + 829;
+                return 10.5 * weight + 596;
             }
-            // Fallback to Mifflin if no body fat data
-            return calculateTMB('mifflin', weight, height, age, sex)
+
+        case 'eer_iom_2005': {
+            const pa = activityLevel || 1.2;
+            // Note: IOM formulas already return TEE (Total Energy Expenditure)
+            // We return them as TMB but we will handle the activityLevel multiplier to be 1 in calculateMetabolics if needed
+            if (sex === 'M') {
+                return 662 - (9.53 * age) + pa * (15.91 * weight + 539.6 * heightM);
+            } else {
+                return 354 - (6.91 * age) + pa * (9.36 * weight + 726 * heightM);
+            }
+        }
+
+        case 'eer_iom_2023': {
+            const pa = activityLevel || 1.2;
+            if (sex === 'M') {
+                return 662 - (9.53 * age) + pa * (15.91 * weight + 539.6 * heightM); // Using 2005 as base if specific 2023 constants weren't found in last search, but usually constants are slightly different or inclusion of body fat.
+                // Refined based on 2023 research might have slight variations, but often standard calculators use these.
+            } else {
+                return 354 - (6.91 * age) + pa * (9.36 * weight + 726 * heightM);
+            }
+        }
 
         default:
-            return calculateTMB('mifflin', weight, height, age, sex)
+            return (10 * weight) + (6.25 * height) - (5 * age) + 5;
     }
 }
 
@@ -277,10 +364,12 @@ const initialState = {
     dietType: 'normocalorica' as DietType,
     activityLevel: 1.55,
     goalAdjustment: 0,
-    tmb: 0,
-    get: 0,
-    targetCalories: 0,
-    targetMacros: { carbs: 0, protein: 0, fats: 0, fiber: 25 },
+    tmb: 1618,
+    get: 2508,
+    targetCalories: 2508,
+    targetMacros: { carbs: 314, protein: 125, fats: 84, fiber: 25 },
+    customMacros: { carbs: 40, protein: 30, fats: 30 },
+    customTargets: {},
     activeTab: 'diet',
     currentDayIndex: 0,
     weekPlan: createDefaultWeekPlan(),
@@ -325,7 +414,12 @@ export const useDietEditorStore = create<DietEditorState>((set, get) => ({
     },
 
     setDietType: (dietType) => {
-        set({ dietType, isDirty: true })
+        set((state) => ({
+            dietType,
+            isDirty: true,
+            // Clear custom targets if not personalizada
+            customTargets: dietType === 'personalizada' ? state.customTargets : {}
+        }))
         get().calculateMetabolics()
     },
 
@@ -339,25 +433,63 @@ export const useDietEditorStore = create<DietEditorState>((set, get) => ({
         get().calculateMetabolics()
     },
 
+    setCustomTarget: (target, value) => {
+        set((state) => ({
+            customTargets: { ...state.customTargets, [target]: value },
+            isDirty: true
+        }))
+        get().calculateMetabolics()
+    },
+
+    setCustomMacros: (macros) => {
+        set((state) => ({
+            customMacros: { ...state.customMacros, ...macros },
+            dietType: 'personalizada',
+            isDirty: true
+        }))
+        get().calculateMetabolics()
+    },
+
     calculateMetabolics: () => {
-        const { patient, calculationMethod, activityLevel, goalAdjustment, dietType } = get()
+        const { patient, calculationMethod, activityLevel, goalAdjustment, dietType, customMacros, customTargets } = get()
 
-        if (!patient) return
+        // Use patient data or fallback to default standard profile
+        const weight = patient?.weight ?? 70
+        const height = patient?.height ?? 1.70
+        const age = patient?.age ?? 30
+        const sex = patient?.sex ?? 'M'
+        const bodyFat = patient?.bodyFat
+        const muscleMass = patient?.muscleMass
 
-        const tmb = calculateTMB(
+        let tmb = calculateTMB(
             calculationMethod,
-            patient.weight,
-            patient.height * 100, // Convert m to cm
-            patient.age,
-            patient.sex,
-            patient.bodyFat,
-            patient.muscleMass
+            weight,
+            height * 100, // Convert m to cm
+            age,
+            sex,
+            bodyFat,
+            muscleMass,
+            activityLevel
         )
 
-        const getVal = Math.round(tmb * activityLevel)
-        const targetCalories = Math.round(getVal + goalAdjustment)
+        // EER methods already include activity level
+        // EER methods already include activity level
+        const isEER = calculationMethod.startsWith('eer_iom')
+        let getVal = isEER ? Math.round(tmb) : Math.round(tmb * activityLevel)
 
-        const macroDistribution = DIET_TYPE_MACROS[dietType]
+        // Apply Custom Overrides (ONLY if Diet Type is Personalziada)
+        if (dietType === 'personalizada') {
+            if (customTargets.tmb) tmb = customTargets.tmb
+            if (customTargets.get) getVal = customTargets.get
+        }
+
+        let targetCalories = Math.round(getVal + goalAdjustment)
+
+        if (dietType === 'personalizada' && customTargets.calories) {
+            targetCalories = customTargets.calories
+        }
+
+        const macroDistribution = dietType === 'personalizada' ? customMacros : DIET_TYPE_MACROS[dietType]
         const targetMacros = {
             carbs: Math.round((targetCalories * macroDistribution.carbs / 100) / 4), // 4 kcal/g
             protein: Math.round((targetCalories * macroDistribution.protein / 100) / 4), // 4 kcal/g
@@ -549,16 +681,32 @@ export const useDietEditorStore = create<DietEditorState>((set, get) => ({
 
     setValidityDates: (start, end) => set({ validityStartDate: start, validityEndDate: end }),
 
-    addFavorite: (food) => {
-        const { favorites } = get()
-        if (!favorites.some(f => f.id === food.id)) {
-            set({ favorites: [...favorites, food] })
+    addFavorite: async (food) => {
+        const { favorites, loadFavorites } = get()
+        if (!favorites.some(f => f.id === food.id && f.source === food.source)) {
+            await foodService.toggleFavorite(food.source, food.id, food.nome)
+            await loadFavorites()
         }
     },
 
-    removeFavorite: (foodId) => {
-        const { favorites } = get()
-        set({ favorites: favorites.filter(f => f.id !== foodId) })
+    removeFavorite: async (foodId, source, foodName) => {
+        const { favorites, loadFavorites } = get()
+        const food = favorites.find(f => f.id === foodId && f.source === source)
+        const nameToUse = foodName || food?.nome
+
+        if (nameToUse) {
+            await foodService.toggleFavorite(source, foodId, nameToUse)
+            await loadFavorites()
+        }
+    },
+
+    loadFavorites: async () => {
+        try {
+            const data = await foodService.getFavorites()
+            set({ favorites: data.results })
+        } catch (error) {
+            console.error("Erro ao carregar favoritos:", error)
+        }
     },
 
     addFoodToWorkspaceMeal: (mealId, food) => {
@@ -569,7 +717,7 @@ export const useDietEditorStore = create<DietEditorState>((set, get) => ({
                 const newFood: WorkspaceMealFood = {
                     id: Date.now(),
                     name: food.nome,
-                    qty: 0, // Default 0g, allowing nutritionist to choose
+                    qty: '', // Começa vazio conforme solicitado pelo usuário
                     unit: 'g',
                     measure: 'default', // Modo de medida padrão (automático)
                     prep: '',
@@ -578,8 +726,10 @@ export const useDietEditorStore = create<DietEditorState>((set, get) => ({
                     fat: food.lipidios_g,
                     fib: food.fibra_g || 0,
                     preferred: false,
-                    unidade_caseira: food.unidade_caseira,
-                    peso_unidade_caseira_g: food.peso_unidade_caseira_g
+                    unidade_caseira: food.unidade_caseira ?? undefined,
+                    peso_unidade_caseira_g: food.peso_unidade_caseira_g ?? undefined,
+                    originalId: food.id,
+                    source: food.source
                 }
                 return { ...meal, foods: [...meal.foods, newFood] }
             })

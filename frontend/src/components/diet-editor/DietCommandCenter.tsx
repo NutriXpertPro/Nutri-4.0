@@ -78,10 +78,10 @@ export function DietCommandCenter({ patientId }: DietCommandCenterProps) {
                 {/* Toolbar */}
                 <header className="h-14 border-b border-white/10 bg-black/20 backdrop-blur-xl flex items-center justify-between px-4 flex-shrink-0">
                     <div className="flex items-center gap-4">
-                        <h1 className="text-lg font-semibold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
+                        <h1 className="text-lg bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
                             Diet Command Center
                         </h1>
-                        <span className="px-2 py-1 rounded-full bg-amber-500/20 text-amber-400 text-xs font-medium">
+                        <span className="px-2 py-1 rounded-full bg-amber-500/20 text-amber-400 text-xs">
                             PRO
                         </span>
                     </div>
@@ -214,9 +214,9 @@ export function DietCommandCenter({ patientId }: DietCommandCenterProps) {
                                 <div className="flex border-b border-white/10">
                                     <button
                                         onClick={() => setRightPanelTab('search')}
-                                        className={`flex-1 py-3 text-sm font-medium flex items-center justify-center gap-2 transition-colors ${rightPanelTab === 'search'
-                                                ? 'text-white border-b-2 border-indigo-500 bg-indigo-500/10'
-                                                : 'text-slate-400 hover:text-white'
+                                        className={`flex-1 py-3 text-sm flex items-center justify-center gap-2 transition-colors ${rightPanelTab === 'search'
+                                            ? 'text-white border-b-2 border-indigo-500 bg-indigo-500/10'
+                                            : 'text-slate-400 hover:text-white'
                                             }`}
                                     >
                                         <Search className="h-4 w-4" />
@@ -224,9 +224,9 @@ export function DietCommandCenter({ patientId }: DietCommandCenterProps) {
                                     </button>
                                     <button
                                         onClick={() => setRightPanelTab('presets')}
-                                        className={`flex-1 py-3 text-sm font-medium flex items-center justify-center gap-2 transition-colors ${rightPanelTab === 'presets'
-                                                ? 'text-white border-b-2 border-indigo-500 bg-indigo-500/10'
-                                                : 'text-slate-400 hover:text-white'
+                                        className={`flex-1 py-3 text-sm flex items-center justify-center gap-2 transition-colors ${rightPanelTab === 'presets'
+                                            ? 'text-white border-b-2 border-indigo-500 bg-indigo-500/10'
+                                            : 'text-slate-400 hover:text-white'
                                             }`}
                                     >
                                         <LayoutGrid className="h-4 w-4" />

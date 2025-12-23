@@ -25,6 +25,10 @@ import {
     Trash2,
     TrendingUp,
     TrendingDown,
+    Target,
+    Heart,
+    Activity,
+    Zap,
 } from "lucide-react"
 
 interface Patient {
@@ -48,45 +52,67 @@ interface PatientCardProps {
     className?: string
 }
 
+// Função para retornar ícone específico baseado no tipo de goal
+function getGoalIcon(goal: string) {
+    const normalizedGoal = goal.toLowerCase();
+
+    if (normalizedGoal.includes('qualidade') || normalizedGoal.includes('bem-estar') || normalizedGoal.includes('saúde')) {
+        return <Heart className="h-4 w-4 text-rose-500" />;
+    }
+
+    if (normalizedGoal.includes('massa') || normalizedGoal.includes('músculo') || normalizedGoal.includes('ganho')) {
+        return <Activity className="h-4 w-4 text-blue-500" />;
+    }
+
+    if (normalizedGoal.includes('gordura') || normalizedGoal.includes('perda') || normalizedGoal.includes('emagrecer')) {
+        return <Zap className="h-4 w-4 text-amber-500" />;
+    }
+
+    // Default para outros tipos de objetivo
+    return <Target className="h-4 w-4 text-primary" />;
+}
+
 export function PatientCard({ patient, className }: PatientCardProps) {
     return (
         <Card
+            variant="glass"
             className={cn(
-                "group relative overflow-hidden transition-all duration-300",
-                "hover:shadow-lg hover:-translate-y-1",
-                "bg-card/80 backdrop-blur-sm border-border/50",
+                "group relative overflow-hidden transition-all duration-500",
+                "hover:shadow-[0_20px_50px_-12px_rgba(0,0,0,0.1)] hover:-translate-y-2",
+                "bg-background/40 border border-border shadow-xl",
                 className
             )}
         >
-            {/* Status indicator */}
-            <div
-                className={cn(
-                    "absolute top-0 right-0 w-2 h-full",
-                    patient.status === "active" ? "bg-primary" : "bg-muted"
-                )}
-            />
-
-            <CardContent className="p-4">
+            <CardContent className="p-6">
                 {/* Header: Avatar + Name + Menu */}
-                <div className="flex items-start gap-3 mb-4">
-                    <Avatar className="h-12 w-12 border-2 border-border">
-                        <AvatarImage src={patient.avatar} />
-                        <AvatarFallback className="text-sm bg-primary/10 text-primary font-medium">
-                            {patient.name.substring(0, 2).toUpperCase()}
-                        </AvatarFallback>
-                    </Avatar>
+                <div className="flex items-start gap-4 mb-6">
+                    <div className="relative">
+                        <Avatar className="h-16 w-16 border-2 border-background shadow-md">
+                            <AvatarImage src={patient.avatar} />
+                            <AvatarFallback className="text-lg bg-primary/10 text-primary">
+                                {patient.name.substring(0, 2).toUpperCase()}
+                            </AvatarFallback>
+                        </Avatar>
+                        <div className={cn(
+                            "absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-4 border-background shadow-sm",
+                            patient.status === "active" ? "bg-emerald-500" : "bg-slate-300"
+                        )} />
+                    </div>
 
-                    <div className="flex-1 min-w-0">
+                    <div className="flex-1 min-w-0 pt-1">
                         <div className="flex items-center gap-2 mb-1">
-                            <h3 className="font-semibold truncate">{patient.name}</h3>
-                            <Badge variant={patient.status === "active" ? "default" : "secondary"} className="h-5 px-1.5 text-[10px]">
-                                {patient.status === "active" ? "Ativo" : "Inativo"}
-                            </Badge>
+                            <User className="h-5 w-5 text-muted-foreground" />
+                            <h3 className="text-lg tracking-tight truncate group-hover:text-primary transition-colors font-normal">
+                              {patient.name.startsWith('Paciente ') ? patient.name.substring(9) : patient.name}
+                            </h3>
                         </div>
-                        {patient.goal && (
-                            <p className="text-xs text-muted-foreground truncate">
-                                🎯 {patient.goal}
-                            </p>
+                        {patient.goal ? (
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                {getGoalIcon(patient.goal.toLowerCase())}
+                                <span>{patient.goal.toLowerCase()}</span>
+                            </div>
+                        ) : (
+                            <p className="text-[10px] text-muted-foreground/40 capitalize tracking-wide">Paciente cadastrado</p>
                         )}
                     </div>
 
@@ -95,78 +121,80 @@ export function PatientCard({ patient, className }: PatientCardProps) {
                         <DropdownMenuTrigger asChild>
                             <Button
                                 variant="ghost"
-                                size="icon-sm"
-                                className="opacity-0 group-hover:opacity-100 transition-opacity"
+                                size="icon"
+                                className="h-8 w-8 rounded-xl bg-muted/20 opacity-0 group-hover:opacity-100 transition-all hover:bg-primary/10 hover:text-primary"
                             >
                                 <MoreVertical className="h-4 w-4" />
                             </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                            <DropdownMenuItem asChild>
+                        <DropdownMenuContent align="end" className="rounded-2xl border-border/10 shadow-2xl p-1 w-48">
+                            <DropdownMenuItem asChild className="rounded-xl h-10 text-sm">
                                 <Link href={`/patients/${patient.id}`}>
-                                    <Eye className="mr-2 h-4 w-4" />
+                                    <Eye className="mr-2 h-4 w-4 opacity-40" />
                                     Ver Perfil
                                 </Link>
                             </DropdownMenuItem>
-                            <DropdownMenuItem>
-                                <MessageSquare className="mr-2 h-4 w-4" />
+                            <DropdownMenuItem className="rounded-xl h-10 text-sm focus:text-destructive focus:bg-destructive/5">
+                                <MessageSquare className="mr-2 h-4 w-4 text-destructive opacity-40 group-hover:opacity-100 transition-opacity" />
                                 Enviar Mensagem
                             </DropdownMenuItem>
-                            <DropdownMenuItem asChild>
+                            <DropdownMenuItem asChild className="rounded-xl h-10 text-sm focus:text-primary focus:bg-primary/5">
                                 <Link href={`/diets/new?patient=${patient.id}`}>
-                                    <UtensilsCrossed className="mr-2 h-4 w-4" />
+                                    <UtensilsCrossed className="mr-2 h-4 w-4 text-primary opacity-40 group-hover:opacity-100 transition-opacity" />
                                     Criar Dieta
                                 </Link>
                             </DropdownMenuItem>
-                            <DropdownMenuItem className="text-destructive focus:text-destructive">
-                                <Trash2 className="mr-2 h-4 w-4" />
+                            <div className="h-px bg-border/5 my-1" />
+                            <DropdownMenuItem className="rounded-xl h-10 text-sm text-destructive focus:text-destructive focus:bg-destructive/5">
+                                <Trash2 className="mr-2 h-4 w-4 opacity-40" />
                                 Excluir
                             </DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
                 </div>
 
-                {/* Info */}
-                <div className="space-y-2 text-sm text-muted-foreground mb-4">
-                    <div className="flex items-center gap-2 truncate">
-                        <Mail className="h-3.5 w-3.5 flex-shrink-0 text-primary" />
-                        <span className="truncate">{patient.email}</span>
+                {/* Info Grid */}
+                <div className="grid grid-cols-1 gap-3 mb-6">
+                    <div className="flex items-center gap-3 p-2.5 rounded-2xl bg-muted/20 border border-border/5 group/info hover:bg-muted/40 transition-colors">
+                        <div className="p-2 rounded-xl bg-background shadow-sm text-blue-500 group-hover/info:scale-110 transition-transform">
+                            <Mail className="h-3.5 w-3.5" />
+                        </div>
+                        <span className="text-xs text-muted-foreground truncate">{patient.email}</span>
                     </div>
-                    <div className="flex items-center gap-2">
-                        <Phone className="h-3.5 w-3.5 flex-shrink-0 text-primary" />
-                        <span>{patient.phone}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <Calendar className="h-3.5 w-3.5 flex-shrink-0 text-primary" />
-                        <span>Desde {patient.createdAt}</span>
+                    <div className="flex items-center gap-3 p-2.5 rounded-2xl bg-muted/20 border border-border/5 group/info hover:bg-muted/40 transition-colors">
+                        <div className="p-2 rounded-xl bg-background shadow-sm text-green-600 group-hover/info:scale-110 transition-transform">
+                            <Phone className="h-3.5 w-3.5" />
+                        </div>
+                        <span className="text-xs text-muted-foreground">{patient.phone || '(11) 99999-9999'}</span>
                     </div>
                 </div>
 
                 {/* Footer: Progress + CTA */}
-                <div className="flex items-center justify-between pt-3 border-t">
-                    {patient.progress ? (
-                        <div className="flex items-center gap-1 text-sm">
-                            {patient.progress.isPositive ? (
-                                <TrendingDown className="h-4 w-4 text-green-500" />
-                            ) : (
-                                <TrendingUp className="h-4 w-4 text-red-500" />
-                            )}
-                            <span
-                                className={cn(
-                                    "font-medium",
-                                    patient.progress.isPositive ? "text-green-500" : "text-red-500"
-                                )}
-                            >
-                                {patient.progress.value > 0 ? "-" : "+"}{Math.abs(patient.progress.value)}kg
-                            </span>
-                        </div>
-                    ) : (
-                        <div className="text-xs text-muted-foreground">Sem dados de progresso</div>
-                    )}
+                <div className="flex items-center justify-between pt-5 border-t border-border/10">
+                    <div className="flex flex-col">
+                        <span className="text-[9px] text-muted-foreground uppercase tracking-widest opacity-40 mb-1">Evolução Peso</span>
+                        {patient.progress ? (
+                            <div className="flex items-center gap-2">
+                                <div className={cn(
+                                    "flex items-center gap-1 px-2 py-0.5 rounded-lg text-[11px] tabular-nums",
+                                    patient.progress.isPositive ? "bg-emerald-500/10 text-emerald-600" : "bg-amber-500/10 text-amber-600"
+                                )}>
+                                    {patient.progress.isPositive ? (
+                                        <TrendingDown className="h-3.5 w-3.5" />
+                                    ) : (
+                                        <TrendingUp className="h-3.5 w-3.5" />
+                                    )}
+                                    {patient.progress.value > 0 ? "-" : "+"}{Math.abs(patient.progress.value)}kg
+                                </div>
+                            </div>
+                        ) : (
+                            <span className="text-[10px] text-muted-foreground/40 italic">Sem dados</span>
+                        )}
+                    </div>
 
-                    <Button size="sm" variant="outline" asChild>
+                    <Button size="sm" variant="outline" className="h-9 px-4 rounded-xl border-border/20 text-[10px] uppercase tracking-widest hover:bg-primary hover:text-white hover:border-primary transition-all shadow-sm" asChild>
                         <Link href={`/patients/${patient.id}`}>
-                            Ver Perfil
+                            Perfil Completo
                         </Link>
                     </Button>
                 </div>

@@ -112,8 +112,25 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
         if attrs['password'] != attrs['confirm_password']:
             raise serializers.ValidationError({"password": "As senhas não coincidem."})
 
-        # Verificar se a senha não é igual ao email do usuário (quando for possível acessar)
-        # A validação completa de email/nome ocorrerá quando tivermos acesso ao usuário
+        # Obter o UID do usuário a partir do contexto
+        # O UID é passado via URL, então precisamos extrair do contexto
+        request = self.context.get('request')
+        if request:
+            uidb64 = request.resolver_match.kwargs.get('uidb64')
+            if uidb64:
+                from django.utils.encoding import force_str
+                from django.utils.http import urlsafe_base64_decode
+                from django.contrib.auth import get_user_model
+                User = get_user_model()
+
+                try:
+                    uid = force_str(urlsafe_base64_decode(uidb64))
+                    user = User.objects.get(pk=uid)
+                    validate_password_not_email_or_name(attrs['password'], user.email, user.name)
+                except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+                    # Se não for possível obter o usuário, não fazemos a validação
+                    pass
+
         return attrs
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
@@ -212,7 +229,7 @@ class ChangePasswordSerializer(serializers.Serializer):
 
 
 class AuthenticationLogSerializer(serializers.ModelSerializer):
-    user_id = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), source='user')
+    user_id = serializers.PrimaryKeyRelatedField(source='user', read_only=True)
 
     class Meta:
         model = AuthenticationLog

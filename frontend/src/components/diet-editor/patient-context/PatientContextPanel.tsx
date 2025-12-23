@@ -42,12 +42,12 @@ export function PatientContextPanel() {
                             className="h-12 w-12 rounded-full object-cover border-2 border-white/20"
                         />
                     ) : (
-                        <div className="h-12 w-12 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-lg font-bold">
+                        <div className="h-12 w-12 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-lg">
                             {patient.name.charAt(0)}
                         </div>
                     )}
                     <div>
-                        <h3 className="font-semibold text-white">{patient.name}</h3>
+                        <h3 className="text-white">{patient.name}</h3>
                         <p className="text-sm text-slate-400">
                             {patient.age} anos • {patient.sex === 'M' ? 'Masculino' : 'Feminino'}
                         </p>
@@ -160,7 +160,7 @@ function StatCard({ icon, label, value, color }: StatCardProps) {
                 {icon}
                 <span>{label}</span>
             </div>
-            <p className="text-lg font-semibold text-white">{value}</p>
+            <p className="text-lg text-white">{value}</p>
         </div>
     )
 }

@@ -75,7 +75,7 @@ export function NutritionPanel() {
                         placeholder="Buscar alimentos..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="pl-10 bg-white/5 border-white/10 text-white placeholder:text-slate-500"
+                        className="pl-10 bg-white/5 border-white/10 text-foreground placeholder:text-slate-500"
                     />
                 </div>
                 <div className="flex gap-2 mt-2">
@@ -163,7 +163,7 @@ function SearchResultsList({ results, isLoading, onSelect }: SearchResultsListPr
                 >
                     <div className="flex justify-between items-start">
                         <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-white truncate">{food.nome}</p>
+                            <p className="text-sm font-medium text-foreground truncate">{food.nome}</p>
                             <p className="text-xs text-slate-400">{food.grupo}</p>
                         </div>
                         <span className={`text-xs px-1.5 py-0.5 rounded ${food.source === 'TACO' ? 'bg-green-500/20 text-green-400' :
@@ -218,7 +218,7 @@ function FoodDetailView({
             {/* Header */}
             <div className="flex items-start justify-between mb-4">
                 <div>
-                    <h3 className="font-medium text-white">{food.nome}</h3>
+                    <h3 className="font-medium text-foreground">{food.nome}</h3>
                     <p className="text-xs text-slate-400">{food.grupo} • {food.source}</p>
                 </div>
                 <button onClick={onClose} className="p-1 rounded hover:bg-white/10">
@@ -237,12 +237,12 @@ function FoodDetailView({
                             onAdd();
                         }
                     }}
-                    className="flex-1 bg-white/5 border-white/10 text-white [-webkit-appearance:none] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-inner-spin-button]:m-0 [&::-webkit-outer-spin-button]:m-0"
+                    className="flex-1 bg-white/5 border-white/10 text-foreground [-webkit-appearance:none] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-inner-spin-button]:m-0 [&::-webkit-outer-spin-button]:m-0"
                 />
                 <select
                     value={unit}
                     onChange={(e) => onUnitChange(e.target.value)}
-                    className="px-3 rounded-lg bg-white/5 border border-white/10 text-white"
+                    className="px-3 rounded-lg bg-white/5 border border-white/10 text-foreground"
                 >
                     <option value="g">gramas</option>
                     <option value="ml">ml</option>
@@ -259,7 +259,7 @@ function FoodDetailView({
                         key={qty}
                         onClick={() => onQuantityChange(qty)}
                         className={`flex-1 py-1.5 rounded-lg text-xs font-medium transition-all ${quantity === qty
-                            ? 'bg-indigo-500 text-white'
+                            ? 'bg-indigo-500 text-foreground'
                             : 'bg-white/5 text-slate-400 hover:bg-white/10'
                             }`}
                     >
@@ -271,7 +271,7 @@ function FoodDetailView({
             {/* Nutritional Info */}
             <div className="rounded-xl bg-gradient-to-br from-indigo-500/10 to-purple-500/10 border border-white/10 p-4 mb-4">
                 <div className="text-center mb-4">
-                    <p className="text-2xl font-bold text-white">
+                    <p className="text-2xl font-bold text-foreground">
                         {(food.energia_kcal * multiplier).toFixed(0)}
                     </p>
                     <p className="text-xs text-slate-400">kcal</p>
@@ -311,7 +311,7 @@ function FoodDetailView({
             <Button
                 onClick={onAdd}
                 disabled={!canAdd}
-                className="w-full bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 text-white border-0"
+                className="w-full bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 text-foreground border-0"
             >
                 <Plus className="h-4 w-4 mr-2" />
                 {canAdd ? 'Adicionar à Refeição' : 'Selecione uma refeição primeiro'}
@@ -329,7 +329,7 @@ function QuickAccessView({ onSelect }: QuickAccessViewProps) {
         <div className="p-4 space-y-6">
             {/* Favorites */}
             <div>
-                <h4 className="flex items-center gap-2 text-sm font-medium text-white mb-3">
+                <h4 className="flex items-center gap-2 text-sm font-medium text-foreground mb-3">
                     <Star className="h-4 w-4 text-yellow-400" />
                     Favoritos
                 </h4>
@@ -341,7 +341,7 @@ function QuickAccessView({ onSelect }: QuickAccessViewProps) {
 
             {/* Recent */}
             <div>
-                <h4 className="flex items-center gap-2 text-sm font-medium text-white mb-3">
+                <h4 className="flex items-center gap-2 text-sm font-medium text-foreground mb-3">
                     <Clock className="h-4 w-4 text-blue-400" />
                     Usados Recentemente
                 </h4>
@@ -356,7 +356,7 @@ function QuickAccessView({ onSelect }: QuickAccessViewProps) {
                 <div className="flex items-start gap-3">
                     <Info className="h-5 w-5 text-indigo-400 flex-shrink-0 mt-0.5" />
                     <div>
-                        <p className="text-sm text-white">Dica</p>
+                        <p className="text-sm text-foreground">Dica</p>
                         <p className="text-xs text-slate-400 mt-1">
                             Use Ctrl+F para focar na busca rapidamente.
                             Digite pelo menos 2 caracteres para buscar.

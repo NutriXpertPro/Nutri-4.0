@@ -89,7 +89,7 @@ const GoogleCalendarIntegration = () => {
   const connectToGoogle = async () => {
     try {
       const response = await api.get('/integrations/google-calendar/auth/');
-      
+
       // Redirect to Google auth URL
       window.location.href = response.data.authorization_url;
     } catch (error) {
@@ -124,7 +124,7 @@ const GoogleCalendarIntegration = () => {
     try {
       const response = await api.get('/integrations/google-calendar/sync/get_calendars/');
       setAvailableCalendars(response.data.calendars);
-      
+
       // Set the primary calendar as default if available
       const primaryCalendar = response.data.calendars.find((cal: any) => cal.primary);
       if (primaryCalendar) {
@@ -147,7 +147,7 @@ const GoogleCalendarIntegration = () => {
         appointment_id: appointmentId,
         calendar_id: selectedCalendar
       });
-      
+
       toast({
         title: 'Sucesso',
         description: 'Consulta sincronizada com Google Calendar'
@@ -170,7 +170,7 @@ const GoogleCalendarIntegration = () => {
       const response = await api.post('/integrations/google-calendar/sync/sync_all_appointments/', {
         calendar_id: selectedCalendar
       });
-      
+
       toast({
         title: 'Sucesso',
         description: `Sincronização concluída: ${response.data.results.length} consultas processadas`
@@ -218,7 +218,7 @@ const GoogleCalendarIntegration = () => {
           <div className="space-y-4">
             <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
               <div>
-                <h3 className="font-medium">{integration.google_display_name}</h3>
+                <h3 className="font-normal">{integration.google_display_name}</h3>
                 <p className="text-sm text-muted-foreground">{integration.google_email}</p>
               </div>
               <Badge variant={integration.is_active ? "default" : "secondary"}>
@@ -245,7 +245,7 @@ const GoogleCalendarIntegration = () => {
         ) : (
           <div className="text-center py-8">
             <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-medium mb-2">Google Calendar não conectado</h3>
+            <h3 className="text-lg font-normal mb-2">Google Calendar não conectado</h3>
             <p className="text-muted-foreground mb-4">
               Conecte sua conta do Google para sincronizar suas consultas automaticamente
             </p>

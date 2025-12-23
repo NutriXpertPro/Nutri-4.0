@@ -25,6 +25,7 @@ const WhatsAppConversationsList: React.FC<WhatsAppConversationsListProps> = ({
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [filter, setFilter] = useState<'all' | 'unread' | 'favorites' | 'groups'>('all');
 
   // Carregar conversas do backend
   useEffect(() => {
@@ -128,11 +129,48 @@ const WhatsAppConversationsList: React.FC<WhatsAppConversationsListProps> = ({
     );
   }
 
+  // Filtrar conversas com base no filtro selecionado
+  const filteredConversations = conversations.filter(conversation => {
+    switch (filter) {
+      case 'unread':
+        return conversation.unread_count > 0;
+      case 'favorites':
+        // Para implementação futura - por enquanto, retornamos todas as conversas
+        return true;
+      case 'groups':
+        // Para implementação futura - por enquanto, retornamos todas as conversas
+        return true;
+      case 'all':
+      default:
+        return true;
+    }
+  });
+
   return (
     <div className="h-full flex flex-col overflow-hidden">
+      {/* Filtros */}
+      <div className="flex gap-2 p-3">
+        {(['all', 'unread', 'favorites', 'groups'] as const).map((f) => (
+          <button
+            key={f}
+            className={`px-4 py-2 text-sm capitalize rounded-full transition-colors ${
+              filter === f
+                ? 'bg-primary text-primary-foreground'
+                : 'bg-muted text-muted-foreground hover:bg-muted/80'
+            }`}
+            onClick={() => setFilter(f)}
+          >
+            {f === 'all' ? 'Tudo' :
+             f === 'unread' ? 'Não lidas' :
+             f === 'favorites' ? 'Favoritos' :
+             'Grupos'}
+          </button>
+        ))}
+      </div>
+
       {/* Conversations List */}
       <div className="flex-1 overflow-y-auto overflow-x-hidden">
-        {conversations.map((conversation) => {
+        {filteredConversations.map((conversation) => {
           const participant = conversation.participants.find(
             p => p.id !== currentUserId
           );

@@ -23,11 +23,11 @@ export default function DietsPage() {
             {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                 <div>
-                    <h1 className="text-2xl font-bold flex items-center gap-2">
-                        <Utensils className="h-6 w-6 text-primary" />
+                    <h1 className="text-h1 capitalize flex items-center gap-2">
                         Meus Planos Alimentares
                     </h1>
-                    <p className="text-muted-foreground mt-1">
+                    <p className="text-muted-foreground mt-1 flex items-center gap-2">
+                        <Utensils className="h-4 w-4 text-primary" />
                         Gerencie os planos alimentares dos seus pacientes
                     </p>
                 </div>
@@ -40,20 +40,17 @@ export default function DietsPage() {
             </div>
 
             {/* Empty State / Content Placeholder */}
-            <div className="flex flex-col items-center justify-center py-12 text-center border-2 border-dashed rounded-lg bg-muted/10">
-                <div className="bg-background p-4 rounded-full mb-4 ring-1 ring-border">
-                    <Utensils className="h-8 w-8 text-muted-foreground" />
-                </div>
-                <h3 className="text-lg font-medium mb-1">Meus Planos Alimentares</h3>
-                <p className="text-muted-foreground mb-6 max-w-sm">
-                    Aqui você poderá visualizar e gerenciar todos os planos alimentares criados.
-                    Por enquanto, utilize o botão acima para criar um novo plano.
-                </p>
-                <Button variant="outline" asChild>
-                    <Link href="/diets/create">
-                        Criar meu primeiro plano
-                    </Link>
-                </Button>
+            <div className="relative flex flex-col items-center justify-center min-h-[32rem] text-center border-2 border-dashed rounded-lg bg-muted/10 overflow-hidden">
+                <img
+                    src="/refeicao-light.png"
+                    alt="Plano Alimentar"
+                    className="absolute inset-0 w-full h-full object-contain scale-x-175 dark:hidden"
+                />
+                <img
+                    src="/refeicao-dark.png"
+                    alt="Plano Alimentar"
+                    className="absolute inset-0 w-full h-full object-contain scale-x-175 hidden dark:block"
+                />
             </div>
         </DashboardLayout>
     )

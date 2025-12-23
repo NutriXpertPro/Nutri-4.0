@@ -52,8 +52,12 @@ Thumbs.db
 .env
 .env.local
 .env.*.local
+backend/env_fix_v2.txt
 
 # Others
 *.bak
 *.tmp
-coverage//agent_xpert/ 
+.gemini/
+*.diff
+*.txt
+build.log

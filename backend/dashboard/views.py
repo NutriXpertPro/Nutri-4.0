@@ -14,9 +14,10 @@ class DashboardStatsView(APIView):
         nutritionist = request.user
         
         # Pacientes Ativos
-        active_patients_count = PatientProfile.objects.filter(
-            nutritionist=nutritionist
-        ).count()
+        active_patients = PatientProfile.objects.filter(
+            nutritionist=nutritionist, is_active=True
+        )
+        active_patients_count = active_patients.count()
 
         # Consultas Hoje
         today = timezone.now().date()
@@ -27,15 +28,71 @@ class DashboardStatsView(APIView):
 
         # Dietas Ativas
         active_diets_count = Diet.objects.filter(
-            patient__nutritionist=nutritionist,
+            patient__in=active_patients,
             is_active=True
         ).count()
 
+        # --- Cálculo da Taxa de Progresso em Direção à Meta ---
+        total_progress = 0
+        patients_with_goals_count = 0
+
+        # Filtra apenas pacientes que têm uma dieta ativa
+        patients_with_active_diets = active_patients.filter(diets__is_active=True).distinct()
+
+        for patient in patients_with_active_diets:
+            # Requer uma meta de peso e um objetivo definido
+            if not patient.target_weight or not patient.goal:
+                continue
+
+            # Busca a primeira e a última avaliação do paciente
+            evaluations = Evaluation.objects.filter(patient=patient).order_by('date')
+            first_eval = evaluations.first()
+            latest_eval = evaluations.last()
+
+            # Requer pelo menos duas avaliações para calcular o progresso
+            if not first_eval or not latest_eval or first_eval == latest_eval:
+                continue
+            
+            initial_weight = first_eval.weight
+            current_weight = latest_eval.weight
+
+            if not initial_weight or not current_weight:
+                continue
+
+            patients_with_goals_count += 1
+            
+            # Lógica para perda de peso/gordura
+            if patient.goal in ['PERDA_GORDURA', 'QUALIDADE_VIDA']:
+                total_change_required = float(initial_weight) - float(patient.target_weight)
+                change_achieved = float(initial_weight) - float(current_weight)
+                
+                if total_change_required <= 0:
+                    progress = 100.0 if current_weight <= patient.target_weight else 0.0
+                else:
+                    progress = (change_achieved / total_change_required) * 100
+            
+            # Lógica para ganho de massa/peso
+            elif patient.goal == 'GANHO_MASSA':
+                total_change_required = float(patient.target_weight) - float(initial_weight)
+                change_achieved = float(current_weight) - float(initial_weight)
+                
+                if total_change_required <= 0:
+                    progress = 100.0 if current_weight >= patient.target_weight else 0.0
+                else:
+                    progress = (change_achieved / total_change_required) * 100
+            
+            else:
+                progress = 0
+
+            total_progress += max(0, min(progress, 100))
+
+        average_progress_rate = (total_progress / patients_with_goals_count) if patients_with_goals_count > 0 else 0
+        
         return Response({
             "active_patients": active_patients_count,
             "appointments_today": appointments_today_count,
             "active_diets": active_diets_count,
-            "adhesion_rate": 87 
+            "adhesion_rate": round(average_progress_rate)
         })
 
 class DashboardAppointmentsView(APIView):

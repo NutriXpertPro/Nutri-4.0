@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
-import { 
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -15,7 +15,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Trash2, Save, Play } from 'lucide-react';
+import { Plus, Trash2, Save, Play, Bot } from 'lucide-react';
 import api from '@/services/api';
 
 interface AutomationTemplate {
@@ -51,7 +51,7 @@ const AutomationSettings = () => {
       is_active: false,
     }
   ]);
-  
+
   const [currentTemplate, setCurrentTemplate] = useState<AutomationTemplate | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -100,7 +100,7 @@ const AutomationSettings = () => {
 
   const handleDeleteTemplate = async (id: string) => {
     if (!id) return;
-    
+
     try {
       await api.delete(`/automation/templates/${id}`);
       setTemplates(templates.filter(template => template.id !== id));
@@ -111,7 +111,7 @@ const AutomationSettings = () => {
 
   const handleSaveTemplate = async () => {
     if (!currentTemplate) return;
-    
+
     try {
       if (currentTemplate.id) {
         // Atualizar template existente
@@ -164,7 +164,10 @@ const AutomationSettings = () => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Automação de Mensagens</CardTitle>
+        <CardTitle className="flex items-center gap-2">
+          <Bot className="h-5 w-5 text-primary" />
+          Automação de Mensagens
+        </CardTitle>
         <CardDescription>
           Configure mensagens automáticas que serão enviadas em eventos específicos
         </CardDescription>
@@ -174,25 +177,25 @@ const AutomationSettings = () => {
           <Plus className="h-4 w-4 mr-2" />
           Adicionar Template
         </Button>
-        
+
         {isEditing ? (
           <div className="space-y-4 p-4 border rounded-lg mb-4 bg-muted/30">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label htmlFor="template-name" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                <label htmlFor="template-name" className="text-sm font-normal leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
                   Nome do Template
                 </label>
                 <Input
                   id="template-name"
                   value={currentTemplate?.name || ''}
-                  onChange={(e) => setCurrentTemplate(currentTemplate ? {...currentTemplate, name: e.target.value} : null)}
+                  onChange={(e) => setCurrentTemplate(currentTemplate ? { ...currentTemplate, name: e.target.value } : null)}
                   placeholder="Ex: Confirmação de Consulta"
                   className="mt-1"
                 />
               </div>
 
               <div>
-                <label htmlFor="template-trigger" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                <label htmlFor="template-trigger" className="text-sm font-normal leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
                   Gatilho
                 </label>
                 <Select
@@ -213,13 +216,13 @@ const AutomationSettings = () => {
             </div>
 
             <div>
-              <label htmlFor="template-content" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+              <label htmlFor="template-content" className="text-sm font-normal leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
                 Conteúdo da Mensagem
               </label>
               <Textarea
                 id="template-content"
                 value={currentTemplate?.content || ''}
-                onChange={(e) => setCurrentTemplate(currentTemplate ? {...currentTemplate, content: e.target.value} : null)}
+                onChange={(e) => setCurrentTemplate(currentTemplate ? { ...currentTemplate, content: e.target.value } : null)}
                 placeholder="Digite a mensagem automática (use variáveis como {patient_name}, {appointment_date}, etc.)"
                 rows={4}
                 className="mt-1"
@@ -233,20 +236,20 @@ const AutomationSettings = () => {
               <Switch
                 id="template-active"
                 checked={currentTemplate?.is_active}
-                onCheckedChange={(checked) => setCurrentTemplate(currentTemplate ? {...currentTemplate, is_active: checked} : null)}
+                onCheckedChange={(checked) => setCurrentTemplate(currentTemplate ? { ...currentTemplate, is_active: checked } : null)}
               />
-              <label htmlFor="template-active" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+              <label htmlFor="template-active" className="text-sm font-normal leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
                 Ativo
               </label>
             </div>
-            
+
             <div className="flex space-x-2">
               <Button onClick={handleSaveTemplate}>
                 <Save className="h-4 w-4 mr-2" />
                 Salvar
               </Button>
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 onClick={() => {
                   setIsEditing(false);
                   setCurrentTemplate(null);
@@ -257,14 +260,14 @@ const AutomationSettings = () => {
             </div>
           </div>
         ) : null}
-        
+
         <div className="space-y-4">
           {templates.map((template) => (
             <Card key={template.id || Math.random()} className="hover:bg-accent/50 transition-colors">
               <CardContent className="p-4 flex justify-between items-start">
                 <div className="space-y-1">
                   <div className="flex items-center space-x-2">
-                    <h3 className="font-medium">{template.name}</h3>
+                    <h3 className="font-normal">{template.name}</h3>
                     <Badge variant={template.is_active ? "default" : "secondary"}>
                       {template.is_active ? 'Ativo' : 'Inativo'}
                     </Badge>
@@ -275,16 +278,16 @@ const AutomationSettings = () => {
                   <p className="text-sm">{template.content.substring(0, 100)}{template.content.length > 100 ? '...' : ''}</p>
                 </div>
                 <div className="flex space-x-2">
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
+                  <Button
+                    variant="outline"
+                    size="sm"
                     onClick={() => handleEditTemplate(template)}
                   >
                     Editar
                   </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
+                  <Button
+                    variant="outline"
+                    size="sm"
                     onClick={() => template.id ? handleDeleteTemplate(template.id) : null}
                   >
                     <Trash2 className="h-4 w-4" />
@@ -293,7 +296,7 @@ const AutomationSettings = () => {
               </CardContent>
             </Card>
           ))}
-          
+
           {templates.length === 0 && (
             <div className="text-center py-8 text-muted-foreground">
               <p>Nenhum template de automação configurado</p>

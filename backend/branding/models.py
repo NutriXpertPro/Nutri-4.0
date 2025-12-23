@@ -1,6 +1,7 @@
 from django.db import models
 from django.conf import settings
 from users.models import User
+from utils.sanitization import sanitize_string
 
 
 class UserBranding(models.Model):
@@ -82,6 +83,26 @@ class UserBranding(models.Model):
     is_active = models.BooleanField(default=True, verbose_name="Ativo")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Criado em")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Atualizado em")
+
+    def save(self, *args, **kwargs):
+        """Sanitizar campos de texto antes de salvar"""
+        if self.business_name:
+            self.business_name = sanitize_string(self.business_name)
+        if self.crn_number:
+            self.crn_number = sanitize_string(self.crn_number)
+        if self.professional_license:
+            self.professional_license = sanitize_string(self.professional_license)
+        if self.email_signature:
+            self.email_signature = sanitize_string(self.email_signature)
+        if self.phone:
+            self.phone = sanitize_string(self.phone)
+        if self.address:
+            self.address = sanitize_string(self.address)
+        if self.document_header:
+            self.document_header = sanitize_string(self.document_header)
+        if self.document_footer:
+            self.document_footer = sanitize_string(self.document_footer)
+        super().save(*args, **kwargs)
 
     class Meta:
         verbose_name = "Branding do Usuário"

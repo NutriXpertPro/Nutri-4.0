@@ -10,6 +10,7 @@ from django.dispatch import receiver
 from django.core.validators import FileExtensionValidator
 from django.utils.translation import gettext_lazy as _
 import os
+from utils.sanitization import sanitize_string
 
 # Create your models here.
 
@@ -97,6 +98,12 @@ class User(AbstractBaseUser, PermissionsMixin):
         """Retorna o email do usuário como sua representação em string."""
         return self.email
 
+    def save(self, *args, **kwargs):
+        """Sanitizar campos de texto antes de salvar"""
+        if self.name:
+            self.name = sanitize_string(self.name)
+        super().save(*args, **kwargs)
+
     class Meta:
         ordering = ['-created_at'] # Adicionado para ordenação padrão
 
@@ -170,26 +177,27 @@ class UserProfile(models.Model):
     def __str__(self):
         return f"Perfil de {self.user.name}"
 
+    def save(self, *args, **kwargs):
+        """Sanitizar campos de texto antes de salvar"""
+        super().save(*args, **kwargs)
+
     class Meta:
         verbose_name = "Perfil de Usuário"
         verbose_name_plural = "Perfis de Usuários"
 
 
-# Signal para criar um UserProfile automaticamente quando um User é criado
+# Signal unificado para gerenciar o UserProfile
 @receiver(post_save, sender=settings.AUTH_USER_MODEL)
-def create_user_profile(sender, instance=None, created=False, **kwargs):
-    """Cria um perfil para o usuário assim que ele é registrado."""
+def manage_user_profile(sender, instance, created, **kwargs):
+    """Cria ou atualiza o perfil do usuário de forma atômica."""
     if created:
-        UserProfile.objects.create(user=instance)
-
-# Signal para salvar o profile quando o user é salvo
-@receiver(post_save, sender=settings.AUTH_USER_MODEL)
-def save_user_profile(sender, instance, **kwargs):
-    """Garante que o perfil seja salvo quando o usuário for salvo."""
-    try:
-        instance.profile.save()
-    except UserProfile.DoesNotExist:
-        UserProfile.objects.create(user=instance)
+        UserProfile.objects.get_or_create(user=instance)
+    else:
+        # Garante que o perfil exista mesmo para usuários antigos
+        if not hasattr(instance, 'profile'):
+            UserProfile.objects.create(user=instance)
+        else:
+            instance.profile.save()
 
 
 class AuthenticationLog(models.Model):

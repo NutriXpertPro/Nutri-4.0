@@ -15,15 +15,17 @@ import {
   TableHeader, 
   TableRow 
 } from '@/components/ui/table';
-import { 
-  Upload, 
-  Download, 
-  Search, 
-  Plus, 
-  FileText, 
+import {
+  Upload,
+  Download,
+  Search,
+  Plus,
+  FileText,
   Calendar,
   User,
-  Trash2
+  Trash2,
+  HeartPulse,
+  TestTube
 } from 'lucide-react';
 import api from '@/services/api';
 
@@ -196,8 +198,9 @@ const LabExamsPage: React.FC = () => {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Exames Laboratoriais</h1>
-            <p className="text-muted-foreground">
+            <h1 className="text-h1 capitalize font-normal text-foreground">Exames Laboratoriais</h1>
+            <p className="text-subtitle mt-1 flex items-center gap-2">
+              <HeartPulse className="h-4 w-4 text-purple-500" />
               {exams.length} {exams.length === 1 ? 'exame' : 'exames'} registrados
             </p>
           </div>
@@ -229,7 +232,10 @@ const LabExamsPage: React.FC = () => {
         {/* Lista de exames */}
         <Card>
           <CardHeader>
-            <CardTitle>Exames Registrados</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5 text-orange-500" />
+              Exames Registrados
+            </CardTitle>
             <CardDescription>
               Lista de exames laboratoriais dos seus pacientes
             </CardDescription>
@@ -238,10 +244,8 @@ const LabExamsPage: React.FC = () => {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Paciente</TableHead>
-                  <TableHead>Exame</TableHead>
-                  <TableHead>Tipo</TableHead>
-                  <TableHead>Data</TableHead>
+                  <TableHead>Exame e Paciente</TableHead>
+                  <TableHead>Data e Tipo</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Ações</TableHead>
                 </TableRow>
@@ -249,7 +253,7 @@ const LabExamsPage: React.FC = () => {
               <TableBody>
                 {filteredExams.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                    <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
                       Nenhum exame laboratorial encontrado
                     </TableCell>
                   </TableRow>
@@ -257,24 +261,27 @@ const LabExamsPage: React.FC = () => {
                   filteredExams.map((exam) => (
                     <TableRow key={exam.id}>
                       <TableCell className="font-medium">
-                        <div className="flex items-center space-x-2">
-                          <User className="h-4 w-4 text-muted-foreground" />
-                          <span>{exam.patient_name}</span>
+                        <div className="flex flex-col">
+                          <div className="flex items-center space-x-2">
+                            <FileText className="h-4 w-4 text-purple-500" />
+                            <span className="font-medium">{exam.exam_name}</span>
+                          </div>
+                          <div className="flex items-center space-x-2 mt-1">
+                            <User className="h-4 w-4 text-orange-500" />
+                            <span className="text-sm text-muted-foreground">{exam.patient_name}</span>
+                          </div>
                         </div>
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center space-x-2">
-                          <FileText className="h-4 w-4 text-muted-foreground" />
-                          <span>{exam.exam_name}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <span>{exam.exam_type}</span>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center space-x-2">
-                          <Calendar className="h-4 w-4 text-muted-foreground" />
-                          <span>{new Date(exam.date).toLocaleDateString('pt-BR')}</span>
+                        <div className="flex flex-col">
+                          <div className="flex items-center space-x-2">
+                            <Calendar className="h-4 w-4 text-orange-500" />
+                            <span className="text-sm">{new Date(exam.date).toLocaleDateString('pt-BR')}</span>
+                          </div>
+                          <div className="flex items-center space-x-2 mt-1">
+                            <TestTube className="h-4 w-4 text-purple-500" />
+                            <span className="text-sm text-muted-foreground">{exam.exam_type}</span>
+                          </div>
                         </div>
                       </TableCell>
                       <TableCell>
@@ -282,8 +289,8 @@ const LabExamsPage: React.FC = () => {
                       </TableCell>
                       <TableCell>
                         <div className="flex space-x-2">
-                          <Button 
-                            variant="outline" 
+                          <Button
+                            variant="outline"
                             size="sm"
                             onClick={() => handleDownloadExam(exam)}
                             disabled={!exam.file_url}
@@ -291,8 +298,8 @@ const LabExamsPage: React.FC = () => {
                             <Download className="h-4 w-4 mr-2" />
                             Baixar
                           </Button>
-                          <Button 
-                            variant="outline" 
+                          <Button
+                            variant="outline"
                             size="sm"
                             onClick={() => handleDeleteExam(exam.id)}
                             className="text-destructive hover:text-destructive"
@@ -312,7 +319,10 @@ const LabExamsPage: React.FC = () => {
         {/* Adicionar novo exame */}
         <Card>
           <CardHeader>
-            <CardTitle>Adicionar Novo Exame</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <Upload className="h-5 w-5 text-green-500" />
+              Adicionar Novo Exame
+            </CardTitle>
             <CardDescription>
               Registre um novo exame laboratorial para um paciente
             </CardDescription>
@@ -409,7 +419,7 @@ const LabExamsPage: React.FC = () => {
               
               <div className="md:col-span-2 flex justify-end">
                 <Button type="submit">
-                  <Upload className="h-4 w-4 mr-2" />
+                  <Upload className="h-4 w-4 mr-2 text-green-500" />
                   Registrar Exame
                 </Button>
               </div>

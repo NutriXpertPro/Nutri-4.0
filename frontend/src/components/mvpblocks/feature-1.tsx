@@ -1,43 +1,42 @@
 import {
-  FileText,
-  BarChart,
-  Smartphone,
-  MessageCircle,
-  Users,
-  BrainCircuit,
+  Zap,
+  Apple,
+  Camera,
+  LayoutDashboard,
+  ShieldCheck,
+  Award,
 } from 'lucide-react';
-import BorderBeam from './border-beam';
 
 const features = [
   {
-    icon: <BrainCircuit className="h-6 w-6" />,
-    title: 'Anamnese Inteligente',
-    desc: 'Economize tempo com preenchimento automático e sugestões baseadas em IA para anamneses completas.',
+    icon: <Zap className="h-6 w-6" />,
+    title: 'Diagnostique em 5 minutos o que levaria uma hora',
+    desc: 'Utilize nossa anamnese inteligente com mais de 50 campos dinâmicos e preenchimento assistido. A aplicação cruza dados metabólicos e perfis laboratoriais automaticamente, fazendo você parecer um gênio da nutrição diante do paciente.',
   },
   {
-    icon: <FileText className="h-6 w-6" />,
-    title: 'Prescrição Dietética',
-    desc: 'Crie planos alimentares personalizados em minutos com nossa vasta base de alimentos e modelos prontos.',
+    icon: <Apple className="h-6 w-6" />,
+    title: 'Planos Alimentares Imbatíveis com 10.000+ Alimentos',
+    desc: 'Tenha o poder das tabelas TACO, TBCA e USDA integradas. Conversão de medidas automática, "suplementos coringas" e salvamento de presets. Entregue PDFs de luxo ou sincronize direto no celular do paciente em segundos.',
   },
   {
-    icon: <Smartphone className="h-6 w-6" />,
-    title: 'App do Paciente',
-    desc: 'Seu paciente com acesso ao plano, alertas de hidratação e chat direto com você na palma da mão.',
+    icon: <Camera className="h-6 w-6" />,
+    title: 'Transforme Evolução em Emoção com Fotos e Métricas',
+    desc: 'Compare fotos em 3 ângulos lado a lado com gráficos de bioimpedância e evolução física. Gere relatórios de progresso que viralizam e fazem o paciente chorar de alegria ao ver o próprio resultado materializado.',
   },
   {
-    icon: <BarChart className="h-6 w-6" />,
-    title: 'Gestão Financeira',
-    desc: 'Controle consultas, pagamentos e emita recibos automaticamente. Diga adeus às planilhas.',
+    icon: <LayoutDashboard className="h-6 w-6" />,
+    title: 'Antecipe Problemas com Visão de Águia',
+    desc: 'Um painel inteligente que mostra quem está engajado e quem precisa de atenção. Visualize exames laboratoriais, métricas corporais e a taxa de adesão em tempo real. Tenha o controle absoluto de cada detalhe da jornada do seu cliente.',
   },
   {
-    icon: <MessageCircle className="h-6 w-6" />,
-    title: 'Marketing Automatizado',
-    desc: 'Ferramentas integradas para atrair e fidelizar pacientes, com campanhas de e-mail e mensagens.',
+    icon: <ShieldCheck className="h-6 w-6" />,
+    title: 'Conquiste Pacientes sem Expor seu Número de Telefone',
+    desc: 'Centralize toda comunicação no Xpert Messenger. Notificações inteligentes, link de agendamento automático sincronizado com Google Calendar e chat profissional. Atenda com proximidade sem abrir mão do seu descanso pessoal.',
   },
   {
-    icon: <Users className="h-6 w-6" />,
-    title: 'Comunidade Xpert',
-    desc: 'Acesso exclusivo a uma rede de nutricionistas de alta performance para troca de experiências.',
+    icon: <Award className="h-6 w-6" />,
+    title: 'Torne-se o Nutricionista Mais Valorizado do Mercado',
+    desc: 'Documentação completa com sua logo, CRM automático e assinatura digital integrada. Apareça como uma clínica de alto padrão, cobre o valor que você merece e multiplique sua autoridade instantaneamente.',
   },
 ];
 export default function Feature1() {
@@ -72,16 +71,8 @@ export default function Feature1() {
             {features.map((item, idx) => (
               <div
                 key={idx}
-                className="relative flex flex-col p-6 rounded-2xl border border-purple-500 bg-[#161b22] shadow-[0_0_30px_rgba(168,85,247,0.15)] transition-all hover:border-[#8b949e] group overflow-hidden"
+                className="relative flex flex-col p-6 rounded-2xl border border-purple-500 bg-[#161b22] shadow-[0_0_30px_rgba(168,85,247,0.15)] transition-all hover:border-[#8b949e] group"
               >
-                <BorderBeam
-                  size={200}
-                  duration={12}
-                  delay={0}
-                  colorFrom="#ffaa40"
-                  colorTo="#9c40ff"
-                  className="absolute inset-0 rounded-2xl"
-                />
                 <div className="flex flex-col h-full">
                   <div className="text-emerald-400 bg-emerald-400/10 w-fit transform-gpu rounded-full border border-emerald-400/20 p-4">
                     {item.icon}

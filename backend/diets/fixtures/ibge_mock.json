@@ -1,0 +1,18 @@
+[
+    {
+        "id": 16568,
+        "nome_alimento": "Alface, americana, crua",
+        "medida": "Folha",
+        "preparacao": "Natural",
+        "peso_g": 10.0,
+        "codigo_ibge": "3800101"
+    },
+    {
+        "id": 16569,
+        "nome_alimento": "Arroz ao molho pardo (arroz de cabidela), c/ arroz polido, c/ sal",
+        "medida": "Colher de arroz",
+        "preparacao": "Cozido",
+        "peso_g": 45.0,
+        "codigo_ibge": "1000101"
+    }
+]

@@ -21,7 +21,9 @@ class GoogleCalendarIntegration(models.Model):
     )
     refresh_token = models.TextField(
         verbose_name="Token de Atualização",
-        help_text="OAuth 2.0 Refresh Token"
+        help_text="OAuth 2.0 Refresh Token",
+        null=True,
+        blank=True
     )
     token_expiry = models.DateTimeField(
         verbose_name="Expiração do Token",

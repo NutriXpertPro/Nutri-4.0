@@ -48,18 +48,18 @@ export function PacienteEmFoco({ patient, className }: PacienteEmFocoProps) {
     }
 
     return (
-        <Card className={cn(
-            "h-full relative overflow-hidden",
-            // Destaque visual
-            "border-primary/20 bg-gradient-to-br from-primary/5 to-transparent",
-            className
-        )}>
-            {/* Gradient accent */}
-            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-primary/10 to-transparent rounded-bl-full" />
+            <Card className={cn(
+                "h-full relative overflow-hidden",
+                // Destaque visual
+                "border-primary/20 bg-linear-to-br from-primary/5 to-transparent",
+                className
+            )}>
+                {/* Gradient accent */}
+                <div className="absolute top-0 right-0 w-32 h-32 bg-linear-to-bl from-primary/10 to-transparent rounded-bl-full" />
 
             <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-2 text-lg">
-                    <User className="h-5 w-5 text-primary" />
+                <CardTitle className="flex items-center gap-2 text-lg !font-normal">
+                    <User className="h-5 w-5 text-amber-500" />
                     Próximo Paciente
                 </CardTitle>
             </CardHeader>
@@ -67,14 +67,14 @@ export function PacienteEmFoco({ patient, className }: PacienteEmFocoProps) {
             <CardContent className="space-y-6">
                 {/* Patient Info */}
                 <div className="flex items-center gap-4">
-                    <Avatar className="h-16 w-16 border-2 border-primary/20">
+                    <Avatar className="h-16 w-16 border-2 border-background shadow-md">
                         <AvatarImage src={patient.avatar} />
-                        <AvatarFallback className="text-lg bg-primary/10 text-primary">
+                        <AvatarFallback className="text-lg bg-primary/10 text-primary !font-normal">
                             {patient.name.substring(0, 2).toUpperCase()}
                         </AvatarFallback>
                     </Avatar>
                     <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-lg truncate">{patient.name}</h3>
+                        <h3 className="!font-normal text-lg truncate">{patient.name}</h3>
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
                             <Target className="h-4 w-4 text-primary" />
                             <span>{patient.goal}</span>
@@ -95,7 +95,7 @@ export function PacienteEmFoco({ patient, className }: PacienteEmFocoProps) {
                             <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">
                                 {metric.label}
                             </p>
-                            <p className="font-bold text-lg">{metric.value}</p>
+                            <p className="!font-normal text-lg">{metric.value}</p>
                             {metric.trend !== undefined && (
                                 <div className={cn(
                                     "flex items-center justify-center gap-0.5 text-xs font-medium",
@@ -121,11 +121,11 @@ export function PacienteEmFoco({ patient, className }: PacienteEmFocoProps) {
                             Ver Perfil
                         </Link>
                     </Button>
-                    <Button size="sm" variant="outline" className="gap-2">
+                    <Button size="sm" variant="outline" className="gap-2 text-destructive border-destructive/20 hover:bg-destructive/5">
                         <MessageSquare className="h-4 w-4" />
                         Mensagem
                     </Button>
-                    <Button size="icon-sm" variant="ghost">
+                    <Button size="icon-sm" variant="ghost" className="text-green-600 hover:bg-green-50">
                         <Phone className="h-4 w-4" />
                     </Button>
                 </div>

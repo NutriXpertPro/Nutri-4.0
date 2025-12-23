@@ -2,116 +2,122 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { StatCard } from "@/components/dashboard/StatCard"
-import { Activity, Calendar, TrendingUp, Utensils } from "lucide-react"
+import { Activity, Calendar, TrendingUp, Utensils, MessageSquareText } from "lucide-react"
+
+import { IconWrapper } from "@/components/ui/IconWrapper"
 
 export function PatientOverviewTab() {
     return (
-        <div className="space-y-6">
+        <div className="space-y-8 pb-10">
             {/* Cards de Resumo */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <Card className="col-span-1 md:col-span-2">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-base font-medium">Progresso de Peso</CardTitle>
-                        <Activity className="h-4 w-4 text-muted-foreground" />
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <Card variant="glass" className="col-span-1 md:col-span-2 border-none bg-background/40 shadow-xl overflow-hidden group">
+                    <CardHeader className="flex flex-row items-center justify-between pb-6">
+                        <div className="space-y-1">
+                            <p className="text-[10px] text-primary uppercase tracking-[0.2em]">Monitoramento</p>
+                            <CardTitle className="text-xl tracking-tight">Evolução de Peso</CardTitle>
+                        </div>
+                        <IconWrapper icon={Activity} variant="blue" size="md" className="group-hover:scale-110 transition-transform" />
                     </CardHeader>
-                    <CardContent>
-                        <div className="flex items-end justify-between mb-4">
-                            <div>
-                                <p className="text-xs text-muted-foreground">Início (3 meses atrás)</p>
-                                <div className="text-xl font-bold text-muted-foreground">85.0 kg</div>
+                    <CardContent className="pt-2">
+                        <div className="flex items-end justify-between mb-8">
+                            <div className="space-y-1">
+                                <p className="text-[10px] text-muted-foreground uppercase tracking-widest opacity-40">Peso Inicial</p>
+                                <div className="text-xl text-muted-foreground/60 tabular-nums">85.0 kg</div>
                             </div>
-                            <div className="flex flex-col items-center px-4">
-                                <span className="text-xs font-medium text-green-500 bg-green-500/10 px-2 py-0.5 rounded-full mb-1">
-                                    -12.5 kg
-                                </span>
+
+                            <div className="flex flex-col items-center">
+                                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-emerald-500/10 text-emerald-600 shadow-sm border border-emerald-500/10 animate-pulse">
+                                    <TrendingUp className="h-4 w-4 rotate-180" />
+                                    <span className="text-sm tabular-nums">-12.5 kg</span>
+                                </div>
+                                <p className="text-[8px] text-emerald-500/40 uppercase tracking-widest mt-2">Perda Total</p>
                             </div>
-                            <div className="text-right">
-                                <p className="text-xs text-muted-foreground">Atual</p>
-                                <div className="text-3xl font-bold">72.5 kg</div>
+
+                            <div className="text-right space-y-1">
+                                <p className="text-[10px] text-primary uppercase tracking-widest">Peso Atual</p>
+                                <div className="text-5xl tracking-tighter text-foreground tabular-nums">72.5<span className="text-xl ml-1 text-muted-foreground/40">kg</span></div>
                             </div>
                         </div>
 
-                        {/* Visual Gauge (Vermelho -> Amarelo -> Verde) */}
-                        <div className="relative pt-4 pb-2">
-                            <div className="h-1.5 w-full rounded-full bg-gradient-to-r from-red-500 via-yellow-400 to-green-500 opacity-80" />
+                        {/* Visual Gauge */}
+                        <div className="relative pt-6 pb-2">
+                            <div className="h-2 w-full rounded-full bg-muted/30 overflow-hidden relative">
+                                <div className="absolute inset-0 bg-gradient-to-r from-red-500/60 via-amber-400/60 to-emerald-500/60 blur-[1px]" />
+                                <div className="absolute inset-y-0 left-0 bg-gradient-to-r from-red-500 via-amber-400 to-emerald-500 shadow-[0_0_20px_rgba(16,185,129,0.3)]" style={{ width: '75%' }} />
+                            </div>
+
                             {/* Marcador de Posição */}
                             <div
-                                className="absolute top-3 w-2.5 h-3.5 bg-white dark:bg-zinc-200 border-2 border-zinc-900/10 dark:border-black/20 shadow-sm rounded-full transform -translate-x-1/2 transition-all duration-500"
-                                style={{ left: '60%' }}
+                                className="absolute top-5 w-4 h-4 bg-background border-4 border-primary shadow-[0_0_15px_rgba(var(--primary),0.5)] rounded-full transform -translate-x-1/2 transition-all duration-1000 z-10"
+                                style={{ left: '75%' }}
                             />
-                            {/* Marcador de Início */}
-                            <div className="absolute top-7 left-0 text-[10px] text-muted-foreground font-medium">85kg</div>
-                            {/* Marcador de Meta */}
-                            <div className="absolute top-7 right-0 text-[10px] text-muted-foreground text-right font-medium">Meta: 65kg</div>
+
+                            {/* Marcadores */}
+                            <div className="flex justify-between mt-6">
+                                <div className="flex flex-col">
+                                    <span className="text-[9px] text-muted-foreground uppercase tracking-widest opacity-30">Início</span>
+                                    <span className="text-xs tabular-nums">85kg</span>
+                                </div>
+                                <div className="flex flex-col items-center">
+                                    <span className="text-[9px] text-primary uppercase tracking-widest">Progresso</span>
+                                    <div className="h-1 w-12 rounded-full bg-primary/20 mt-1" />
+                                </div>
+                                <div className="flex flex-col items-end">
+                                    <span className="text-[9px] text-primary uppercase tracking-widest">Meta</span>
+                                    <span className="text-xs tabular-nums">65kg</span>
+                                </div>
+                            </div>
                         </div>
                     </CardContent>
                 </Card>
 
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Próxima Consulta</CardTitle>
-                        <Calendar className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">12 Dez</div>
-                        <p className="text-xs text-muted-foreground">
-                            às 14:30 (Online)
-                        </p>
-                    </CardContent>
-                </Card>
+                <StatCard
+                    title="Próxima Consulta"
+                    value="12 Dez"
+                    subtitle="às 14:30 • ONLINE"
+                    icon={Calendar}
+                    variant="blue"
+                />
 
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Dieta Ativa</CardTitle>
-                        <Utensils className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">Low Carb</div>
-                        <p className="text-xs text-muted-foreground">
-                            vence em 5 dias
-                        </p>
-                    </CardContent>
-                </Card>
-
-                <Card className="relative overflow-hidden rounded-2xl border bg-white/50 dark:bg-slate-950/50 backdrop-blur-xl transition-all duration-300 hover:shadow-lg hover:shadow-primary/5 group">
-                    <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
-                        <CardTitle className="text-sm font-medium text-muted-foreground">Adesão</CardTitle>
-                        <div className="p-2 rounded-lg bg-emerald-100 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400">
-                            <TrendingUp className="h-4 w-4" />
-                        </div>
-                    </CardHeader>
-                    <CardContent className="relative z-10">
-                        <div className="text-2xl font-bold mt-2 text-emerald-600 dark:text-emerald-400">87%</div>
-                        <p className="text-xs text-muted-foreground mt-1">
-                            Excelente
-                        </p>
-                        {/* Mini bar chart visual */}
-                        <div className="flex gap-1 mt-3 h-1.5">
-                            <div className="flex-1 bg-emerald-500 rounded-full opacity-30"></div>
-                            <div className="flex-1 bg-emerald-500 rounded-full opacity-30"></div>
-                            <div className="flex-1 bg-emerald-500 rounded-full opacity-30"></div>
-                            <div className="flex-1 bg-emerald-500 rounded-full opacity-30"></div>
-                            <div className="flex-1 bg-emerald-500 rounded-full"></div>
-                        </div>
-                    </CardContent>
-                </Card>
+                <StatCard
+                    title="Adesão Geral"
+                    value="87%"
+                    subtitle="EXCELENTE PERFORMANCE"
+                    icon={TrendingUp}
+                    variant="green"
+                />
             </div>
 
-            {/* Anotações Rápidas (Placeholder) */}
-            <Card>
-                <CardHeader>
-                    <CardTitle>Anotações Recentes</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <div className="space-y-4">
-                        <div className="border-l-4 border-primary pl-4 py-2 bg-muted/20 rounded-r-md">
-                            <p className="text-sm font-medium">Paciente relatou dificuldade com o café da manhã.</p>
-                            <p className="text-xs text-muted-foreground mt-1">05 Dez 2025 - 09:15</p>
+            {/* Anotações Rápidas */}
+            <Card variant="glass" className="border-none bg-background/40 shadow-xl group overflow-hidden">
+                <CardHeader className="flex flex-row items-center justify-between pb-6">
+                    <div className="flex items-center gap-4">
+                        <IconWrapper icon={MessageSquareText} variant="amber" size="md" className="group-hover:rotate-12 transition-transform" />
+                        <div className="space-y-1">
+                            <p className="text-[10px] text-amber-500 uppercase tracking-widest">Clinical Notes</p>
+                            <CardTitle className="text-xl tracking-tight">Últimas Anotações</CardTitle>
                         </div>
-                        <div className="border-l-4 border-muted pl-4 py-2 bg-muted/20 rounded-r-md">
-                            <p className="text-sm font-medium">Exames de sangue solicitados.</p>
-                            <p className="text-xs text-muted-foreground mt-1">20 Nov 2025 - 16:30</p>
+                    </div>
+                </CardHeader>
+                <CardContent className="px-6 pb-8">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="group/note relative bg-muted/20 hover:bg-muted/40 p-5 rounded-3xl border border-border/5 transition-all hover:translate-x-1">
+                            <div className="absolute left-0 top-6 bottom-6 w-1 bg-primary rounded-full shadow-[0_0_10px_rgba(var(--primary),0.5)]" />
+                            <p className="text-sm text-foreground leading-relaxed">Paciente relatou dificuldade com o café da manhã, sugerida substituição por opção rápida.</p>
+                            <div className="flex items-center gap-2 mt-4 text-[10px] text-muted-foreground/40 uppercase tracking-widest">
+                                <Calendar className="h-3 w-3" />
+                                05 Dez 2025 • 09:15
+                            </div>
+                        </div>
+
+                        <div className="group/note relative bg-muted/10 hover:bg-muted/30 p-5 rounded-3xl border border-border/5 transition-all hover:translate-x-1">
+                            <div className="absolute left-0 top-6 bottom-6 w-1 bg-muted-foreground/20 rounded-full" />
+                            <p className="text-sm text-muted-foreground leading-relaxed">Exames de sangue solicitados (Hemograma + Lipidograma). Aguardando resultados.</p>
+                            <div className="flex items-center gap-2 mt-4 text-[10px] text-muted-foreground/30 uppercase tracking-widest">
+                                <Calendar className="h-3 w-3" />
+                                20 Nov 2025 • 16:30
+                            </div>
                         </div>
                     </div>
                 </CardContent>

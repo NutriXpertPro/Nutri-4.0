@@ -123,18 +123,14 @@ export default function NewPatientPage() {
                             <ArrowLeft className="h-5 w-5" />
                         </Link>
                     </Button>
-                    <div className="flex items-center gap-3">
-                        <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary shadow-sm">
-                            <UserPlus className="h-6 w-6" />
-                        </div>
-                        <div>
-                            <h1 className="text-3xl font-bold tracking-tight text-foreground">
-                                Novo Paciente
-                            </h1>
-                            <p className="text-muted-foreground mt-1">
-                                Preencha os dados abaixo para criar um novo prontuário.
-                            </p>
-                        </div>
+                    <div>
+                        <h1 className="text-3xl font-normal tracking-tight text-foreground">
+                            Novo Paciente
+                        </h1>
+                        <p className="text-muted-foreground mt-1 flex items-center gap-2">
+                            <UserPlus className="h-4 w-4 text-primary" />
+                            Preencha os dados abaixo para criar um novo prontuário.
+                        </p>
                     </div>
                 </div>
 

@@ -49,7 +49,7 @@ export function AcoesRapidas({ className }: AcoesRapidasProps) {
     return (
         <Card className={cn("", className)}>
             <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-2 text-lg">
+                <CardTitle className="flex items-center gap-2 text-lg font-normal">
                     <Zap className="h-5 w-5 text-primary" />
                     Ações Rápidas
                 </CardTitle>

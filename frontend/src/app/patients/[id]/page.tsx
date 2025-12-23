@@ -13,6 +13,7 @@ import { PatientTimelineTab } from "@/components/patients/PatientTimelineTab"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent } from "@/components/ui/card"
 import { Loader2 } from "lucide-react"
+import { cn } from "@/lib/utils"
 import { usePatient } from "@/hooks/usePatients"
 import { useAuth } from "@/contexts/auth-context"
 
@@ -94,32 +95,28 @@ export default function PatientDetailsPage() {
             <div className="w-full max-w-full space-y-6">
                 <PatientHeader patient={patientData} fullData={patient} />
 
-                <Tabs defaultValue="overview" className="mt-8">
-                    <TabsList className="grid w-full grid-cols-5 bg-muted/20 p-1 rounded-xl">
-                        <TabsTrigger
-                            value="overview"
-                            className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary dark:data-[state=active]:text-primary text-muted-foreground hover:text-foreground transition-all duration-300"
-                        >Visão Geral</TabsTrigger>
-                        <TabsTrigger
-                            value="context"
-                            className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary dark:data-[state=active]:text-primary text-muted-foreground hover:text-foreground transition-all duration-300"
-                        >Contexto</TabsTrigger>
-                        <TabsTrigger
-                            value="analysis"
-                            className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary dark:data-[state=active]:text-primary text-muted-foreground hover:text-foreground transition-all duration-300"
-                        >Análise</TabsTrigger>
-                        <TabsTrigger
-                            value="diet"
-                            className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary dark:data-[state=active]:text-primary text-muted-foreground hover:text-foreground transition-all duration-300"
-                        >Dieta</TabsTrigger>
-                        <TabsTrigger
-                            value="anamnesis"
-                            className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary dark:data-[state=active]:text-primary text-muted-foreground hover:text-foreground transition-all duration-300"
-                        >Anamnese</TabsTrigger>
-                        <TabsTrigger
-                            value="timeline"
-                            className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary dark:data-[state=active]:text-primary text-muted-foreground hover:text-foreground transition-all duration-300"
-                        >Timeline</TabsTrigger>
+                <Tabs defaultValue="overview" className="mt-10">
+                    <TabsList className="flex items-center gap-1 bg-muted/20 p-1.5 rounded-[1.5rem] border border-border/5 w-fit mb-8">
+                        {[
+                            { value: 'overview', label: 'Visão Geral' },
+                            { value: 'context', label: 'Contexto' },
+                            { value: 'analysis', label: 'Análise' },
+                            { value: 'diet', label: 'Dieta' },
+                            { value: 'anamnesis', label: 'Anamnese' },
+                            { value: 'timeline', label: 'Timeline' }
+                        ].map((tab) => (
+                            <TabsTrigger
+                                key={tab.value}
+                                value={tab.value}
+                                className={cn(
+                                    "px-6 h-10 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all duration-500",
+                                    "data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-lg data-[state=active]:shadow-primary/10",
+                                    "hover:text-primary hover:bg-background/20"
+                                )}
+                            >
+                                {tab.label}
+                            </TabsTrigger>
+                        ))}
                     </TabsList>
 
                     <div className="mt-6 space-y-6">

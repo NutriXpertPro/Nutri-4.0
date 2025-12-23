@@ -1,3 +1,6 @@
+import secrets
+import string
+
 from rest_framework import serializers
 from .models import PatientProfile
 
@@ -19,7 +22,8 @@ class PatientProfileSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'user_id', 'name', 'email', 'gender', 'status', 'is_active',
             'birth_date', 'phone', 'address', 'goal', 
-            'service_type', 'start_date', 'created_at'
+            'service_type', 'start_date', 'created_at',
+            'target_weight', 'target_body_fat'
         ]
         read_only_fields = ['user_id', 'created_at']
 
@@ -46,6 +50,11 @@ class PatientProfileSerializer(serializers.ModelSerializer):
                 user.save()
             else:
                 # Create new user
+
+                # Generate a secure random password
+                alphabet = string.ascii_letters + string.digits + string.punctuation
+                random_password = ''.join(secrets.choice(alphabet) for i in range(16))
+                
                 user = User.objects.create(
                     email=email,
                     name=user_data.get('name'),
@@ -53,8 +62,34 @@ class PatientProfileSerializer(serializers.ModelSerializer):
                     user_type='paciente',
                     is_active=True
                 )
-                user.set_password('Mudar@123')
+                user.set_password(random_password)
                 user.save()
+                
+                # Enviar email para o paciente definir sua própria senha
+                # via link de redefinição de senha.
+                from django.contrib.auth.tokens import default_token_generator
+                from django.utils.http import urlsafe_base64_encode
+                from django.utils.encoding import force_bytes
+                from django.core.mail import send_mail
+                import os
+
+                token = default_token_generator.make_token(user)
+                uid = urlsafe_base64_encode(force_bytes(user.pk))
+                frontend_url = os.environ.get('FRONTEND_URL', 'http://localhost:3000')
+                reset_link = f"{frontend_url}/auth/set-password/{uid}/{token}/"
+
+                try:
+                    send_mail(
+                        'Defina sua senha - NutriXpertPro',
+                        f'Para definir sua senha, clique no link: {reset_link}',
+                        'noreply@nutrixpert.com.br',
+                        [user.email],
+                        fail_silently=False,
+                    )
+                except Exception as e:
+                    # Em caso de erro no envio de email, registrar mas continuar processo
+                    print(f"Erro ao enviar email de definição de senha: {str(e)}")
+                    pass  # Não interromper o processo por falha de email
             
             # Create profile
             patient_profile = PatientProfile.objects.create(

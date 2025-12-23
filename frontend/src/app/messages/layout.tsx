@@ -1,6 +1,6 @@
 import { DashboardLayout } from "@/components/layout";
 
-export default function MessagesLayout({
+export default function XpertMessengerLayout({
   children,
 }: {
   children: React.ReactNode

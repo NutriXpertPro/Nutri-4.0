@@ -2,6 +2,7 @@ from django.db import models
 from django.utils import formats
 from patients.models import PatientProfile
 from django.core.exceptions import ValidationError # Importar ValidationError
+from utils.sanitization import sanitize_string
 
 # Validador de esquema JSON
 def validate_body_measurements_schema(value):
@@ -65,6 +66,17 @@ class Evaluation(models.Model):
             self.bmi = float(self.weight) / (float(self.height) ** 2)
         super().save(*args, **kwargs)
 
+    def save(self, *args, **kwargs):
+        """Sanitizar campos de texto antes de salvar"""
+        # Sanitizar body_measurements se for um dicionário de strings
+        if self.body_measurements and isinstance(self.body_measurements, dict):
+            sanitized_measurements = {}
+            for key, value in self.body_measurements.items():
+                sanitized_key = sanitize_string(str(key)) if isinstance(key, str) else key
+                sanitized_measurements[sanitized_key] = value
+            self.body_measurements = sanitized_measurements
+        super().save(*args, **kwargs)
+
     def __str__(self):
         """
         Retorna uma representação em string da avaliação, identificando o
@@ -98,3 +110,45 @@ class EvaluationPhoto(models.Model):
         paciente e o rótulo da foto.
         """
         return f"Foto de {self.evaluation.patient.user.name} - {self.get_label_display()}"
+
+
+class ExternalExam(models.Model):
+    """
+    Armazena exames externos uploadados (PDFs, imagens) vinculados a um paciente.
+    """
+    FILE_TYPE_CHOICES = [
+        ('PDF', 'PDF'),
+        ('JPG', 'JPG'),
+        ('PNG', 'PNG'),
+        ('JPEG', 'JPEG'),
+    ]
+    
+    patient = models.ForeignKey(
+        PatientProfile,
+        on_delete=models.CASCADE,
+        related_name='external_exams'
+    )
+    uploaded_by = models.ForeignKey(
+        'users.User',
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='uploaded_exams'
+    )
+    file = models.FileField(upload_to='external_exams/%Y/%m/%d/')
+    file_type = models.CharField(max_length=10, choices=FILE_TYPE_CHOICES)
+    notes = models.TextField(blank=True, default='')
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        ordering = ['-uploaded_at']
+        verbose_name = 'Exame Externo'
+        verbose_name_plural = 'Exames Externos'
+    
+    def __str__(self):
+        return f"Exame de {self.patient.user.name} - {self.uploaded_at.strftime('%d/%m/%Y')}"
+    
+    @property
+    def file_name(self):
+        """Retorna apenas o nome do arquivo sem o caminho"""
+        import os
+        return os.path.basename(self.file.name) if self.file else ''

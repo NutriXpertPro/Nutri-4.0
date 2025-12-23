@@ -104,11 +104,11 @@ export function MealPresetsPanel() {
     return (
         <div className="p-4 space-y-4">
             <div className="flex items-center justify-between">
-                <h3 className="text-sm font-medium text-white flex items-center gap-2">
+                <h3 className="text-sm font-medium text-foreground flex items-center gap-2">
                     <Sparkles className="h-4 w-4 text-amber-400" />
                     Presets de Refeição
                 </h3>
-                <Button variant="ghost" size="sm" className="text-xs text-slate-400 hover:text-white">
+                <Button variant="ghost" size="sm" className="text-xs text-slate-400 hover:text-foreground">
                     <Plus className="h-3 w-3 mr-1" />
                     Criar Preset
                 </Button>
@@ -171,7 +171,7 @@ function PresetCategory({ category, presets, isExpanded, onToggle, onApply, canA
                     <div className={`p-2 rounded-lg ${colorClasses[category.color]}`}>
                         <Icon className="h-4 w-4" />
                     </div>
-                    <span className="text-sm font-medium text-white">{category.label}</span>
+                    <span className="text-sm font-medium text-foreground">{category.label}</span>
                     <span className="text-xs text-slate-500">
                         {presets.length} {presets.length === 1 ? 'preset' : 'presets'}
                     </span>
@@ -235,7 +235,7 @@ function PresetCard({ preset, onApply, canApply }: PresetCardProps) {
     return (
         <div className="rounded-lg bg-white/5 p-3 group">
             <div className="flex items-center justify-between mb-2">
-                <h4 className="text-sm font-medium text-white">{preset.name}</h4>
+                <h4 className="text-sm font-medium text-foreground">{preset.name}</h4>
                 <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button className="p-1 rounded hover:bg-white/10">
                         <Edit3 className="h-3 w-3 text-slate-400" />
@@ -272,7 +272,7 @@ function PresetCard({ preset, onApply, canApply }: PresetCardProps) {
                     variant="ghost"
                     onClick={onApply}
                     disabled={!canApply}
-                    className="h-7 text-xs bg-gradient-to-r from-indigo-500/20 to-purple-500/20 hover:from-indigo-500/30 hover:to-purple-500/30 text-white border border-indigo-500/30"
+                    className="h-7 text-xs bg-gradient-to-r from-indigo-500/20 to-purple-500/20 hover:from-indigo-500/30 hover:to-purple-500/30 text-foreground border border-indigo-500/30"
                 >
                     Aplicar
                 </Button>

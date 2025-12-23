@@ -3,6 +3,8 @@ from django.conf import settings
 from patients.models import PatientProfile
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator, MaxValueValidator
+from utils.sanitization import sanitize_string
+from django.utils.translation import gettext_lazy as _
 
 
 class Anamnesis(models.Model):
@@ -119,6 +121,20 @@ class Anamnesis(models.Model):
         ],
         blank=True
     )
+    target_weight = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        help_text=_("Meta de peso em kg")
+    )
+    target_body_fat = models.DecimalField(
+        max_digits=4,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        help_text=_("Meta de percentual de gordura corporal")
+    )
     compromisso_relatorios = models.BooleanField(
         default=False,
         help_text="Se compromete a enviar fotos e relatórios semanalmente?"
@@ -159,10 +175,66 @@ class Anamnesis(models.Model):
         verbose_name = 'Anamnese'
         verbose_name_plural = 'Anamneses'
 
+    def save(self, *args, **kwargs):
+        """
+        Sanitiza campos de texto e sincroniza metas com o PatientProfile.
+        """
+        # Sincronizar metas com o perfil do paciente
+        if self.patient:
+            update_fields = []
+            if self.target_weight and self.patient.target_weight != self.target_weight:
+                self.patient.target_weight = self.target_weight
+                update_fields.append('target_weight')
+            
+            if self.target_body_fat and self.patient.target_body_fat != self.target_body_fat:
+                self.patient.target_body_fat = self.target_body_fat
+                update_fields.append('target_body_fat')
+
+            if update_fields:
+                self.patient.save(update_fields=update_fields)
+
+        # Sanitização dos campos de texto (código existente)
+        if self.nome:
+            self.nome = sanitize_string(self.nome)
+        if self.profissao:
+            self.profissao = sanitize_string(self.profissao)
+        if self.dificuldade_dormir:
+            self.dificuldade_dormir = sanitize_string(self.dificuldade_dormir)
+        if self.horario_treino:
+            self.horario_treino = sanitize_string(self.horario_treino)
+        if self.tempo_disponivel_treino:
+            self.tempo_disponivel_treino = sanitize_string(self.tempo_disponivel_treino)
+        if self.alimentos_restritos:
+            self.alimentos_restritos = sanitize_string(self.alimentos_restritos)
+        if self.resultado_dieta:
+            self.resultado_dieta = sanitize_string(self.resultado_dieta)
+        if self.horarios_maior_apetite:
+            self.horarios_maior_apetite = sanitize_string(self.horarios_maior_apetite)
+        if self.frutas_preferencia:
+            self.frutas_preferencia = sanitize_string(self.frutas_preferencia)
+        if self.doenca_familiar:
+            self.doenca_familiar = sanitize_string(self.doenca_familiar)
+        if self.problemas_saude_detalhes:
+            self.problemas_saude_detalhes = sanitize_string(self.problemas_saude_detalhes)
+        if self.problema_articular:
+            self.problema_articular = sanitize_string(self.problema_articular)
+        if self.medicamentos_detalhes:
+            self.medicamentos_detalhes = sanitize_string(self.medicamentos_detalhes)
+        if self.intolerancia_detalhes:
+            self.intolerancia_detalhes = sanitize_string(self.intolerancia_detalhes)
+        if self.termogenico_usado:
+            self.termogenico_usado = sanitize_string(self.termogenico_usado)
+        if self.alcool_frequencia:
+            self.alcool_frequencia = sanitize_string(self.alcool_frequencia)
+        if self.anabolizante_problemas:
+            self.anabolizante_problemas = sanitize_string(self.anabolizante_problemas)
+        
+        super().save(*args, **kwargs)
+
     def __str__(self):
         """Retorna uma representação em string da anamnese."""
         return f"Anamnese de {self.patient.user.name}"
-    
+
 
     def get_progresso(self):
         """Calcula o progresso de preenchimento do questionário (0-100%)."""
@@ -195,6 +267,14 @@ class AnamnesisTemplate(models.Model):
         ordering = ['-created_at']
         verbose_name = 'Modelo de Anamnese'
         verbose_name_plural = 'Modelos de Anamnese'
+
+    def save(self, *args, **kwargs):
+        """Sanitizar campos de texto antes de salvar"""
+        if self.title:
+            self.title = sanitize_string(self.title)
+        if self.description:
+            self.description = sanitize_string(self.description)
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.title

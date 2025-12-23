@@ -57,3 +57,29 @@ O projeto Nutri 4.0, após as rodadas de correção, se encontra em um estado de
 8.  **Documentação:** Manter a documentação do projeto atualizada com as configurações e processos de implantação.
 
 Com a correção do erro crítico restante e a atenção contínua às recomendações, o projeto estará apto para um desenvolvimento e implantação seguros e eficientes.
+
+## 4. Análise de Tamanhos de Fonte nos Títulos dos Cards
+
+### Página de Avaliações (http://localhost:3000/evaluations)
+- **Título**: "TOTAL DE AVALIAÇÕES"
+- **Classe CSS**: `text-data-label` (definida em globals.css)
+- **Tamanho de fonte**: 20px fixo (após alteração)
+- **Características**: Maiúsculas, espaçamento entre letras de 0.1em, cor suavizada (muted foreground)
+
+### Página do Dashboard (http://localhost:3000/dashboard)
+- **Título**: "Pacientes Ativos"
+- **Classe CSS**: `text-data-label` (definida em globals.css)
+- **Definição da classe**: `text-[20px] uppercase tracking-[0.1em] text-muted-foreground`
+- **Tamanho de fonte**: 20px fixo (após alteração)
+- **Características**: Maiúsculas, espaçamento entre letras de 0.1em, cor suavizada (muted foreground)
+
+### Consistência Atualizada
+1. **Sistema de Tipografia**:
+   - Ambas as páginas agora usam a mesma classe customizada (`text-data-label`)
+
+2. **Tamanho da Fonte**:
+   - Ambas as páginas: 20px fixo (aumentado de 10px para 12px e agora para 20px)
+
+3. **Consistência**:
+   - As duas páginas agora têm consistência visual completa nos títulos dos cards
+   - Ambos os títulos usam a mesma classe de estilo padronizada (`text-data-label`)

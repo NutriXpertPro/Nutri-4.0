@@ -18,6 +18,7 @@ from users.views import UserDetailView
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("", lambda request: JsonResponse({"message": "Nutri 4.0 API is running"}), name="root"),
+    path("health/", lambda request: JsonResponse({"status": "healthy"}), name="health-check"),
     
     # API REST - Autenticação JWT (Tokens)
     path("api/token/", CustomTokenObtainPairView.as_view(), name="token_obtain_pair"),

@@ -76,7 +76,7 @@ export default function Header1() {
               <Link
                 prefetch={false}
                 href="/"
-                className="flex items-center space-x-2"
+                className="flex items-center gap-0.5"
               >
                 <Image
                   src={logo}

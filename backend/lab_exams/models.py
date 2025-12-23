@@ -1,4 +1,5 @@
 from django.db import models
+from django.core.validators import FileExtensionValidator
 from patients.models import PatientProfile
 
 class LabExam(models.Model):
@@ -14,8 +15,9 @@ class LabExam(models.Model):
     name = models.CharField(max_length=200, verbose_name="Nome do Exame", db_index=True) # Adicionado para performance
     date = models.DateField(verbose_name="Data do Exame")
     attachment = models.FileField(
-        upload_to='lab_exams/%Y/%m/%d/', 
-        verbose_name="Anexo do Exame"
+        upload_to='lab_exams/%Y/%m/%d/',
+        verbose_name="Anexo do Exame",
+        validators=[FileExtensionValidator(allowed_extensions=['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png'])]
     )
     notes = models.TextField(null=True, blank=True, verbose_name="Observações")
     uploaded_at = models.DateTimeField(auto_now_add=True)

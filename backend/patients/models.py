@@ -2,6 +2,7 @@ from django.db import models
 from django.conf import settings
 from datetime import date
 from django.utils.translation import gettext_lazy as _
+from utils.sanitization import sanitize_string
 
 # Create your models here.
 
@@ -49,6 +50,20 @@ class PatientProfile(models.Model):
         blank=True,
         db_index=True # Added for performance
     )
+    target_weight = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        help_text=_("Peso alvo do paciente em kg")
+    )
+    target_body_fat = models.DecimalField(
+        max_digits=4,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        help_text=_("Percentual de gordura corporal alvo")
+    )
     service_type = models.CharField(
         max_length=20,
         choices=SERVICE_TYPE_CHOICES,
@@ -79,6 +94,12 @@ class PatientProfile(models.Model):
                 )
             )
         return None
+
+    def save(self, *args, **kwargs):
+        """Sanitizar campos de texto antes de salvar"""
+        if self.address:
+            self.address = sanitize_string(self.address)
+        super().save(*args, **kwargs)
 
     def __str__(self):
         """

@@ -1,5 +1,6 @@
 from django.db import models
 from django.conf import settings
+from utils.sanitization import sanitize_string
 
 
 class Conversation(models.Model):
@@ -38,6 +39,12 @@ class Message(models.Model):
 
     class Meta:
         ordering = ["timestamp"]
+
+    def save(self, *args, **kwargs):
+        """Sanitizar conteúdo da mensagem antes de salvar"""
+        if self.content:
+            self.content = sanitize_string(self.content)
+        super().save(*args, **kwargs)
 
     def __str__(self):
         """

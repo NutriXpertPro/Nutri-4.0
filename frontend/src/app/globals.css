@@ -14,33 +14,33 @@
    ========================================= */
 :root {
   --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
+  --foreground: oklch(0.2 0 0);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
+  --card-foreground: oklch(0.2 0 0);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
+  --popover-foreground: oklch(0.2 0 0);
   --primary: oklch(0.205 0 0);
   --primary-foreground: oklch(0.985 0 0);
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.205 0 0);
   --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
+  --muted-foreground: oklch(0.4 0 0);
   --accent: oklch(0.97 0 0);
   --accent-foreground: oklch(0.205 0 0);
   --destructive: oklch(0.577 0.245 27.325);
   --destructive-foreground: oklch(0.577 0.245 27.325);
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
-  --ring: oklch(0.145 0 0);
+  --ring: oklch(0.42 0 0);
   --radius: 0.625rem;
   --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-foreground: oklch(0.25 0 0);
   --sidebar-primary: oklch(0.205 0 0);
   --sidebar-primary-foreground: oklch(0.985 0 0);
   --sidebar-accent: oklch(0.97 0 0);
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.145 0 0);
+  --sidebar-ring: oklch(0.42 0 0);
 }
 
 .dark {
@@ -227,29 +227,58 @@
 
 
 @layer base {
-
   * {
-
     @apply border-border outline-ring/50;
-
   }
-
-
 
   body {
-
-    @apply bg-background text-foreground;
-
-    background-image: 
-
+    @apply bg-background text-foreground antialiased;
+    background-image:
       radial-gradient(circle at 25% 25%, oklch(from var(--primary) l c h / 0.03) 0%, transparent 50%),
-
       radial-gradient(circle at 75% 75%, oklch(from var(--primary) l c h / 0.03) 0%, transparent 50%);
-
     background-size: 100% 100%;
-
     background-attachment: fixed;
+  }
+}
 
+@layer utilities {
+
+  /* Glassmorphism Variants */
+  .glass-card {
+    @apply bg-card/60 backdrop-blur-md border border-border/40 shadow-sm transition-all duration-300;
   }
 
+  .glass-card-hover {
+    @apply hover:bg-card/80 hover:border-border/60 hover:shadow-lg hover:-translate-y-0.5;
+  }
+
+  .glass-header {
+    @apply bg-background/80 backdrop-blur-xl border-b border-border/10;
+  }
+
+  /* Typography System */
+  .text-h1 {
+    @apply text-3xl tracking-tight text-foreground;
+  }
+
+  .text-h2 {
+    @apply text-xl tracking-tight text-foreground;
+  }
+
+  .text-data-label {
+    @apply text-[14px] uppercase tracking-[0.1em] text-muted-foreground;
+  }
+
+  .text-data-value {
+    @apply text-2xl tracking-tight tabular-nums text-foreground;
+  }
+
+  .text-subtitle {
+    @apply text-sm text-muted-foreground;
+  }
+
+  /* Icon Effects */
+  .icon-glow {
+    @apply relative after:absolute after:inset-0 after:rounded-full after:bg-current after:opacity-10 after:blur-sm;
+  }
 }

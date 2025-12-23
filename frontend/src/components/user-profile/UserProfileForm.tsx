@@ -11,7 +11,8 @@ import { useAuth } from "@/contexts/auth-context";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { userService, UserProfile, UpdateUserProfile } from "@/services/user-service";
 import { useEffect, useState, useRef } from "react";
-import { Loader2, Trash2 } from "lucide-react";
+import { Loader2, Trash2, Upload } from "lucide-react";
+
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import Image from "next/image";
@@ -48,6 +49,7 @@ export function UserProfileForm() {
   });
 
   const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [selectedFileName, setSelectedFileName] = useState<string>("");
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
@@ -106,12 +108,14 @@ export function UserProfileForm() {
     const file = event.target.files?.[0];
     if (file) {
       setPreviewImage(URL.createObjectURL(file));
+      setSelectedFileName(file.name);
       form.setValue("profile_picture", event.target.files, { shouldValidate: true });
     }
   };
 
   const handleRemoveImage = () => {
     setPreviewImage(null);
+    setSelectedFileName("");
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
@@ -149,7 +153,7 @@ export function UserProfileForm() {
 
   if (isError) {
     return (
-      <div className="text-center text-destructive">
+      <div className="text-center text-muted-foreground">
         Erro ao carregar dados do perfil.
       </div>
     );
@@ -186,13 +190,25 @@ export function UserProfileForm() {
                       type="file"
                       accept="image/*"
                       onChange={(e) => {
-                        field.onChange(e.target.files); // Atualiza o valor no formulário
-                        handleFileChange(e); // Atualiza o preview
+                        field.onChange(e.target.files);
+                        handleFileChange(e);
                       }}
                       ref={fileInputRef}
-                      className="w-auto cursor-pointer"
-                      value={""} // Reinicia sempre o valor para evitar warnings
+                      className="hidden"
                     />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="w-fit"
+                    >
+                      <Upload className="mr-2 h-4 w-4" />
+                      {selectedFileName || "Escolher Foto"}
+                    </Button>
+                    {selectedFileName && (
+                      <p className="text-xs text-muted-foreground">{selectedFileName}</p>
+                    )}
                     {previewImage && (
                       <Button
                         type="button"

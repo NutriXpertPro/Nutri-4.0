@@ -7,6 +7,7 @@ import { UserProfileForm } from "@/components/user-profile/UserProfileForm";
 import AutomationSettings from "@/components/automation/AutomationSettings";
 import BrandingSettings from "@/components/branding/BrandingSettings";
 import GoogleCalendarIntegration from "@/components/integrations/GoogleCalendarIntegration";
+import { Settings, User } from "lucide-react";
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -32,11 +33,17 @@ export default function SettingsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold mb-1">Configurações</h1>
+        <h1 className="text-3xl font-normal mb-1 flex items-center gap-3">
+          <Settings className="h-8 w-8 text-primary" />
+          Configurações
+        </h1>
         <p className="text-muted-foreground">Gerencie suas informações de perfil e preferências.</p>
       </div>
       <div className="border-b pb-4">
-        <h2 className="text-2xl font-semibold mb-4">Informações do Perfil</h2>
+        <h2 className="text-2xl font-normal mb-4 flex items-center gap-2">
+          <User className="h-6 w-6 text-primary" />
+          Informações do Perfil
+        </h2>
         <UserProfileForm />
       </div>
       {/* Configurações de automação de mensagens */}

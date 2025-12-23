@@ -118,7 +118,7 @@ export function AnamnesisList({ onNewAnamnesis, onEdit, onView }: AnamnesisListP
             case "incomplete":
                 return <Badge className="bg-amber-500 hover:bg-amber-500">Incompleta</Badge>
             case "pending":
-                return <Badge className="bg-muted-foreground hover:bg-muted-foreground">Pendente</Badge>
+                return <Badge className="bg-destructive text-white hover:bg-destructive">Pendente</Badge>
             default:
                 return <Badge variant="outline">Desconhecido</Badge>
         }
@@ -129,7 +129,7 @@ export function AnamnesisList({ onNewAnamnesis, onEdit, onView }: AnamnesisListP
             {/* Header com ações */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
-                    <h2 className="text-2xl font-bold tracking-tight">Anamneses</h2>
+                    <h2 className="text-2xl font-normal tracking-tight">Anamneses</h2>
                     <p className="text-muted-foreground">
                         Gerencie as anamneses dos seus pacientes
                     </p>
@@ -143,61 +143,28 @@ export function AnamnesisList({ onNewAnamnesis, onEdit, onView }: AnamnesisListP
                 </div>
             </div>
 
-            {/* Card de Estatísticas */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <Card>
-                    <CardContent className="p-5 flex items-center gap-4">
-                        <div className="h-12 w-12 rounded-xl bg-emerald-500/10 flex items-center justify-center">
-                            <CheckCircle2 className="h-6 w-6 text-emerald-500" />
-                        </div>
-                        <div>
-                            <p className="text-2xl font-bold">2</p>
-                            <p className="text-sm text-muted-foreground">Completas</p>
-                        </div>
-                    </CardContent>
-                </Card>
-                
-                <Card>
-                    <CardContent className="p-5 flex items-center gap-4">
-                        <div className="h-12 w-12 rounded-xl bg-amber-500/10 flex items-center justify-center">
-                            <Clock className="h-6 w-6 text-amber-500" />
-                        </div>
-                        <div>
-                            <p className="text-2xl font-bold">1</p>
-                            <p className="text-sm text-muted-foreground">Incompletas</p>
-                        </div>
-                    </CardContent>
-                </Card>
-                
-                <Card>
-                    <CardContent className="p-5 flex items-center gap-4">
-                        <div className="h-12 w-12 rounded-xl bg-muted-foreground/10 flex items-center justify-center">
-                            <Clock className="h-6 w-6 text-muted-foreground" />
-                        </div>
-                        <div>
-                            <p className="text-2xl font-bold">1</p>
-                            <p className="text-sm text-muted-foreground">Pendentes</p>
-                        </div>
-                    </CardContent>
-                </Card>
-                
-                <Card>
-                    <CardContent className="p-5 flex items-center gap-4">
-                        <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center">
-                            <FileText className="h-6 w-6 text-primary" />
-                        </div>
-                        <div>
-                            <p className="text-2xl font-bold">4</p>
-                            <p className="text-sm text-muted-foreground">Total</p>
-                        </div>
-                    </CardContent>
-                </Card>
-            </div>
-
             {/* Filtros e Busca */}
             <Card>
-                <CardHeader>
-                    <div className="flex flex-col sm:flex-row gap-4">
+                <CardHeader className="pb-3">
+                    <div className="flex gap-2">
+                        {(['all', 'completed', 'incomplete', 'pending'] as const).map((f) => (
+                            <button
+                                key={f}
+                                className={`px-4 py-2 text-sm capitalize rounded-full transition-colors ${
+                                    (f === 'all' && filterStatus === null) || filterStatus === f
+                                        ? 'bg-primary text-primary-foreground'
+                                        : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                                }`}
+                                onClick={() => setFilterStatus(f === 'all' ? null : f)}
+                            >
+                                {f === 'all' ? 'Todos' :
+                                f === 'completed' ? 'Completas' :
+                                f === 'incomplete' ? 'Incompletas' :
+                                'Pendentes'}
+                            </button>
+                        ))}
+                    </div>
+                    <div className="flex flex-col sm:flex-row gap-4 mt-4">
                         <div className="relative flex-1">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                             <Input
@@ -207,36 +174,8 @@ export function AnamnesisList({ onNewAnamnesis, onEdit, onView }: AnamnesisListP
                                 className="pl-10"
                             />
                         </div>
-                        
-                        <div className="flex gap-2">
-                            <Button 
-                                variant={filterStatus === null ? "default" : "outline"} 
-                                onClick={() => setFilterStatus(null)}
-                                className="gap-2"
-                            >
-                                <Filter className="h-4 w-4" />
-                                Todos
-                            </Button>
-                            <Button 
-                                variant={filterStatus === "completed" ? "default" : "outline"} 
-                                onClick={() => setFilterStatus("completed")}
-                                className="gap-2"
-                            >
-                                <CheckCircle2 className="h-4 w-4" />
-                                Completas
-                            </Button>
-                            <Button 
-                                variant={filterStatus === "incomplete" ? "default" : "outline"} 
-                                onClick={() => setFilterStatus("incomplete")}
-                                className="gap-2"
-                            >
-                                <Clock className="h-4 w-4" />
-                                Incompletas
-                            </Button>
-                        </div>
                     </div>
                 </CardHeader>
-                
                 <CardContent>
                     <div className="rounded-md border">
                         <Table>

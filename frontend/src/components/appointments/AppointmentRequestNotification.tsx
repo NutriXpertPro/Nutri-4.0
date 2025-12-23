@@ -33,16 +33,15 @@ export function AppointmentRequestNotification({
 
   return (
     <div className="relative">
-      <Card className="bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-xl border-border/40 hover:shadow-lg transition-all overflow-hidden">
-        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 via-cyan-500 to-blue-500" />
+      <Card variant="glass" className="overflow-hidden">
         <CardHeader className="pb-3 relative">
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-blue-500/30 to-blue-500/10 flex items-center justify-center text-blue-500">
+            <div className="h-10 w-10 rounded-xl bg-green-500/10 flex items-center justify-center text-green-500">
               <Clock className="h-5 w-5" />
             </div>
             <div>
               <CardTitle className="flex items-center gap-2">
-                <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-cyan-500">
+                <span className="text-foreground">
                   Solicitações de Agendamento
                 </span>
                 <Badge variant="secondary" className="text-xs">
@@ -62,11 +61,11 @@ export function AppointmentRequestNotification({
                 <div className="flex items-start justify-between">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <User className="h-4 w-4 text-muted-foreground" />
-                      <h4 className="font-medium truncate">{request.patientName}</h4>
+                      <User className="h-4 w-4 text-primary" />
+                      <h4 className="truncate">{request.patientName}</h4>
                     </div>
                     <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
-                      <Calendar className="h-3.5 w-3.5" />
+                      <Calendar className="h-3.5 w-3.5 text-amber-500" />
                       <span>
                         {format(parseISO(request.date), 'dd/MM/yyyy', { locale: ptBR })} às {request.time}
                       </span>
@@ -80,15 +79,16 @@ export function AppointmentRequestNotification({
                     <Button
                       variant="outline"
                       size="sm"
-                      className="h-8 w-8 p-0 text-destructive hover:text-destructive border-destructive/30"
+                      className="h-8 w-8 p-0 text-destructive hover:text-destructive"
                       onClick={() => onReject(request.id)}
                       title="Rejeitar"
                     >
                       <X className="h-4 w-4" />
                     </Button>
                     <Button
+                      variant="default"
                       size="sm"
-                      className="h-8 px-3 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 shadow-lg shadow-blue-500/20"
+                      className="h-8 px-3"
                       onClick={() => onApprove(request.id)}
                     >
                       <Check className="h-4 w-4 mr-1" />
