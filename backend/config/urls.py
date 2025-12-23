@@ -17,8 +17,16 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from users import views as user_views
+from django.http import JsonResponse
+
+def health_check(request):
+    return JsonResponse({
+        'status': 'healthy',
+        'message': 'Nutri 4.0 API is running'
+    })
 
 urlpatterns = [
+    path('api/health/', health_check, name='health-check'),
     path('admin/', admin.site.urls),
     path('api/v1/auth/', include('users.urls')),
     path('api/v1/users/me/', user_views.UserDetailView.as_view(), name='user-me'),
@@ -33,4 +41,3 @@ urlpatterns = [
     path('api/v1/diets/', include('diets.urls')),  # Foods and Diets
     path('api/v1/', include('dashboard.urls')),
 ]
-

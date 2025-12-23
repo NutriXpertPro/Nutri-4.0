@@ -29,3 +29,10 @@ cryptography>=41.0.0
 django-redis==5.4.0
 
 # CORS
+django-cors-headers==4.3.1
+
+# Additional utilities
+celery==5.3.4
+redis==5.0.1
+kombu==5.3.4
+billiard==4.1.0
