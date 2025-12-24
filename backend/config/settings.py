@@ -240,8 +240,12 @@ if os.environ.get('DJANGO_ENV') == 'production':
         print("Erro: DEBUG não deve estar ativado em produção. Saindo...")
         import sys
         sys.exit(1)
-    if 'localhost' in ALLOWED_HOSTS or '127.0.0.1' in ALLOWED_HOSTS:
-        print("Erro: localhost ou 127.0.0.1 não devem estar na lista de ALLOWED_HOSTS em produção. Saindo...")
+
+    # Configure ALLOWED_HOSTS from environment variable
+    if os.getenv('ALLOWED_HOSTS'):
+        ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS').split(',')
+    else:
+        print("Erro: ALLOWED_HOSTS não configurado em produção. Saindo...")
         import sys
         sys.exit(1)
 
