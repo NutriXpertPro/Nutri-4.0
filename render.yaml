@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: nutri-4-0
+    env: python
+    buildCommand: pip install --upgrade pip && pip install -r backend/requirements.txt
+    startCommand: python backend/manage.py migrate && gunicorn backend.setup.wsgi:application --bind 0.0.0.0:$PORT --workers 3 --timeout 120
+    envVars:
+      - key: PYTHON_PATH
+        value: backend
