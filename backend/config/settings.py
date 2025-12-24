@@ -77,13 +77,24 @@ INSTALLED_APPS = [
     # 3rd party
     'rest_framework',
     'rest_framework_simplejwt',
+    'corsheaders',
+    'django_redis',
 
     # Local
-    'users.apps.UsersConfig',
-    'patients',
+    'anamnesis',
     'appointments',
+    'automation',
+    'branding',
+    'dashboard',
+    'diets',
+    'evaluations',
+    'integrations',
+    'lab_exams',
+    'messages',
     'notifications',
-    'corsheaders',
+    'patients',
+    'payments',
+    'users.apps.UsersConfig',
 ]
 
 MIDDLEWARE = [
