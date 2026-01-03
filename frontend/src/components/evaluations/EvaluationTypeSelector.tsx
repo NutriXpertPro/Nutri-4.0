@@ -43,6 +43,7 @@ export function EvaluationTypeSelector({ patient, onTypeSelect, onBack, onTempla
       title: 'Avaliação Completa',
       description: 'Registro de medidas antropométricas e bioimpedância',
       icon: Ruler,
+      color: 'text-violet-500',
       badge: 'Padrão'
     },
     {
@@ -50,6 +51,7 @@ export function EvaluationTypeSelector({ patient, onTypeSelect, onBack, onTempla
       title: 'Dobra Cutânea',
       description: 'Medidas com adipômetro nos principais pontos',
       icon: Target,
+      color: 'text-emerald-500',
       badge: 'Especializado'
     },
     {
@@ -57,6 +59,7 @@ export function EvaluationTypeSelector({ patient, onTypeSelect, onBack, onTempla
       title: 'Antropometria',
       description: 'Medidas corporais com fita métrica',
       icon: Scale,
+      color: 'text-amber-500',
       badge: 'Completo'
     },
     {
@@ -64,6 +67,7 @@ export function EvaluationTypeSelector({ patient, onTypeSelect, onBack, onTempla
       title: 'Bioimpedância',
       description: 'Análise de composição corporal',
       icon: HeartPulse,
+      color: 'text-rose-500',
       badge: 'Técnico'
     },
     {
@@ -71,6 +75,7 @@ export function EvaluationTypeSelector({ patient, onTypeSelect, onBack, onTempla
       title: 'Upload Externo',
       description: 'Exames de terceiros ou laboratórios',
       icon: Upload,
+      color: 'text-blue-500',
       badge: 'Integração'
     },
     {
@@ -78,6 +83,7 @@ export function EvaluationTypeSelector({ patient, onTypeSelect, onBack, onTempla
       title: 'Ficha Personalizada',
       description: 'Modelos pré-definidos ou personalizados',
       icon: FileText,
+      color: 'text-violet-500',
       badge: 'Modelo'
     }
   ]
@@ -140,7 +146,7 @@ export function EvaluationTypeSelector({ patient, onTypeSelect, onBack, onTempla
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle className="flex items-center gap-2 text-lg">
-                    <IconComponent className="h-5 w-5" />
+                    <IconComponent className={`h-5 w-5 ${type.color}`} />
                     {type.title}
                   </CardTitle>
                   <Badge variant="outline">{type.badge}</Badge>

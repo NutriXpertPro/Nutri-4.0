@@ -30,10 +30,10 @@ export default function HeroSection() {
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#0a0a0a] border border-emerald-500/30 text-emerald-400 text-sm font-semibold mb-6 shadow-[0_0_20px_-5px_rgba(16,185,129,0.3)]"
+          className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#0a0a0a] border border-emerald-500/30 text-emerald-400 text-sm font-semibold mb-6 shadow-[0_0_20px_-5px_rgba(16,185,129,0.3)] whitespace-nowrap flex-shrink-0"
         >
           <Hexagon className="w-3 h-3 fill-current animate-pulse" />
-          VERSÃO XPERT 4.0 DISPONÍVEL
+          VERSÃO <span className="text-emerald-500" style={{ textShadow: '1px 1px 2px rgba(255,255,255,0.1)' }}><span style={{ fontSize: '20px', textShadow: '1px 1px 2px rgba(255,255,255,0.2)' }}>X</span>pert</span> 4.0 DISPONÍVEL
         </motion.div>
 
         {/* Headline Principal */}
@@ -54,10 +54,9 @@ export default function HeroSection() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.2 }}
-          className="text-lg md:text-xl text-neutral-400 max-w-3xl mb-10 leading-relaxed font-light"
+          className="text-lg md:text-xl text-neutral-400 max-w-3xl mb-10 leading-relaxed font-light whitespace-nowrap text-center mx-auto"
         >
-          Centralize sua clínica em uma plataforma feita para a <strong>Elite da Nutrição</strong>.
-          Anamnese metabólica detalhada, gestão financeira e app exclusivo para fidelizar seus pacientes.
+          Aqui a <strong>Elite da Nutrição</strong> transforma seu consultório em um Ecosistema de monitoramento nutricional.
         </motion.p>
 
         {/* CTAs */}
@@ -72,15 +71,15 @@ export default function HeroSection() {
             whileTap={{ scale: 0.95 }}
             className="relative group"
           >
-            <div className="absolute -inset-1 bg-gradient-to-r from-emerald-600 to-teal-600 rounded-xl blur opacity-25 group-hover:opacity-75 transition duration-1000 group-hover:duration-200"></div>
+            <div className="absolute -inset-1 bg-gradient-to-r from-emerald-600 to-teal-600 rounded-xl blur opacity-25 transition duration-1000"></div>
             <Button
               size="lg"
-              className="relative h-14 px-10 text-lg bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white border-0 shadow-[0_0_40px_-10px_rgba(16,185,129,0.6)] font-bold tracking-wide overflow-hidden"
+              className="relative h-14 px-10 text-lg bg-black hover:bg-black text-white border-0 shadow-[0_0_40px_-10px_rgba(0,0,0,0.6)] font-bold tracking-wide overflow-hidden"
               asChild
             >
               <Link href="/register">
                 <span className="relative z-10 flex items-center">
-                  ACESSAR MODO XPERT
+                  Seja um<span className="ml-2 text-emerald-500" style={{ textShadow: '1px 1px 2px rgba(255,255,255,0.1)' }}><span style={{ fontSize: '20px', textShadow: '1px 1px 2px rgba(255,255,255,0.2)' }}>X</span>pert</span>
                   <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
                 </span>
                 {/* Shine Effect with Frame Motion */}

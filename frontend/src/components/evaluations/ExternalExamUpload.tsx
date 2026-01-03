@@ -118,7 +118,7 @@ export function ExternalExamUpload({ patientId, onUpload, onSuccess }: ExternalE
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Upload className="h-5 w-5" />
+          <Upload className="h-5 w-5 text-blue-500" />
           Upload de Exame Externo
         </CardTitle>
       </CardHeader>
@@ -128,7 +128,7 @@ export function ExternalExamUpload({ patientId, onUpload, onSuccess }: ExternalE
           <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 flex flex-col items-center justify-center gap-4 hover:bg-muted/10 transition-colors">
             {!selectedFile ? (
               <label className="flex flex-col items-center justify-center w-full cursor-pointer">
-                <Upload className="h-10 w-10 text-muted-foreground" />
+                <Upload className="h-10 w-10 text-blue-500/50" />
                 <div className="text-center">
                   <p className="font-medium">Clique para selecionar arquivo</p>
                   <p className="text-sm text-muted-foreground">PDF, JPG, PNG até 10MB</p>
@@ -144,7 +144,7 @@ export function ExternalExamUpload({ patientId, onUpload, onSuccess }: ExternalE
             ) : (
               <div className="w-full flex flex-col items-center">
                 <div className="flex items-center gap-2 w-full mb-4">
-                  <FileText className="h-8 w-8 text-primary" />
+                  <FileText className="h-8 w-8 text-blue-500" />
                   <div className="flex-1 min-w-0">
                     <p className="font-medium truncate">{selectedFile.name}</p>
                     <p className="text-sm text-muted-foreground">

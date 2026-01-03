@@ -157,33 +157,33 @@ class UserDetailSerializer(serializers.ModelSerializer):
     """
     Serializer for the /users/me/ endpoint to retrieve and update user details.
     """
-    settings = UserProfileSettingsSerializer(source='profile')
-    profile_picture = serializers.ImageField(source='profile.profile_picture', required=False)
+    settings = UserProfileSettingsSerializer(source='profile', required=False)
+    avatar = serializers.ImageField(source='profile.profile_picture', read_only=True)
+    profile_picture = serializers.ImageField(source='profile.profile_picture', required=False, allow_null=True)
 
     class Meta:
         model = User
         fields = (
             'id', 'email', 'name', 'user_type', 'professional_title',
-            'gender', 'profile_picture', 'settings', 'created_at'
+            'gender', 'avatar', 'profile_picture', 'settings', 'created_at'
         )
         read_only_fields = ('id', 'email', 'user_type', 'created_at')
 
     def update(self, instance, validated_data):
-        # Separate profile-related data from user data
+        # Extrair dados de perfil (incluindo profile_picture se o DRF mapeou via source)
         profile_data = validated_data.pop('profile', {})
-
-        # Update the main User instance fields (e.g., 'name', 'professional_title', etc.)
+        
+        # Atualizar campos do User
         instance = super().update(instance, validated_data)
-
-        # Get or create the related UserProfile instance
-        profile = instance.profile
-
-        # Update profile fields from nested serializer
+        
+        # Garantir que o perfil existe
+        profile, created = UserProfile.objects.get_or_create(user=instance)
+        
+        # Atualizar campos do perfil
         for attr, value in profile_data.items():
             setattr(profile, attr, value)
-
+        
         profile.save()
-
         return instance
 
 

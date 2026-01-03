@@ -34,8 +34,14 @@ import {
     CheckCircle,
     ArrowLeft,
     AlertCircle,
-    Save as SaveIcon
+    Save as SaveIcon,
+    TrendingDown,
+    TrendingUp,
+    Dumbbell,
+    Flame,
+    ClipboardList,
 } from "lucide-react"
+import { IconWrapper } from "@/components/ui/IconWrapper"
 import { cn } from "@/lib/utils"
 
 interface WizardStep {
@@ -45,6 +51,22 @@ interface WizardStep {
     color: string
     description: string
     completed: boolean
+}
+
+// Helper para obter ícone e cor baseado no objetivo
+const getObjectiveConfig = (objective: string) => {
+    switch (objective) {
+        case "Emagrecimento":
+            return { icon: TrendingDown, variant: "blue" as const }
+        case "Ganho de massa muscular":
+            return { icon: Dumbbell, variant: "amber" as const }
+        case "Ganho de peso":
+            return { icon: TrendingUp, variant: "indigo" as const }
+        case "Trincar o shape":
+            return { icon: Flame, variant: "rose" as const }
+        default:
+            return { icon: Target, variant: "emerald" as const }
+    }
 }
 
 interface WizardAnamnesisData {
@@ -198,17 +220,17 @@ export function WizardAnamnesisForm({ patientId, initialData, onSave, onCancel }
         switch (stepId) {
             case "identificacao":
                 return isFieldValid(formData.nome) &&
-                       isFieldValid(formData.idade) &&
-                       isFieldValid(formData.sexo) &&
-                       isFieldValid(formData.nascimento) &&
-                       isFieldValid(formData.email) &&
-                       isFieldValid(formData.telefone)
+                    isFieldValid(formData.idade) &&
+                    isFieldValid(formData.sexo) &&
+                    isFieldValid(formData.nascimento) &&
+                    isFieldValid(formData.email) &&
+                    isFieldValid(formData.telefone)
             case "rotina":
                 return isFieldValid(formData.hora_acorda) &&
-                       isFieldValid(formData.hora_dorme)
+                    isFieldValid(formData.hora_dorme)
             case "nutricao":
                 return isFieldValid(formData.peso) &&
-                       isFieldValid(formData.altura)
+                    isFieldValid(formData.altura)
             case "saude":
                 return true // Validação complexa, consideramos como válido por enquanto
             case "objetivos":
@@ -216,13 +238,13 @@ export function WizardAnamnesisForm({ patientId, initialData, onSave, onCancel }
             case "medidas":
                 // Pelo menos um campo de medida deve estar preenchido
                 return isFieldValid(formData.pescoco) ||
-                       isFieldValid(formData.cintura) ||
-                       isFieldValid(formData.quadril)
+                    isFieldValid(formData.cintura) ||
+                    isFieldValid(formData.quadril)
             case "fotos":
                 // Consideramos completa se pelo menos uma foto estiver preenchida
                 return isFieldValid(formData.foto_frente) ||
-                       isFieldValid(formData.foto_lado) ||
-                       isFieldValid(formData.foto_costas)
+                    isFieldValid(formData.foto_lado) ||
+                    isFieldValid(formData.foto_costas)
             default:
                 return false
         }
@@ -885,10 +907,13 @@ export function WizardAnamnesisForm({ patientId, initialData, onSave, onCancel }
                 return (
                     <Card className="border-0 shadow-none">
                         <CardHeader>
-                            <div className="flex items-center gap-3">
-                                <div className="h-10 w-10 rounded-lg bg-amber-500/10 flex items-center justify-center text-amber-500">
-                                    <Target className="h-5 w-5" />
-                                </div>
+                            <div className="flex items-center gap-4">
+                                <IconWrapper
+                                    {...getObjectiveConfig(formData.objetivo)}
+                                    size="lg"
+                                    glow
+                                    className="ring-4 ring-background border border-white/10 dark:border-white/20 shadow-md"
+                                />
                                 <div>
                                     <CardTitle className="text-2xl">Objetivos</CardTitle>
                                     <CardDescription>Suas metas e compromisso</CardDescription>
@@ -1022,9 +1047,9 @@ export function WizardAnamnesisForm({ patientId, initialData, onSave, onCancel }
                                             )}
                                         </div>
                                         <Button variant="outline" size="sm" className="w-full">
-                                    <Camera className="h-4 w-4 mr-2" />
-                                    {formData[key] ? "Substituir" : "Adicionar"} Foto
-                                </Button>
+                                            <Camera className="h-4 w-4 mr-2" />
+                                            {formData[key] ? "Substituir" : "Adicionar"} Foto
+                                        </Button>
                                     </div>
                                 ))}
                             </div>
@@ -1055,17 +1080,17 @@ export function WizardAnamnesisForm({ patientId, initialData, onSave, onCancel }
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4 overflow-x-auto pb-2">
                     {steps.map((step, index) => (
-                        <div 
+                        <div
                             key={step.id}
                             className="flex items-center gap-2 min-w-max"
                         >
-                            <div 
+                            <div
                                 className={cn(
                                     "h-10 w-10 rounded-full flex items-center justify-center text-sm font-medium transition-colors cursor-pointer",
-                                    index === currentStep 
-                                        ? `bg-${step.color}-500 text-white` 
-                                        : index < currentStep 
-                                            ? "bg-emerald-500 text-white" 
+                                    index === currentStep
+                                        ? `bg-${step.color}-500 text-white`
+                                        : index < currentStep
+                                            ? "bg-emerald-500 text-white"
                                             : "bg-muted text-muted-foreground",
                                     index > currentStep && "hover:bg-muted/50"
                                 )}
@@ -1076,10 +1101,10 @@ export function WizardAnamnesisForm({ patientId, initialData, onSave, onCancel }
                             <div className="text-left hidden sm:block">
                                 <div className={cn(
                                     "text-sm font-medium",
-                                    index === currentStep 
-                                        ? "text-foreground" 
-                                        : index < currentStep 
-                                            ? "text-emerald-600" 
+                                    index === currentStep
+                                        ? "text-foreground"
+                                        : index < currentStep
+                                            ? "text-emerald-600"
                                             : "text-muted-foreground"
                                 )}>
                                     {step.title}
@@ -1147,12 +1172,12 @@ export function WizardAnamnesisForm({ patientId, initialData, onSave, onCancel }
             <div className="flex items-center justify-between pt-2">
                 <Button
                     variant="outline"
-                    onClick={onCancel || prevStep}
-                    disabled={currentStep === 0}
-                    className="gap-2"
+                    onClick={currentStep === 0 ? onCancel : prevStep}
+                    disabled={currentStep === 0 && !onCancel}
+                    className={cn("gap-2", currentStep === 0 && !onCancel && "invisible")}
                 >
                     <ArrowLeft className="h-4 w-4" />
-                    {onCancel ? "Cancelar" : "Anterior"}
+                    {currentStep === 0 ? "Cancelar" : "Anterior"}
                 </Button>
 
                 <div className="flex items-center gap-2">

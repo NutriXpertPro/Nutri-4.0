@@ -8,12 +8,13 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Calendar, MapPin, Video, ChevronRight, ExternalLink } from "lucide-react"
+import { IconWrapper } from "@/components/ui/IconWrapper"
 
 export interface Appointment {
     id: string
     time: string
     patientName: string
-    patientAvatar?: string
+    avatar?: string
     type: "presencial" | "online"
     duration: number // em minutos
     description?: string
@@ -29,9 +30,14 @@ export function AgendaDoDia({ appointments = [], className }: AgendaDoDiaProps) 
     return (
         <Card className={cn("h-full flex flex-col", className)}>
             <CardHeader className="flex flex-row items-center justify-between pb-3 space-y-0">
-                <div className="flex items-center gap-2">
-                    <CardTitle className="flex items-center gap-2 text-lg !font-normal">
-                        <Calendar className="h-5 w-5 text-amber-500" />
+                <div className="flex items-center gap-4">
+                    <IconWrapper
+                        icon={Calendar}
+                        variant="amber"
+                        size="md"
+                        className="ring-4 ring-background border border-white/10 dark:border-white/20 shadow-md"
+                    />
+                    <CardTitle className="text-lg !font-normal">
                         Agenda de Hoje
                     </CardTitle>
                     <Badge variant="secondary" className="!font-normal">
@@ -81,8 +87,8 @@ export function AgendaDoDia({ appointments = [], className }: AgendaDoDiaProps) 
                                 {/* Content */}
                                 <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-3">
-                                        <Avatar className="h-9 w-9 border border-border/50">
-                                            <AvatarImage src={appointment.patientAvatar} />
+                                        <Avatar className="h-9 w-9 border border-border/50 overflow-hidden">
+                                            <AvatarImage src={appointment.avatar} className="h-full w-full object-cover" />
                                             <AvatarFallback className="text-xs bg-muted !font-normal text-muted-foreground">
                                                 {appointment.patientName.substring(0, 2).toUpperCase()}
                                             </AvatarFallback>

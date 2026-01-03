@@ -29,6 +29,7 @@ import {
 } from '@/stores/diet-editor-store'
 import { NavigationCommandPalette } from './NavigationCommandPalette'
 import { HubNavigation } from './HubNavigation'
+import patientService from '@/services/patient-service'
 import { NeonText } from '../design/GlassPrimitives'
 import {
     DropdownMenu,
@@ -47,12 +48,7 @@ import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 
-// Mock Patients
-const MOCK_PATIENTS = [
-    { id: 1, name: 'João Silva', age: 32, weight: 78, height: 1.78, sex: 'M', goal: 'Hipertrofia', objective: 'Ganho de Massa' },
-    { id: 2, name: 'Maria Oliveira', age: 28, weight: 62, height: 1.65, sex: 'F', goal: 'Emagrecimento', objective: 'Perda de Gordura' },
-    { id: 3, name: 'Carlos Santos', age: 45, weight: 92, height: 1.82, sex: 'M', goal: 'Manutenção', objective: 'Saúde Geral' },
-]
+// Removed MOCK_PATIENTS - using real API search
 
 export function EcoHeader() {
     const router = useRouter()
@@ -63,8 +59,47 @@ export function EcoHeader() {
     const activeTab = useDietEditorStore(state => state.activeTab)
     const setActiveTab = useDietEditorStore(state => state.setActiveTab)
 
+    // Name Abbreviation Logic
+    const formatPatientName = (name: string) => {
+        if (!name) return 'Novo Paciente'
+        const parts = name.trim().split(/\s+/)
+        if (parts.length <= 2) return name
+
+        const first = parts[0]
+        const last = parts[parts.length - 1]
+        const middles = parts.slice(1, -1).map(p => p[0].toUpperCase() + '.')
+
+        return `${first} ${middles.join(' ')} ${last}`
+    }
+
     // Command Palette State
     const [isCommandPaletteOpen, setIsCommandPaletteOpen] = React.useState(false)
+
+    // Patient Search State
+    const [searchQuery, setSearchQuery] = React.useState("")
+    const [searchResults, setSearchResults] = React.useState<any[]>([])
+    const [isSearching, setIsSearching] = React.useState(false)
+
+    React.useEffect(() => {
+        if (searchQuery.length < 2) {
+            setSearchResults([])
+            return
+        }
+
+        const timer = setTimeout(async () => {
+            setIsSearching(true)
+            try {
+                const results = await patientService.search(searchQuery)
+                setSearchResults(results)
+            } catch (err) {
+                console.error("Error searching patients:", err)
+            } finally {
+                setIsSearching(false)
+            }
+        }, 300)
+
+        return () => clearTimeout(timer)
+    }, [searchQuery])
 
     // Store Actions & State
     const {
@@ -78,7 +113,8 @@ export function EcoHeader() {
         tmb,
         get,
         targetCalories,
-        targetMacros
+        targetMacros,
+        calculateMetabolics
     } = useDietEditorStore()
 
     // Real-time Calculations
@@ -131,13 +167,25 @@ export function EcoHeader() {
                     </Link>
                 </div>
 
-                {/* FLOATING CIRCULAR GRAPH */}
-                <div className="absolute left-1/2 -translate-x-1/2 top-20 -translate-y-1/2 z-50">
+                {/* FLOATING CIRCULAR GRAPH + TOTAL CALÓRICO */}
+                <div className="absolute left-1/2 md:left-[60%] -translate-x-1/2 top-20 -translate-y-1/2 z-50 transition-all duration-500 flex items-center gap-6">
                     <CircularMacroChart
                         totals={currentTotals}
                         targets={targetMacros}
                         targetCalories={targetCalories}
+                        hideText
                     />
+
+                    {/* Total Calórico à direita do gráfico */}
+                    <div className="flex flex-col mt-[15px]">
+                        <span className="text-[10px] text-muted-foreground uppercase tracking-widest opacity-60">Total Calórico</span>
+                        <div className="flex items-baseline gap-2">
+                            <span className="text-3xl font-bold text-foreground tabular-nums leading-none">
+                                {Math.round(currentTotals.calories)}
+                            </span>
+                            <span className="text-sm text-muted-foreground opacity-40">/ {targetCalories}</span>
+                        </div>
+                    </div>
                 </div>
 
                 <div className="px-6 md:px-10 -mt-8 flex flex-col gap-8 relative z-10">
@@ -147,8 +195,11 @@ export function EcoHeader() {
 
                         {/* Avatar (Overlapping) with Selector */}
                         <div className="relative group">
-                            <Avatar className="h-28 w-28 border-4 border-background shadow-2xl transition-transform group-hover:scale-105">
-                                <AvatarImage src={patient?.photo} />
+                            <Avatar className="h-28 w-28 border-4 border-background shadow-2xl transition-transform group-hover:scale-105 overflow-hidden">
+                                <AvatarImage
+                                    src={patient?.avatar}
+                                    className="h-full w-full object-cover"
+                                />
                                 <AvatarFallback className="text-3xl bg-primary/10 text-primary">
                                     {patient?.name?.substring(0, 2).toUpperCase() || <Users className="h-10 w-10 opacity-50" />}
                                 </AvatarFallback>
@@ -166,21 +217,41 @@ export function EcoHeader() {
                                     <div className="px-3 py-2">
                                         <div className="relative">
                                             <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                                            <Input placeholder="Buscar por nome..." className="h-10 pl-10 text-sm bg-muted/50" />
+                                            <Input
+                                                placeholder="Buscar por nome..."
+                                                className="h-10 pl-10 text-sm bg-muted/50"
+                                                value={searchQuery}
+                                                onChange={(e) => setSearchQuery(e.target.value)}
+                                            />
                                         </div>
                                     </div>
                                     <DropdownMenuSeparator />
-                                    {MOCK_PATIENTS.map(p => (
+                                    {isSearching && (
+                                        <div className="px-4 py-3 text-xs text-muted-foreground text-center italic">Buscando...</div>
+                                    )}
+                                    {!isSearching && searchQuery.length >= 2 && searchResults.length === 0 && (
+                                        <div className="px-4 py-3 text-xs text-muted-foreground text-center">Nenhum paciente encontrado.</div>
+                                    )}
+                                    {searchResults.map(p => (
                                         <DropdownMenuItem
                                             key={p.id}
-                                            onClick={() => setPatient(p as any)}
-                                            className="flex flex-col items-start cursor-pointer py-3 px-4 focus:bg-primary/10"
+                                            onClick={() => {
+                                                setPatient(p as any)
+                                                // Clear search after selection
+                                                setSearchQuery("")
+                                                setSearchResults([])
+                                            }}
+                                            className="flex items-center gap-3 py-3 px-4 focus:bg-primary/10 cursor-pointer"
                                         >
-                                            <span className="text-base">{p.name}</span>
-                                            <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
-                                                <span>{p.objective}</span>
-                                                <span className="w-1 h-1 rounded-full bg-border" />
-                                                <span>{p.weight}kg</span>
+                                            <Avatar className="h-8 w-8 border border-border/50">
+                                                <AvatarImage src={p.avatar} className="object-cover" />
+                                                <AvatarFallback className="text-[10px] bg-primary/5 text-primary">
+                                                    {p.name.substring(0, 2).toUpperCase()}
+                                                </AvatarFallback>
+                                            </Avatar>
+                                            <div className="flex flex-col">
+                                                <span className="text-sm font-medium leading-none">{p.name}</span>
+                                                <span className="text-[10px] text-muted-foreground mt-1 uppercase tracking-tighter">ID: {p.id}</span>
                                             </div>
                                         </DropdownMenuItem>
                                     ))}
@@ -193,261 +264,268 @@ export function EcoHeader() {
                         </div>
 
                         {/* Info */}
-                        <div className="flex-1 space-y-2 mb-2">
-                            <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-                                <h1 className="text-h1">
-                                    {patient?.name || 'Novo Paciente'}
-                                </h1>
-                                <div className="flex gap-2">
-                                    <Badge variant="outline" className="text-muted-foreground bg-background/50 px-3 h-7">
-                                        {patient?.age || '--'} anos
-                                    </Badge>
-                                    <Badge variant="outline" className="text-muted-foreground bg-background/50 px-3 h-7">
-                                        {patient?.weight || '--'} kg
-                                    </Badge>
+                        <div className="flex-1 space-y-3 mb-2 min-w-0">
+                            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                                <div className="flex flex-wrap items-center gap-x-8 gap-y-2">
+                                    <h1 className="text-h1 truncate max-w-[280px] md:max-w-[350px]" title={patient?.name}>
+                                        {formatPatientName(patient?.name || '')}
+                                    </h1>
+                                </div>
+
+                                {/* Actions & Strategies moved here for horizontal alignment */}
+                                <div className="flex gap-2 -mt-[5px] flex-wrap relative">
+                                    {/* Selectors */}
+                                    {/* Selectors */}
+                                    <div className="absolute right-0 top-[119px] flex gap-2">
+                                        <Selector
+                                            icon={Utensils}
+                                            label={
+                                                {
+                                                    'harris_benedict_1919': 'Harris-Benedict 1919',
+                                                    'harris_benedict_1984': 'Harris-Benedict 1984',
+                                                    'harris_benedict': 'Harris-Benedict 1984',
+                                                    'mifflin_1990': 'Mifflin-St Jeor 1990',
+                                                    'mifflin': 'Mifflin-St Jeor 1990',
+                                                    'henry_rees_1991': 'Henry & Rees 1991',
+                                                    'tinsley_2018_weight': 'Tinsley 2018 (Peso)',
+                                                    'katch_mcardle_1996': 'Katch-McArdle 1996',
+                                                    'cunningham_1980': 'Cunningham 1980',
+                                                    'cunningham': 'Cunningham 1980',
+                                                    'tinsley_2018_lbm': 'Tinsley 2018 (Massa Magra)',
+                                                    'fao_who_2004': 'FAO/WHO 2004',
+                                                    'eer_iom_2005': 'EER/IOM 2005',
+                                                    'eer_iom_2023': 'EER/IOM 2023',
+                                                }[calculationMethod] || 'Mifflin-St Jeor 1990'
+                                            }
+                                        >
+                                            {[
+                                                {
+                                                    value: 'mifflin_1990',
+                                                    label: 'Mifflin-St Jeor 1990',
+                                                    desc: 'Padrão-ouro atual para indivíduos saudáveis e com sobrepeso/obesidade.'
+                                                },
+                                                {
+                                                    value: 'harris_benedict_1919',
+                                                    label: 'Harris-Benedict 1919',
+                                                    desc: 'Equação clássica. Tende a superestimar a TMB em 5-15%.'
+                                                },
+                                                {
+                                                    value: 'harris_benedict_1984',
+                                                    label: 'Harris-Benedict 1984',
+                                                    desc: 'Revisão da original. Boa para histórico comparativo.'
+                                                },
+                                                {
+                                                    value: 'henry_rees_1991',
+                                                    label: 'Henry & Rees 1991',
+                                                    desc: 'Específica para populações de zonas tropicais (climas quentes).'
+                                                },
+                                                {
+                                                    value: 'tinsley_2018_weight',
+                                                    label: 'Tinsley 2018 (Peso)',
+                                                    desc: 'Recente e validada para atletas de força e fisiculturistas.'
+                                                },
+                                                {
+                                                    value: 'katch_mcardle_1996',
+                                                    label: 'Katch-McArdle 1996',
+                                                    desc: 'Baseada na Massa Livre de Gordura (MLG). Essencial para atletas.'
+                                                },
+                                                {
+                                                    value: 'cunningham_1980',
+                                                    label: 'Cunningham 1980',
+                                                    desc: 'Foca no tecido metabolicamente ativo. Para endurance/força.'
+                                                },
+                                                {
+                                                    value: 'tinsley_2018_lbm',
+                                                    label: 'Tinsley 2018 (Massa Magra)',
+                                                    desc: 'Alta precisão para musculação/physique usando composição corporal.'
+                                                },
+                                                {
+                                                    value: 'fao_who_2004',
+                                                    label: 'FAO/WHO 2004',
+                                                    desc: 'Robusta para crianças, adolescentes e idosos.'
+                                                },
+                                                {
+                                                    value: 'eer_iom_2005',
+                                                    label: 'EER/IOM 2005',
+                                                    desc: 'D.R.I. Calcula o Gasto Energético Total diretamente.'
+                                                },
+                                                {
+                                                    value: 'eer_iom_2023',
+                                                    label: 'EER/IOM 2023',
+                                                    desc: 'Atualização mais recente das DRIs.'
+                                                },
+                                            ].map((option) => (
+                                                <div key={option.value} className="relative group/item w-full">
+                                                    <DropdownMenuItem
+                                                        onClick={() => setCalculationMethod(option.value as any)}
+                                                        className="flex flex-col items-start py-2.5 px-4 cursor-pointer focus:bg-primary/10 w-full"
+                                                    >
+                                                        <div className="flex flex-col w-full gap-0.5">
+                                                            <span className="text-sm font-medium">{option.label}</span>
+                                                            <span className="text-[10px] text-muted-foreground opacity-70 group-hover/item:opacity-100 transition-opacity leading-tight max-w-[240px]">
+                                                                {option.desc}
+                                                            </span>
+                                                        </div>
+                                                    </DropdownMenuItem>
+                                                </div>
+                                            ))}
+                                        </Selector>
+
+                                        <Selector
+                                            icon={Dna}
+                                            label={
+                                                dietType === 'personalizada'
+                                                    ? 'DIETA PERSONALIZADA'
+                                                    : (DIET_TYPE_MACROS[dietType]?.label || 'ESTRATÉGIA').toUpperCase()
+                                            }
+                                            subLabel={
+                                                dietType === 'personalizada'
+                                                    ? `60/25/15%`
+                                                    : `${DIET_TYPE_MACROS[dietType]?.carbs}/${DIET_TYPE_MACROS[dietType]?.protein}/${DIET_TYPE_MACROS[dietType]?.fats}%`
+                                            }
+                                        >
+                                            {[
+                                                { key: 'normocalorica', desc: 'Equilíbrio padrão. Ideal para manutenção e saúde geral.' },
+                                                { key: 'low_carb', desc: 'Redução de carboidratos. Foco em controle glicêmico e peso.' },
+                                                { key: 'high_carb', desc: 'Alto carboidrato. Ideal para atletas de endurance e alta performance.' },
+                                                { key: 'cetogenica', desc: 'Carboidratos mínimos (<50g). Induz cetose para queima de gordura.' },
+                                                { key: 'hiperproteica', desc: 'Foco em proteínas. Ótima para ganho de massa e saciedade.' },
+                                                { key: 'mediterranea', desc: 'Foco em gorduras saudáveis, azeite, castanhas e vegetais.' },
+                                                { key: 'vegetariana', desc: 'Sem carnes. Baseada em vegetais, ovos e laticínios.' },
+                                                { key: 'vegana', desc: 'Estrita. Zero produtos de origem animal.' },
+                                                { key: 'sem_gluten', desc: 'Exclusão de trigo/glúten. Para celíacos ou sensibilidade.' },
+                                            ].map((option) => {
+                                                const data = DIET_TYPE_MACROS[option.key as DietType];
+                                                if (!data) return null;
+                                                return (
+                                                    <div key={option.key} className="relative group/item w-full">
+                                                        <DropdownMenuItem
+                                                            onClick={() => setDietType(option.key as DietType)}
+                                                            className="flex flex-col items-start py-2.5 px-4 cursor-pointer focus:bg-primary/10 w-full"
+                                                        >
+                                                            <div className="flex items-center justify-between w-full">
+                                                                <span className="text-sm font-medium">{data.label}</span>
+                                                                <Badge variant="outline" className="text-[9px] opacity-60 ml-2 border-border/50">
+                                                                    {data.carbs}/{data.protein}/{data.fats}%
+                                                                </Badge>
+                                                            </div>
+                                                            <span className="text-[10px] text-muted-foreground opacity-70 group-hover/item:opacity-100 transition-opacity leading-tight max-w-[240px mt-0.5">
+                                                                {option.desc}
+                                                            </span>
+                                                        </DropdownMenuItem>
+                                                    </div>
+                                                )
+                                            })}
+
+                                            <div className="relative group/item w-full">
+                                                <DropdownMenuItem onClick={() => setDietType('personalizada')} className="flex flex-col items-start py-2.5 px-4 cursor-pointer focus:bg-primary/10 w-full">
+                                                    <div className="flex items-center justify-between w-full">
+                                                        <span className="text-sm font-medium">Personalizada</span>
+                                                    </div>
+                                                    <span className="text-[10px] text-muted-foreground opacity-70 group-hover/item:opacity-100 transition-opacity leading-tight max-w-[240px] mt-0.5">
+                                                        Defina manualmente suas metas de macros.
+                                                    </span>
+                                                </DropdownMenuItem>
+                                            </div>
+                                        </Selector>
+                                    </div>
+
+                                    <Button variant="outline" size="sm" className="h-8 gap-2 rounded-xl text-[10px] uppercase tracking-widest text-muted-foreground border-border/50 hover:border-amber-500/40 transition-all">
+                                        <FileText className="h-3.5 w-3.5 text-amber-500" />
+                                        Exportar PDF
+                                    </Button>
+                                    <Button variant="outline" size="sm" className="h-8 gap-2 rounded-xl text-[10px] uppercase tracking-widest text-muted-foreground border-border/50 hover:border-primary/40 transition-all">
+                                        <Smartphone className="h-3.5 w-3.5 text-primary" />
+                                        Enviar App
+                                    </Button>
                                 </div>
                             </div>
 
-                            <div className="flex flex-wrap items-center gap-5">
-                                <span className="flex items-center gap-2 text-subtitle">
+                            <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+                                <span className="flex items-center gap-2 text-subtitle whitespace-nowrap">
                                     <Target className="h-4 w-4 text-primary" />
                                     <span className="uppercase tracking-wider text-[11px]">{patient?.goal || 'Objetivo'}</span>
                                 </span>
                                 <span className="w-1.5 h-1.5 rounded-full bg-border" />
-                                <span className="text-emerald-500 text-xs uppercase tracking-tight">Adesão Presumida: 90%</span>
-                            </div>
-                        </div>
-
-                        {/* Actions & Strategies */}
-                        <div className="flex flex-col items-end gap-3 w-full md:w-auto mb-2">
-                            {/* Buttons */}
-                            <div className="flex gap-2">
-                                <Button variant="outline" size="sm" className="h-8 gap-2 rounded-xl text-[10px] uppercase tracking-widest text-muted-foreground border-border/50 hover:border-amber-500/40 transition-all">
-                                    <FileText className="h-3.5 w-3.5 text-amber-500" />
-                                    Exportar PDF
-                                </Button>
-                                <Button variant="outline" size="sm" className="h-8 gap-2 rounded-xl text-[10px] uppercase tracking-widest text-muted-foreground border-border/50 hover:border-primary/40 transition-all">
-                                    <Smartphone className="h-3.5 w-3.5 text-primary" />
-                                    Enviar App
-                                </Button>
+                                <span className="text-emerald-500 text-xs uppercase tracking-tight whitespace-nowrap">Status: Ativo</span>
+                                <span className="w-1.5 h-1.5 rounded-full bg-border" />
+                                <span className="text-primary text-xs uppercase tracking-tight whitespace-nowrap">IMC: {patient?.weight && patient?.height ? (patient.weight / (patient.height * patient.height)).toFixed(1) : '--'}</span>
                             </div>
 
-                            {/* Selectors */}
-                            <div className="flex gap-2">
-                                <Selector
-                                    icon={Utensils}
-                                    label={
-                                        {
-                                            'harris_benedict_1919': 'Harris-Benedict 1919',
-                                            'harris_benedict_1984': 'Harris-Benedict 1984',
-                                            'harris_benedict': 'Harris-Benedict 1984',
-                                            'mifflin_1990': 'Mifflin-St Jeor 1990',
-                                            'mifflin': 'Mifflin-St Jeor 1990',
-                                            'henry_rees_1991': 'Henry & Rees 1991',
-                                            'tinsley_2018_weight': 'Tinsley 2018 (Peso)',
-                                            'katch_mcardle_1996': 'Katch-McArdle 1996',
-                                            'cunningham_1980': 'Cunningham 1980',
-                                            'cunningham': 'Cunningham 1980',
-                                            'tinsley_2018_lbm': 'Tinsley 2018 (Massa Magra)',
-                                            'fao_who_2004': 'FAO/WHO 2004',
-                                            'eer_iom_2005': 'EER/IOM 2005',
-                                            'eer_iom_2023': 'EER/IOM 2023',
-                                        }[calculationMethod] || 'Mifflin-St Jeor 1990'
-                                    }
-                                >
-                                    {[
-                                        {
-                                            value: 'mifflin_1990',
-                                            label: 'Mifflin-St Jeor 1990',
-                                            desc: 'Padrão-ouro atual para indivíduos saudáveis e com sobrepeso/obesidade.'
-                                        },
-                                        {
-                                            value: 'harris_benedict_1919',
-                                            label: 'Harris-Benedict 1919',
-                                            desc: 'Equação clássica. Tende a superestimar a TMB em 5-15%.'
-                                        },
-                                        {
-                                            value: 'harris_benedict_1984',
-                                            label: 'Harris-Benedict 1984',
-                                            desc: 'Revisão da original. Boa para histórico comparativo.'
-                                        },
-                                        {
-                                            value: 'henry_rees_1991',
-                                            label: 'Henry & Rees 1991',
-                                            desc: 'Específica para populações de zonas tropicais (climas quentes).'
-                                        },
-                                        {
-                                            value: 'tinsley_2018_weight',
-                                            label: 'Tinsley 2018 (Peso)',
-                                            desc: 'Recente e validada para atletas de força e fisiculturistas.'
-                                        },
-                                        {
-                                            value: 'katch_mcardle_1996',
-                                            label: 'Katch-McArdle 1996',
-                                            desc: 'Baseada na Massa Livre de Gordura (MLG). Essencial para atletas.'
-                                        },
-                                        {
-                                            value: 'cunningham_1980',
-                                            label: 'Cunningham 1980',
-                                            desc: 'Foca no tecido metabolicamente ativo. Para endurance/força.'
-                                        },
-                                        {
-                                            value: 'tinsley_2018_lbm',
-                                            label: 'Tinsley 2018 (Massa Magra)',
-                                            desc: 'Alta precisão para musculação/physique usando composição corporal.'
-                                        },
-                                        {
-                                            value: 'fao_who_2004',
-                                            label: 'FAO/WHO 2004',
-                                            desc: 'Robusta para crianças, adolescentes e idosos.'
-                                        },
-                                        {
-                                            value: 'eer_iom_2005',
-                                            label: 'EER/IOM 2005',
-                                            desc: 'D.R.I. Calcula o Gasto Energético Total diretamente.'
-                                        },
-                                        {
-                                            value: 'eer_iom_2023',
-                                            label: 'EER/IOM 2023',
-                                            desc: 'Atualização mais recente das DRIs.'
-                                        },
-                                    ].map((option) => (
-                                        <div key={option.value} className="relative group/item w-full">
-                                            <DropdownMenuItem
-                                                onClick={() => setCalculationMethod(option.value as any)}
-                                                className="flex flex-col items-start py-2.5 px-4 cursor-pointer focus:bg-primary/10 w-full"
-                                            >
-                                                <div className="flex flex-col w-full gap-0.5">
-                                                    <span className="text-sm font-medium">{option.label}</span>
-                                                    <span className="text-[10px] text-muted-foreground opacity-70 group-hover/item:opacity-100 transition-opacity leading-tight max-w-[240px]">
-                                                        {option.desc}
-                                                    </span>
-                                                </div>
-                                            </DropdownMenuItem>
-                                        </div>
-                                    ))}
-                                </Selector>
-
-                                <Selector
-                                    icon={Dna}
-                                    label={
-                                        dietType === 'personalizada'
-                                            ? 'DIETA PERSONALIZADA'
-                                            : (DIET_TYPE_MACROS[dietType]?.label || 'ESTRATÉGIA').toUpperCase()
-                                    }
-                                    subLabel={
-                                        dietType === 'personalizada'
-                                            ? `60/25/15%`
-                                            : `${DIET_TYPE_MACROS[dietType]?.carbs}/${DIET_TYPE_MACROS[dietType]?.protein}/${DIET_TYPE_MACROS[dietType]?.fats}%`
-                                    }
-                                >
-                                    {[
-                                        { key: 'normocalorica', desc: 'Equilíbrio padrão. Ideal para manutenção e saúde geral.' },
-                                        { key: 'low_carb', desc: 'Redução de carboidratos. Foco em controle glicêmico e peso.' },
-                                        { key: 'high_carb', desc: 'Alto carboidrato. Ideal para atletas de endurance e alta performance.' },
-                                        { key: 'cetogenica', desc: 'Carboidratos mínimos (<50g). Induz cetose para queima de gordura.' },
-                                        { key: 'hiperproteica', desc: 'Foco em proteínas. Ótima para ganho de massa e saciedade.' },
-                                        { key: 'mediterranea', desc: 'Foco em gorduras saudáveis, azeite, castanhas e vegetais.' },
-                                        { key: 'vegetariana', desc: 'Sem carnes. Baseada em vegetais, ovos e laticínios.' },
-                                        { key: 'vegana', desc: 'Estrita. Zero produtos de origem animal.' },
-                                        { key: 'sem_gluten', desc: 'Exclusão de trigo/glúten. Para celíacos ou sensibilidade.' },
-                                    ].map((option) => {
-                                        const data = DIET_TYPE_MACROS[option.key as DietType];
-                                        if (!data) return null;
-                                        return (
-                                            <div key={option.key} className="relative group/item w-full">
-                                                <DropdownMenuItem
-                                                    onClick={() => setDietType(option.key as DietType)}
-                                                    className="flex flex-col items-start py-2.5 px-4 cursor-pointer focus:bg-primary/10 w-full"
-                                                >
-                                                    <div className="flex items-center justify-between w-full">
-                                                        <span className="text-sm font-medium">{data.label}</span>
-                                                        <Badge variant="outline" className="text-[9px] opacity-60 ml-2 border-border/50">
-                                                            {data.carbs}/{data.protein}/{data.fats}%
-                                                        </Badge>
-                                                    </div>
-                                                    <span className="text-[10px] text-muted-foreground opacity-70 group-hover/item:opacity-100 transition-opacity leading-tight max-w-[240px mt-0.5">
-                                                        {option.desc}
-                                                    </span>
-                                                </DropdownMenuItem>
-                                            </div>
-                                        )
-                                    })}
-
-                                    <div className="relative group/item w-full">
-                                        <DropdownMenuItem onClick={() => setDietType('personalizada')} className="flex flex-col items-start py-2.5 px-4 cursor-pointer focus:bg-primary/10 w-full">
-                                            <div className="flex items-center justify-between w-full">
-                                                <span className="text-sm font-medium">Personalizada</span>
-                                            </div>
-                                            <span className="text-[10px] text-muted-foreground opacity-70 group-hover/item:opacity-100 transition-opacity leading-tight max-w-[240px] mt-0.5">
-                                                Defina manualmente suas metas de macros.
-                                            </span>
-                                        </DropdownMenuItem>
-                                    </div>
-                                </Selector>
+                            <div className="flex flex-wrap gap-2.5 pt-1">
+                                <Badge variant="outline" className="text-muted-foreground bg-background/50 px-3 h-7 border-border/40 whitespace-nowrap">
+                                    {patient?.age || '--'} {patient?.age ? 'anos' : ''}
+                                </Badge>
+                                <Badge variant="outline" className="text-muted-foreground bg-background/50 px-3 h-7 border-border/40 whitespace-nowrap">
+                                    {patient?.weight || '--'} kg
+                                </Badge>
+                                <Badge variant="outline" className="text-muted-foreground bg-background/50 px-3 h-7 border-border/40 whitespace-nowrap">
+                                    {patient?.height ? `${Math.round(patient.height * 100)} cm` : '--'}
+                                </Badge>
                             </div>
                         </div>
                     </div>
 
-                    {/* ROW 2: Metabolic Dashboard */}
-                    <Card variant="glass" className="py-5 px-6 flex flex-col lg:flex-row items-center gap-8 shadow-xl">
-
-                        {/* Metabolic Targets */}
-                        <div className="flex items-center gap-10 px-4 lg:border-r border-border/20">
-                            <MetricBox label="TMB" value={Math.round(tmb)} unit="kcal" icon={Activity} iconColor="text-emerald-500" />
-                            <MetricBox label="GCD" value={Math.round(get)} unit="kcal" icon={Flame} iconColor="text-red-500" />
-                            <MetricBox label="META" value={targetCalories} unit="kcal" icon={Target} highlight />
-                        </div>
-
-                        {/* Activity Selector */}
-                        <div className="lg:border-r border-border/20 px-4">
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <button className="flex flex-col items-start gap-1 p-2.5 rounded-xl hover:bg-primary/5 transition-all group border border-transparent hover:border-primary/20">
-                                        <span className="text-data-label">Nível de Atividade</span>
-                                        <div className="flex items-center gap-2 mt-0.5">
-                                            <Activity className="h-5 w-5 text-emerald-500 group-hover:scale-110 transition-transform" />
-                                            <span className="text-base text-foreground">
-                                                {ACTIVITY_LEVELS.find(l => l.value === activityLevel)?.label || activityLevel}
-                                            </span>
-                                            <ChevronDown className="h-3.5 w-3.5 opacity-30" />
-                                        </div>
-                                    </button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent className="p-1">
-                                    {ACTIVITY_LEVELS.map(level => (
-                                        <DropdownMenuItem key={level.value} onClick={() => setActivityLevel(level.value)} className="py-2.5 px-4 cursor-pointer focus:bg-primary/10">
-                                            {level.label}
-                                        </DropdownMenuItem>
-                                    ))}
-                                </DropdownMenuContent>
-                            </DropdownMenu>
-                        </div>
-
-                        {/* Live Macro Monitor */}
-                        <div className="flex-1 w-full grid grid-cols-2 sm:grid-cols-4 gap-6 px-2">
-                            <MacroMonitor data={proteinData} color="bg-emerald-500" textColor="text-emerald-500" />
-                            <MacroMonitor data={carbsData} color="bg-blue-500" textColor="text-blue-500" />
-                            <MacroMonitor data={fatsData} color="bg-orange-500" textColor="text-orange-500" />
-                            <MacroMonitor data={fiberData} color="bg-purple-500" textColor="text-purple-500" />
-                        </div>
-
-                    </Card>
 
                 </div>
-
-                {/* HUB NAVIGATION AREA */}
-                <div className="absolute bottom-0 left-0 w-full z-50 flex justify-center -mb-7">
-                    <HubNavigation />
-                </div>
-
-                {isCommandPaletteOpen && (
-                    <NavigationCommandPalette
-                        isOpen={isCommandPaletteOpen}
-                        onClose={() => setIsCommandPaletteOpen(false)}
-                    />
-                )}
             </div>
+
+            {/* ROW 2: Metabolic Dashboard */}
+            <Card variant="glass" className="w-full max-w-[1600px] mx-auto py-5 px-6 flex flex-col lg:flex-row items-center gap-8 shadow-xl">
+
+                {/* Metabolic Targets */}
+                <div className="flex items-center gap-10 px-4 lg:border-r border-border/20">
+                    <MetricBox label="TMB" value={Math.round(tmb)} unit="kcal" icon={Activity} iconColor="text-emerald-500" />
+                    <MetricBox label="GCD" value={Math.round(get)} unit="kcal" icon={Flame} iconColor="text-red-500" />
+                    <MetricBox label="META" value={targetCalories} unit="kcal" icon={Target} highlight />
+                </div >
+
+                {/* Activity Selector */}
+                < div className="lg:border-r border-border/20 px-4" >
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <button className="flex flex-col items-start gap-1 p-2.5 rounded-xl hover:bg-primary/5 transition-all group border border-transparent hover:border-primary/20">
+                                <span className="text-data-label">Nível de Atividade</span>
+                                <div className="flex items-center gap-2 mt-0.5">
+                                    <Activity className="h-5 w-5 text-emerald-500 group-hover:scale-110 transition-transform" />
+                                    <span className="text-base text-foreground">
+                                        {ACTIVITY_LEVELS.find(l => l.value === activityLevel)?.label || activityLevel}
+                                    </span>
+                                    <ChevronDown className="h-3.5 w-3.5 opacity-30" />
+                                </div>
+                            </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent className="p-1">
+                            {ACTIVITY_LEVELS.map(level => (
+                                <DropdownMenuItem key={level.value} onClick={() => setActivityLevel(level.value)} className="py-2.5 px-4 cursor-pointer focus:bg-primary/10">
+                                    {level.label}
+                                </DropdownMenuItem>
+                            ))}
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                </div >
+
+                {/* Live Macro Monitor */}
+                < div className="flex-1 w-full grid grid-cols-2 sm:grid-cols-4 gap-6 px-2" >
+                    <MacroMonitor data={proteinData} color="bg-emerald-500" textColor="text-emerald-500" />
+                    <MacroMonitor data={carbsData} color="bg-blue-500" textColor="text-blue-500" />
+                    <MacroMonitor data={fatsData} color="bg-orange-500" textColor="text-orange-500" />
+                    <MacroMonitor data={fiberData} color="bg-purple-500" textColor="text-purple-500" />
+                </div >
+            </Card >
+
+            {/* HUB NAVIGATION AREA */}
+            < div className="absolute bottom-0 left-0 w-full z-50 flex justify-center -mb-7 translate-y-[24px]" >
+                <HubNavigation />
+            </div >
+
+            {isCommandPaletteOpen && (
+                <NavigationCommandPalette
+                    isOpen={isCommandPaletteOpen}
+                    onClose={() => setIsCommandPaletteOpen(false)}
+                />
+            )
+            }
         </>
     )
 }
@@ -471,7 +549,7 @@ function Selector({ icon: Icon, label, subLabel, children }: any) {
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
-                <button className="flex items-center gap-3 px-4 py-2 rounded-xl glass-card border border-border/50 hover:border-primary/40 transition-all group min-w-40">
+                <button className="flex items-center gap-3 px-4 py-2 rounded-xl glass-card border border-border/50 hover:border-primary/40 transition-all group min-w-40 h-[42px]">
                     <Icon className="h-4 w-4 text-primary group-hover:scale-110 transition-transform shrink-0" />
                     <div className="flex flex-col items-start min-w-0">
                         <span className="text-[10px] text-muted-foreground group-hover:text-foreground transition-colors truncate w-full uppercase tracking-tighter">
@@ -540,7 +618,7 @@ function MacroMonitor({ data, color, textColor }: any) {
 }
 
 // --- CIRCULAR CHART COMPONENT ---
-function CircularMacroChart({ totals, targets, targetCalories }: any) {
+function CircularMacroChart({ totals, targets, targetCalories, hideText }: any) {
     const size = 130
     const strokeWidth = 12
     const center = size / 2
@@ -587,15 +665,17 @@ function CircularMacroChart({ totals, targets, targetCalories }: any) {
                 </div>
             </div>
 
-            <div className="flex flex-col min-w-[120px]">
-                <div className="space-y-0.5">
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-widest">Total Calórico</p>
-                    <div className="flex items-baseline gap-2">
-                        <span className="text-4xl text-foreground tabular-nums leading-none">{Math.round(totals.calories)}</span>
-                        <span className="text-sm text-muted-foreground opacity-50 tracking-tighter">/ {targetCalories}</span>
+            {!hideText && (
+                <div className="flex flex-col min-w-[120px]">
+                    <div className="space-y-0.5">
+                        <p className="text-[10px] text-muted-foreground uppercase tracking-widest">Total Calórico</p>
+                        <div className="flex items-baseline gap-2">
+                            <span className="text-4xl text-foreground tabular-nums leading-none">{Math.round(totals.calories)}</span>
+                            <span className="text-sm text-muted-foreground opacity-50 tracking-tighter">/ {targetCalories}</span>
+                        </div>
                     </div>
                 </div>
-            </div>
+            )}
         </div>
     )
 }

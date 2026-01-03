@@ -75,6 +75,11 @@ class PatientProfile(models.Model):
     is_active = models.BooleanField(default=True)
 
 
+    @property
+    def active_evaluation(self):
+        """Retorna a avaliação mais recente do paciente para pegar peso/altura atuais."""
+        return self.evaluations.first()
+
     class Meta:
         db_table = "patient_profiles"
         ordering = ['-created_at'] # Adicionado para ordenação padrão

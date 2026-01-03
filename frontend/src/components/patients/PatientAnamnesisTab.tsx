@@ -17,6 +17,18 @@ interface PatientAnamnesisTabProps {
 type ViewState = 'LIST' | 'CREATE_TEMPLATE' | 'FILL_STANDARD' | 'FILL_CUSTOM'
 
 export function PatientAnamnesisTab({ patientId, patient }: PatientAnamnesisTabProps) {
+    // Função para calcular idade com base na data de nascimento
+    const calculateAge = (birthDate?: string): number => {
+        if (!birthDate) return 0
+        const today = new Date()
+        const birth = new Date(birthDate)
+        let age = today.getFullYear() - birth.getFullYear()
+        const monthDiff = today.getMonth() - birth.getMonth()
+        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+            age--
+        }
+        return age
+    }
     const [view, setView] = useState<ViewState>('LIST')
     const [selectedTemplate, setSelectedTemplate] = useState<AnamnesisTemplate | null>(null)
     const queryClient = useQueryClient()
@@ -84,25 +96,13 @@ export function PatientAnamnesisTab({ patientId, patient }: PatientAnamnesisTabP
 
         if (!patient) return undefined
 
-        // Calcular idade
-        let idade = null
-        if (patient.birth_date) {
-            const today = new Date()
-            const birth = new Date(patient.birth_date)
-            idade = today.getFullYear() - birth.getFullYear()
-            const monthDiff = today.getMonth() - birth.getMonth()
-            if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
-                idade--
-            }
-        }
-
         return {
             nome: patient.name,
             email: patient.email,
             telefone: patient.phone || "",
             sexo: patient.gender === "F" ? "Feminino" : patient.gender === "M" ? "Masculino" : "",
             nascimento: patient.birth_date || "",
-            idade: idade,
+            idade: calculateAge(patient.birth_date),
         }
     }
 
@@ -112,6 +112,37 @@ export function PatientAnamnesisTab({ patientId, patient }: PatientAnamnesisTabP
 
     return (
         <div className="min-h-[600px] relative">
+            {/* Exibir informações do paciente */}
+            <div className="mb-6 p-4 bg-background/40 rounded-xl border border-border/10">
+                <div className="flex items-center gap-4">
+                    <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 border-2 border-background shadow-lg overflow-hidden flex items-center justify-center">
+                        {patient?.avatar ? (
+                            <img
+                                src={patient.avatar}
+                                alt={patient.name}
+                                className="w-full h-full object-cover"
+                            />
+                        ) : (
+                            <span className="text-xl text-muted-foreground">
+                                {patient?.name?.substring(0, 2).toUpperCase() || 'P'}
+                            </span>
+                        )}
+                    </div>
+                    <div>
+                        <h3 className="text-lg font-medium">{patient?.name || 'Paciente'}</h3>
+                        <p className="text-sm text-muted-foreground">{patient?.goal || 'Objetivo não definido'}</p>
+                        <div className="flex gap-4 mt-1">
+                            <span className="text-xs text-muted-foreground">
+                                {patient?.gender === 'M' ? 'Masculino' : patient?.gender === 'F' ? 'Feminino' : 'Gênero não especificado'}
+                            </span>
+                            <span className="text-xs text-muted-foreground">
+                                {patient?.birth_date ? `${calculateAge(patient.birth_date)} anos` : 'Idade não informada'}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             {view === 'LIST' && (
                 <TemplateList
                     templates={templates || []}

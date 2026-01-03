@@ -17,6 +17,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 import api from '@/services/api';
+import { IconWrapper } from '@/components/ui/IconWrapper';
 
 interface GoogleCalendarIntegration {
   id: string;
@@ -201,10 +202,13 @@ const GoogleCalendarIntegration = () => {
   return (
     <Card>
       <CardHeader>
-        <div className="flex items-center gap-3">
-          <div className="bg-blue-500 p-2 rounded-lg">
-            <Calendar className="h-6 w-6 text-white" />
-          </div>
+        <div className="flex items-center gap-4">
+          <IconWrapper
+            icon={Calendar}
+            variant="blue"
+            size="xl"
+            className="ring-4 ring-background border border-white/10 dark:border-white/20 shadow-md"
+          />
           <div>
             <CardTitle>Google Calendar</CardTitle>
             <CardDescription>

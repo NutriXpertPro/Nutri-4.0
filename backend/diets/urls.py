@@ -18,5 +18,11 @@ urlpatterns = [
     # Food Items
     path('food-items/', views.FoodItemViewSet.as_view({'get': 'list', 'post': 'create'}), name='fooditem-list'),
     path('food-items/<int:pk>/', views.FoodItemViewSet.as_view({'get': 'retrieve', 'patch': 'partial_update', 'delete': 'destroy'}), name='fooditem-detail'),
+    # Meal Presets
+    path('meal-presets/', views.MealPresetViewSet.as_view({'get': 'list', 'post': 'create'}), name='meal-preset-list'),
+    path('meal-presets/<int:pk>/', views.MealPresetViewSet.as_view({'get': 'retrieve', 'patch': 'partial_update', 'delete': 'destroy'}), name='meal-preset-detail'),
+    # Default Presets
+    path('default-presets/', views.DefaultPresetViewSet.as_view({'get': 'list', 'post': 'create'}), name='default-preset-list'),
+    path('default-presets/<int:pk>/', views.DefaultPresetViewSet.as_view({'get': 'retrieve', 'patch': 'partial_update', 'delete': 'destroy'}), name='default-preset-detail'),
 ]
 

@@ -22,10 +22,11 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
-import { Loader2 } from "lucide-react"
+import { Loader2, Camera, X } from "lucide-react"
 import { usePatients } from "@/hooks/usePatients"
 import { toast } from "@/components/ui/use-toast"
 import { useRouter } from "next/navigation"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 const formSchema = z.object({
     name: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
@@ -51,11 +52,12 @@ interface EditPatientDialogProps {
         gender?: string
         goal?: string
         service_type?: "ONLINE" | "PRESENCIAL"
+        avatar?: string
     }
 }
 
 export function EditPatientDialog({ open, onOpenChange, patient }: EditPatientDialogProps) {
-    const { updatePatient } = usePatients()
+    const { updatePatient, deletePatient } = usePatients()
     const router = useRouter()
     const [isLoading, setIsLoading] = React.useState(false)
 
@@ -68,8 +70,11 @@ export function EditPatientDialog({ open, onOpenChange, patient }: EditPatientDi
         birth_date: patient.birth_date || "",
         gender: patient.gender || "F",
         goal: patient.goal || "",
-        service_type: patient.service_type || "ONLINE"
+        service_type: patient.service_type || "ONLINE",
+        profile_picture: null as File | null,
     })
+    const fileInputRef = React.useRef<HTMLInputElement>(null)
+    const [previewUrl, setPreviewUrl] = React.useState<string | null>(patient.avatar || null)
 
     // Update form data when patient changes
     React.useEffect(() => {
@@ -81,13 +86,27 @@ export function EditPatientDialog({ open, onOpenChange, patient }: EditPatientDi
                 birth_date: patient.birth_date || "",
                 gender: patient.gender || "F",
                 goal: patient.goal || "",
-                service_type: patient.service_type || "ONLINE"
+                service_type: patient.service_type || "ONLINE",
+                profile_picture: null,
             })
+            setPreviewUrl(patient.avatar || null)
         }
     }, [open, patient])
 
-    const handleChange = (field: string, value: string) => {
+    const handleChange = (field: string, value: any) => {
         setFormData(prev => ({ ...prev, [field]: value }))
+    }
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0]
+        if (file) {
+            handleChange("profile_picture", file)
+            const reader = new FileReader()
+            reader.onloadend = () => {
+                setPreviewUrl(reader.result as string)
+            }
+            reader.readAsDataURL(file)
+        }
     }
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -119,97 +138,188 @@ export function EditPatientDialog({ open, onOpenChange, patient }: EditPatientDi
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[600px]">
-                <DialogHeader>
+            <DialogContent className="sm:max-w-[600px] max-h-[90vh] flex flex-col p-0 overflow-hidden">
+                <DialogHeader className="p-6 pb-2">
                     <DialogTitle>Editar Paciente</DialogTitle>
                     <DialogDescription>
                         Faça alterações no perfil do paciente aqui. Clique em salvar quando terminar.
                     </DialogDescription>
                 </DialogHeader>
-                <form onSubmit={handleSubmit}>
-                    <div className="grid gap-4 py-4">
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-2 col-span-2">
-                                <Label htmlFor="name">Nome Completo</Label>
-                                <Input
-                                    id="name"
-                                    value={formData.name}
-                                    onChange={(e) => handleChange("name", e.target.value)}
-                                    required
+                <form onSubmit={handleSubmit} className="flex flex-col overflow-hidden">
+                    <div className="flex-1 overflow-y-auto px-6 py-4">
+                        <div className="grid gap-6">
+                            {/* Foto do Paciente */}
+                            <div className="flex flex-col items-center gap-4 py-2">
+                                <div className="relative group">
+                                    <Avatar className="h-28 w-28 border-2 border-primary/20 bg-muted/30 shadow-md overflow-hidden">
+                                        <AvatarImage src={previewUrl || ""} className="h-full w-full object-cover" />
+                                        <AvatarFallback className="text-2xl font-bold bg-primary/5 text-primary">
+                                            {formData.name.substring(0, 2).toUpperCase()}
+                                        </AvatarFallback>
+                                    </Avatar>
+                                    <Button
+                                        type="button"
+                                        size="icon"
+                                        variant="secondary"
+                                        className="absolute -bottom-1 -right-1 h-8 w-8 rounded-full shadow-lg border-2 border-background"
+                                        onClick={() => fileInputRef.current?.click()}
+                                    >
+                                        <Camera className="h-4 w-4" />
+                                    </Button>
+                                    {previewUrl && (
+                                        <Button
+                                            type="button"
+                                            size="icon"
+                                            variant="destructive"
+                                            className="absolute -top-1 -right-1 h-6 w-6 rounded-full shadow-lg border-2 border-background"
+                                            onClick={() => {
+                                                setPreviewUrl(null)
+                                                handleChange("profile_picture", null)
+                                            }}
+                                        >
+                                            <X className="h-3 w-3" />
+                                        </Button>
+                                    )}
+                                </div>
+                                <input
+                                    type="file"
+                                    ref={fileInputRef}
+                                    className="hidden"
+                                    accept="image/*"
+                                    onChange={handleFileChange}
                                 />
+                                <p className="text-[10px] text-muted-foreground uppercase tracking-widest">Clique para alterar a foto</p>
                             </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="email">Email</Label>
-                                <Input
-                                    id="email"
-                                    type="email"
-                                    value={formData.email}
-                                    onChange={(e) => handleChange("email", e.target.value)}
-                                    required
-                                />
+
+                            <div className="grid gap-4">
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-2 col-span-2">
+                                        <Label htmlFor="name">Nome Completo</Label>
+                                        <Input
+                                            id="name"
+                                            value={formData.name}
+                                            onChange={(e) => handleChange("name", e.target.value)}
+                                            required
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="email">Email</Label>
+                                        <Input
+                                            id="email"
+                                            type="email"
+                                            value={formData.email}
+                                            onChange={(e) => handleChange("email", e.target.value)}
+                                            required
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="phone">Telefone</Label>
+                                        <Input
+                                            id="phone"
+                                            value={formData.phone}
+                                            onChange={(e) => handleChange("phone", e.target.value)}
+                                            required
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="birth_date">Data de Nascimento</Label>
+                                        <Input
+                                            id="birth_date"
+                                            type="date"
+                                            value={formData.birth_date}
+                                            onChange={(e) => handleChange("birth_date", e.target.value)}
+                                            required
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="gender">Gênero</Label>
+                                        <Select
+                                            value={formData.gender}
+                                            onValueChange={(value) => handleChange("gender", value)}
+                                        >
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Selecione" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="F">Feminino</SelectItem>
+                                                <SelectItem value="M">Masculino</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    <div className="space-y-2 col-span-2">
+                                        <Label htmlFor="goal">Objetivo Principal</Label>
+                                        <Select
+                                            value={formData.goal}
+                                            onValueChange={(value) => handleChange("goal", value)}
+                                        >
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Selecione o objetivo" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="PERDA_GORDURA">Emagrecimento</SelectItem>
+                                                <SelectItem value="GANHO_MASSA">Hipertrofia</SelectItem>
+                                                <SelectItem value="QUALIDADE_VIDA">Qualidade de Vida</SelectItem>
+                                                <SelectItem value="OUTRO">Outro</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                </div>
                             </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="phone">Telefone</Label>
-                                <Input
-                                    id="phone"
-                                    value={formData.phone}
-                                    onChange={(e) => handleChange("phone", e.target.value)}
-                                    required
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="birth_date">Data de Nascimento</Label>
-                                <Input
-                                    id="birth_date"
-                                    type="date"
-                                    value={formData.birth_date}
-                                    onChange={(e) => handleChange("birth_date", e.target.value)}
-                                    required
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="gender">Gênero</Label>
-                                <Select
-                                    value={formData.gender}
-                                    onValueChange={(value) => handleChange("gender", value)}
+                        </div>
+
+                        <DialogFooter className="p-6 pt-2 border-t bg-muted/5">
+                            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                                Cancelar
+                            </Button>
+                            <Button type="submit" disabled={isLoading}>
+                                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                Salvar Alterações
+                            </Button>
+                        </DialogFooter>
+
+                        <div className="border-t pt-4 mt-4">
+                            <DialogDescription className="text-destructive mb-2 font-semibold">
+                                Zona de Perigo
+                            </DialogDescription>
+                            <div className="flex flex-col gap-2">
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    className="w-full border-red-200 text-red-700 hover:bg-red-50 hover:text-red-900 justify-start"
+                                    onClick={() => {
+                                        if (confirm("Tem certeza que deseja arquivar este paciente? Ele ficará inativo mas os dados serão preservados.")) {
+                                            deletePatient.mutate({ id: patient.id, hardDelete: false }, {
+                                                onSuccess: () => {
+                                                    onOpenChange(false);
+                                                    toast({ title: "Paciente arquivado", description: "O paciente foi movido para inativos." });
+                                                }
+                                            });
+                                        }
+                                    }}
                                 >
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Selecione" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="F">Feminino</SelectItem>
-                                        <SelectItem value="M">Masculino</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <div className="space-y-2 col-span-2">
-                                <Label htmlFor="goal">Objetivo Principal</Label>
-                                <Select
-                                    value={formData.goal}
-                                    onValueChange={(value) => handleChange("goal", value)}
+                                    <span className="mr-2">📁</span> Arquivar Paciente (Reversível)
+                                </Button>
+
+                                <Button
+                                    type="button"
+                                    variant="destructive"
+                                    className="w-full justify-start"
+                                    onClick={() => {
+                                        if (confirm("ATENÇÃO: Tem certeza que deseja EXCLUIR PERMANENTEMENTE este paciente? Todos os dados, incluindo histórico, avaliações e dietas serão apagados. Esta ação NÃO pode ser desfeita.")) {
+                                            deletePatient.mutate({ id: patient.id, hardDelete: true }, {
+                                                onSuccess: () => {
+                                                    onOpenChange(false);
+                                                    toast({ title: "Paciente excluído", description: "Todos os dados foram removidos permanentemente." });
+                                                }
+                                            });
+                                        }
+                                    }}
                                 >
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Selecione o objetivo" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="PERDA_GORDURA">Emagrecimento</SelectItem>
-                                        <SelectItem value="GANHO_MASSA">Hipertrofia</SelectItem>
-                                        <SelectItem value="QUALIDADE_VIDA">Qualidade de Vida</SelectItem>
-                                        <SelectItem value="OUTRO">Outro</SelectItem>
-                                    </SelectContent>
-                                </Select>
+                                    <span className="mr-2">🗑️</span> Excluir Permanentemente
+                                </Button>
                             </div>
                         </div>
                     </div>
-                    <DialogFooter>
-                        <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-                            Cancelar
-                        </Button>
-                        <Button type="submit" disabled={isLoading}>
-                            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            Salvar Alterações
-                        </Button>
-                    </DialogFooter>
                 </form>
             </DialogContent>
         </Dialog>

@@ -3,11 +3,10 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/auth-context";
-import { UserProfileForm } from "@/components/user-profile/UserProfileForm";
+import CombinedSettingsForm from "@/components/settings/CombinedSettingsForm";
 import AutomationSettings from "@/components/automation/AutomationSettings";
-import BrandingSettings from "@/components/branding/BrandingSettings";
 import GoogleCalendarIntegration from "@/components/integrations/GoogleCalendarIntegration";
-import { Settings, User } from "lucide-react";
+import { Settings } from "lucide-react";
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -39,17 +38,10 @@ export default function SettingsPage() {
         </h1>
         <p className="text-muted-foreground">Gerencie suas informações de perfil e preferências.</p>
       </div>
-      <div className="border-b pb-4">
-        <h2 className="text-2xl font-normal mb-4 flex items-center gap-2">
-          <User className="h-6 w-6 text-primary" />
-          Informações do Perfil
-        </h2>
-        <UserProfileForm />
-      </div>
+      {/* Formulário combinado de configurações de perfil e branding */}
+      <CombinedSettingsForm />
       {/* Configurações de automação de mensagens */}
       <AutomationSettings />
-      {/* Configurações de branding */}
-      <BrandingSettings />
       {/* Configurações de integração com Google Calendar */}
       <GoogleCalendarIntegration />
     </div>

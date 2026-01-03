@@ -28,19 +28,19 @@ const quickActions: QuickAction[] = [
     {
         icon: <UtensilsCrossed className="h-4 w-4" />,
         label: "Criar Dieta",
-        href: "/diets/new",
+        href: "/diets/create",
         variant: "secondary",
     },
     {
         icon: <CalendarPlus className="h-4 w-4" />,
         label: "Agendar Consulta",
-        href: "/calendar/new",
+        href: "/calendar",
         variant: "outline",
     },
     {
         icon: <ClipboardPlus className="h-4 w-4" />,
         label: "Nova Anamnese",
-        href: "/anamnesis/new",
+        href: "/anamnesis",
         variant: "outline",
     },
 ]

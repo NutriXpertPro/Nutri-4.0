@@ -28,8 +28,16 @@ export default function LandingPage() {
         <div className="container mx-auto px-6 h-20 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-0 group">
             <Logo />
-            <div className="text-xl font-bold tracking-tighter text-white ml-[-15px]">
-              Nutri<span className="text-emerald-500">Xpert</span>Pro
+            <div className="text-xl font-bold tracking-tighter text-white ml-[-15px] flex items-center">
+              <span className="mr-1" style={{ textShadow: '1px 1px 2px rgba(255,255,255,0.1)' }}>
+                <span style={{ fontSize: '1.3em', textShadow: '1px 1px 2px rgba(255,255,255,0.2)' }}>N</span>utri
+              </span>
+              <span className="text-emerald-500" style={{ textShadow: '1px 1px 2px rgba(255,255,255,0.1)' }}>
+                <span className="text-[1.3em]" style={{ textShadow: '1px 1px 2px rgba(255,255,255,0.2)' }}>X</span>pert
+              </span>
+              <span className="ml-1 text-white" style={{ textShadow: '1px 1px 2px rgba(255,255,255,0.1)' }}>
+                <span className="text-[1.3em]" style={{ textShadow: '1px 1px 2px rgba(255,255,255,0.2)' }}>P</span>ro
+              </span>
             </div>
           </Link>
 
@@ -45,12 +53,15 @@ export default function LandingPage() {
               Sou Paciente
             </Link>
             <div className="h-4 w-px bg-white/10 hidden sm:block"></div>
-            <Link href="/login" className="text-sm font-bold text-neutral-300 hover:text-white transition-colors">
+            <Link
+              href="/auth"
+              className="px-6 py-2.5 text-sm font-bold bg-white text-black rounded-full hover:bg-emerald-400 hover:text-black hover:scale-105 transition-all shadow-lg shadow-white/10"
+            >
               Entrar
             </Link>
             <Link
-              href="/register"
-              className="px-6 py-2.5 text-sm font-bold bg-white text-black rounded-full hover:bg-emerald-400 hover:text-black hover:scale-105 transition-all shadow-lg shadow-white/10"
+              href="/auth?tab=register"
+              className="px-6 py-2.5 text-sm font-medium text-neutral-300 hover:text-white transition-colors"
             >
               Começar Agora
             </Link>
@@ -116,8 +127,16 @@ export default function LandingPage() {
             <div className="col-span-1 md:col-span-2">
               <div className="flex items-center gap-0 mb-6">
                 <Logo />
-                <div className="text-2xl font-bold tracking-tighter text-white ml-[-15px]">
-                  Nutri<span className="text-emerald-500">Xpert</span>Pro
+                <div className="text-2xl font-bold tracking-tighter text-white ml-[-15px] flex items-center">
+                  <span className="mr-1" style={{ textShadow: '1px 1px 2px rgba(255,255,255,0.1)' }}>
+                    <span style={{ fontSize: '1.3em', textShadow: '1px 1px 2px rgba(255,255,255,0.2)' }}>N</span>utri
+                  </span>
+                  <span className="text-emerald-500" style={{ textShadow: '1px 1px 2px rgba(255,255,255,0.1)' }}>
+                    <span className="text-[1.3em]" style={{ textShadow: '1px 1px 2px rgba(255,255,255,0.2)' }}>X</span>pert
+                  </span>
+                  <span className="ml-1 text-white" style={{ textShadow: '1px 1px 2px rgba(255,255,255,0.1)' }}>
+                    <span className="text-[1.3em]" style={{ textShadow: '1px 1px 2px rgba(255,255,255,0.2)' }}>P</span>ro
+                  </span>
                 </div>
               </div>
               <p className="text-neutral-500 max-w-sm mb-6">
@@ -157,7 +176,7 @@ export default function LandingPage() {
 
           <div className="pt-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-neutral-600 text-xs">
-              © 2025 Nutri Xpert Pro. Todos os direitos reservados.
+              © 2025 Nutri <span className="text-emerald-500" style={{ textShadow: '1px 1px 2px rgba(255,255,255,0.1)' }}><span style={{ fontSize: '1.3em', textShadow: '1px 1px 2px rgba(255,255,255,0.2)' }}>X</span>pert</span> Pro. Todos os direitos reservados.
             </p>
             <div className="flex items-center gap-2 text-neutral-600 text-xs">
               <MapPin className="w-3 h-3" /> São Paulo, Brasil

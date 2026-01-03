@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useCallback } from 'react'
+import React, { useState, useCallback, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Search, Star, Clock, Plus, Info, X } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
@@ -107,7 +107,25 @@ export function NutritionPanel() {
                         />
                     ) : searchQuery.length >= 2 ? (
                         <SearchResultsList
-                            results={searchResults?.results || []}
+                            results={(() => {
+                                if (!searchResults?.results) return [];
+                                const term = debouncedQuery.toLowerCase().trim();
+                                return [...searchResults.results].sort((a, b) => {
+                                    const nameA = a.nome.toLowerCase().trim();
+                                    const nameB = b.nome.toLowerCase().trim();
+
+                                    // 1. Exact matches first
+                                    if (nameA === term && nameB !== term) return -1;
+                                    if (nameB === term && nameA !== term) return 1;
+
+                                    // 2. "Starting with" matches second
+                                    if (nameA.startsWith(term) && !nameB.startsWith(term)) return -1;
+                                    if (nameB.startsWith(term) && !nameA.startsWith(term)) return 1;
+
+                                    // 3. Shorter names third (complexity logic)
+                                    return nameA.length - nameB.length;
+                                });
+                            })()}
                             isLoading={isLoading}
                             onSelect={setSelectedFood}
                         />

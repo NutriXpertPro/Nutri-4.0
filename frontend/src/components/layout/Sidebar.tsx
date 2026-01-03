@@ -26,7 +26,7 @@ import {
 
 interface SidebarItem {
     icon: React.ReactNode
-    label: string
+    label: React.ReactNode
     href: string
     badge?: number | string
     badgeVariant?: "default" | "destructive" | "warning"
@@ -41,11 +41,10 @@ interface SidebarProps {
 
 // Mock data - será substituído por dados reais da API
 const mockBadges = {
-    patients: 32,
-    appointments: 8,
-    messages: 3,
-    anamnesis: 2,
-    notifications: 5,
+    patients: 0,
+    appointments: 0,
+    messages: 0,
+    anamnesis: 0,
 }
 
 export function Sidebar({ className, collapsed, onToggle }: SidebarProps) {
@@ -53,9 +52,32 @@ export function Sidebar({ className, collapsed, onToggle }: SidebarProps) {
     // Estado interno caso não seja controlado externamente
     const [internalCollapsed, setInternalCollapsed] = React.useState(false)
     const [isMobileOpen, setIsMobileOpen] = React.useState(false)
+    const [notificationCount, setNotificationCount] = React.useState(0)
 
     // Usa prop se definida, senão usa estado interno
     const isCollapsed = collapsed !== undefined ? collapsed : internalCollapsed
+
+    // Efeito para buscar o número de notificações não lidas
+    React.useEffect(() => {
+        const fetchNotificationCount = async () => {
+            try {
+                // Importar o serviço de notificações dinamicamente
+                const notificationServiceModule = await import('@/services/notification-service');
+                const notificationService = notificationServiceModule.notificationService;
+                const count = await notificationService.fetchUnreadCount();
+                setNotificationCount(count);
+            } catch (error) {
+                console.error('Erro ao buscar contagem de notificações:', error);
+            }
+        };
+
+        fetchNotificationCount();
+
+        // Atualizar periodicamente (a cada 30 segundos)
+        const interval = setInterval(fetchNotificationCount, 30000);
+
+        return () => clearInterval(interval);
+    }, []);
 
     const handleToggle = () => {
         const newState = !isCollapsed
@@ -92,8 +114,15 @@ export function Sidebar({ className, collapsed, onToggle }: SidebarProps) {
             badgeVariant: "default",
         },
         {
-            icon: <MessageSquare className="h-5 w-5" />,
-            label: "Xpert Messenger",
+            icon: <MessageSquare className="h-5 w-5 text-emerald-500" />,
+            label: (
+                <span className="flex items-baseline group/lbl">
+                    <span className="text-emerald-500 font-bold group-hover/lbl:drop-shadow-[0_0_8px_rgba(16,185,129,0.4)] transition-all drop-shadow-[0_1px_2px_rgba(16,185,129,0.2)]">
+                        <span className="text-lg">X</span>pert
+                    </span>
+                    <span className="ml-1 text-black font-bold dark:text-white">Messenger</span>
+                </span>
+            ),
             href: "/messages",
             badge: mockBadges.messages,
             badgeVariant: "destructive", // Vermelho para mensagens não lidas
@@ -120,7 +149,7 @@ export function Sidebar({ className, collapsed, onToggle }: SidebarProps) {
             icon: <Bell className="h-5 w-5" />,
             label: "Notificações",
             href: "/notifications",
-            badge: mockBadges.notifications,
+            badge: notificationCount,
             badgeVariant: "default",
         },
         {
@@ -180,11 +209,19 @@ export function Sidebar({ className, collapsed, onToggle }: SidebarProps) {
                             />
                         </div>
                         {!isCollapsed && (
-                            <div 
-                                className="text-lg font-bold tracking-tighter transition-colors ml-[-12px] text-foreground"
+                            <div
+                                className="text-lg font-bold tracking-tighter transition-colors ml-[-12px] text-foreground flex items-center"
                                 suppressHydrationWarning
                             >
-                                Nutri<span className="text-emerald-500">Xpert</span>Pro
+                                <span className="mr-1 text-foreground drop-shadow-sm">
+                                    <span className="text-2xl font-bold">N</span>utri
+                                </span>
+                                <span className="text-emerald-500 drop-shadow-[0_1px_2px_rgba(16,185,129,0.2)]">
+                                    <span className="text-3xl font-black">X</span>pert
+                                </span>
+                                <span className="ml-1 text-foreground drop-shadow-sm">
+                                    <span className="text-2xl font-bold">P</span>ro
+                                </span>
                             </div>
                         )}
                     </Link>
@@ -213,7 +250,7 @@ export function Sidebar({ className, collapsed, onToggle }: SidebarProps) {
                                             isActive(item.href) && "bg-primary/10 text-primary font-medium",
                                             isCollapsed && "justify-center px-2"
                                         )}
-                                        title={isCollapsed ? item.label : undefined}
+                                        title={isCollapsed && typeof item.label === 'string' ? item.label : undefined}
                                     >
                                         <span className={cn(
                                             "flex-shrink-0",

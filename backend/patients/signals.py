@@ -12,17 +12,28 @@ def create_patient_notification(sender, instance, created, **kwargs):
             patient_name = getattr(instance.user, 'name', 'Paciente Desconhecido')
             if patient_name and patient_name.startswith('Paciente '):
                 patient_name = patient_name[9:]  # Remove 'Paciente ' (9 caracteres)
-            message = f"Novo paciente cadastrado: {patient_name}"
+            
+            # Limpar o nome para evitar caracteres residuais
+            patient_name = patient_name.strip()
+            
+            # Incluir ID no formato [ID:xxx] e [PID:xxx] para o frontend capturar
+            message = f"Novo paciente cadastrado: {patient_name} [ID:{instance.id}] [PID:{instance.id}]"
+            
             Notification.objects.create(
                 user=instance.nutritionist,  # Notifica o nutricionista
+                title="Novo Paciente",
                 message=message,
-                type="APP",  # Notificação dentro do app
+                notification_type="system",  # Notificação do sistema/app
             )
+
+            # Enviar email de boas-vindas
+            from .tasks import send_welcome_email_task
+            send_welcome_email_task.delay(instance.user.id, instance.nutritionist.name)
         except Exception:
             # Em caso de erro, cria uma notificação genérica
-            message = "Novo paciente cadastrado"
             Notification.objects.create(
                 user=instance.nutritionist,
-                message=message,
-                type="APP",
+                title="Sistema",
+                message="Novo paciente cadastrado",
+                notification_type="system",
             )

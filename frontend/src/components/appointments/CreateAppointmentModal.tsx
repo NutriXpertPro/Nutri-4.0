@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { 
+import {
     Select,
     SelectContent,
     SelectItem,
@@ -31,6 +31,7 @@ import {
 import { format, setHours, setMinutes, addDays } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import { cn } from "@/lib/utils"
+import { IconWrapper } from "@/components/ui/IconWrapper"
 
 interface Patient {
     id: number
@@ -205,24 +206,27 @@ export function CreateAppointmentModal({
             <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
-                        <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
-                            <Calendar className="h-5 w-5" />
-                        </div>
+                        <IconWrapper
+                            icon={Calendar}
+                            variant="default"
+                            size="xl"
+                            className="ring-4 ring-background border border-white/10 dark:border-white/20 shadow-md"
+                        />
                         Nova Consulta
                     </DialogTitle>
                     <DialogDescription>
                         Agende uma nova consulta para seu paciente
                     </DialogDescription>
                 </DialogHeader>
-                
+
                 <div className="grid gap-4 py-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {/* Select de paciente */}
                         <div className="space-y-2">
                             <Label htmlFor="patient">Paciente *</Label>
-                            <Select 
-                                value={formData.patientId?.toString() || ""} 
-                                onValueChange={(value) => setFormData(prev => ({...prev, patientId: Number(value)}))}
+                            <Select
+                                value={formData.patientId?.toString() || ""}
+                                onValueChange={(value) => setFormData(prev => ({ ...prev, patientId: Number(value) }))}
                             >
                                 <SelectTrigger>
                                     <SelectValue placeholder="Selecione um paciente" />
@@ -236,7 +240,7 @@ export function CreateAppointmentModal({
                                 </SelectContent>
                             </Select>
                         </div>
-                        
+
                         {/* Seletor de data */}
                         <div className="space-y-2">
                             <Label htmlFor="date">Data *</Label>
@@ -247,17 +251,17 @@ export function CreateAppointmentModal({
                                 onChange={(e) => {
                                     const dateString = e.target.value;
                                     const date = dateString ? new Date(dateString) : undefined;
-                                    handleDateSelect(isNaN(date.getTime()) ? undefined : date);
+                                    handleDateSelect(date && !isNaN(date.getTime()) ? date : undefined);
                                 }}
                             />
                         </div>
                     </div>
-                    
+
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {/* Seletor de horário */}
                         <div className="space-y-2">
                             <Label htmlFor="time">Horário *</Label>
-                            <Select value={formData.time} onValueChange={(value) => setFormData(prev => ({...prev, time: value}))}>
+                            <Select value={formData.time} onValueChange={(value) => setFormData(prev => ({ ...prev, time: value }))}>
                                 <SelectTrigger>
                                     <SelectValue />
                                 </SelectTrigger>
@@ -270,13 +274,13 @@ export function CreateAppointmentModal({
                                 </SelectContent>
                             </Select>
                         </div>
-                        
+
                         {/* Seletor de duração */}
                         <div className="space-y-2">
                             <Label htmlFor="duration">Duração *</Label>
-                            <Select 
-                                value={formData.duration.toString()} 
-                                onValueChange={(value) => setFormData(prev => ({...prev, duration: Number(value)}))}
+                            <Select
+                                value={formData.duration.toString()}
+                                onValueChange={(value) => setFormData(prev => ({ ...prev, duration: Number(value) }))}
                             >
                                 <SelectTrigger>
                                     <SelectValue />
@@ -291,14 +295,14 @@ export function CreateAppointmentModal({
                             </Select>
                         </div>
                     </div>
-                    
+
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {/* Seletor de tipo */}
                         <div className="space-y-2">
                             <Label htmlFor="type">Tipo de Consulta *</Label>
                             <Select
                                 value={formData.type}
-                                onValueChange={(value: "presencial" | "online" | "primeira_vez" | "retorno" | "em_grupo" | "pacote" | "permuta" | "pessoal" | "antropometria" | "amigo" | "encaixe" | "teste") => setFormData(prev => ({...prev, type: value}))}
+                                onValueChange={(value: "presencial" | "online" | "primeira_vez" | "retorno" | "em_grupo" | "pacote" | "permuta" | "pessoal" | "antropometria" | "amigo" | "encaixe" | "teste") => setFormData(prev => ({ ...prev, type: value }))}
                             >
                                 <SelectTrigger>
                                     <SelectValue />
@@ -379,7 +383,7 @@ export function CreateAppointmentModal({
                                 </SelectContent>
                             </Select>
                         </div>
-                        
+
                         {/* Link de reunião (apenas para online) */}
                         {formData.type === "online" && (
                             <div className="space-y-2">
@@ -389,7 +393,7 @@ export function CreateAppointmentModal({
                                     <Input
                                         id="meetingLink"
                                         value={formData.meetingLink}
-                                        onChange={(e) => setFormData(prev => ({...prev, meetingLink: e.target.value}))}
+                                        onChange={(e) => setFormData(prev => ({ ...prev, meetingLink: e.target.value }))}
                                         placeholder="https://meet.google.com/xxx-xxxx"
                                         className="pl-10"
                                     />
@@ -397,29 +401,29 @@ export function CreateAppointmentModal({
                             </div>
                         )}
                     </div>
-                    
+
                     {/* Notas */}
                     <div className="space-y-2">
                         <Label htmlFor="notes">Notas</Label>
                         <Input
                             id="notes"
                             value={formData.notes}
-                            onChange={(e) => setFormData(prev => ({...prev, notes: e.target.value}))}
+                            onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
                             placeholder="Anotações adicionais..."
                         />
                     </div>
                 </div>
-                
+
                 <DialogFooter className="flex sm:justify-between">
-                    <Button 
-                        type="button" 
+                    <Button
+                        type="button"
                         variant="outline"
                         onClick={() => onOpenChange(false)}
                     >
                         Cancelar
                     </Button>
-                    <Button 
-                        type="button" 
+                    <Button
+                        type="button"
                         onClick={handleSubmit}
                         disabled={!formData.patientId || !formData.date}
                     >

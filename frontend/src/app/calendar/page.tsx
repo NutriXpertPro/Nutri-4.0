@@ -59,87 +59,156 @@ interface Appointment {
     notes?: string
 }
 
+
+interface PendingRequest {
+    id: number
+    patientName: string
+    date: string
+    time: string
+    reason: string
+}
+
 export default function CalendarPage() {
     const [appointments, setAppointments] = useState<Appointment[]>([])
-    const [patients] = useState<Patient[]>([
-        { id: 1, name: "Maria Silva", email: "maria@example.com" },
-        { id: 2, name: "João Santos", email: "joao@example.com" },
-        { id: 3, name: "Ana Costa", email: "ana@example.com" },
-        { id: 4, name: "Carlos Oliveira", email: "carlos@example.com" },
-        { id: 5, name: "Fernanda Lima", email: "fernanda@example.com" },
-    ])
+    const [patients, setPatients] = useState<Patient[]>([])
     const [showCreateModal, setShowCreateModal] = useState(false)
     const [selectedDate, setSelectedDate] = useState<Date | null>(null)
-    const [pendingRequests, setPendingRequests] = useState([
-        { id: 1, patientName: "José Silva", date: new Date(2025, 11, 14, 10, 0).toISOString(), time: "10:00", reason: "Primeira consulta" },
-        { id: 2, patientName: "Mariana Costa", date: new Date(2025, 11, 16, 14, 30).toISOString(), time: "14:30", reason: "Retorno" }
-    ])
+    const [pendingRequests, setPendingRequests] = useState<PendingRequest[]>([])
     const [filterStatus, setFilterStatus] = useState<string>('all')
     const [filterType, setFilterType] = useState<string>('all')
     const [filterSearch, setFilterSearch] = useState<string>('')
 
-    // Simular carregamento de dados
+    // Carregar dados reais da API
     useEffect(() => {
-        // Em uma implementação real, isso viria de uma API
-        const mockAppointments: Appointment[] = [
-            {
-                id: 1,
-                patientId: 1,
-                patientName: "Maria Silva",
-                patientEmail: "maria@example.com",
-                date: new Date(2025, 11, 12, 9, 0).toISOString(),
-                duration: 60,
-                type: "primeira_vez",
-                status: "confirmada",
-                notes: "Avaliação inicial"
-            },
-            {
-                id: 2,
-                patientId: 2,
-                patientName: "João Santos",
-                patientEmail: "joao@example.com",
-                date: new Date(2025, 11, 12, 10, 30).toISOString(),
-                duration: 45,
-                type: "online",
-                status: "agendada",
-                meetingLink: "https://meet.google.com/xxx-xxxx",
-                notes: "Retorno online"
-            },
-            {
-                id: 3,
-                patientId: 3,
-                patientName: "Ana Costa",
-                patientEmail: "ana@example.com",
-                date: new Date(2025, 11, 15, 14, 0).toISOString(),
-                duration: 60,
-                type: "retorno",
-                status: "agendada",
-                notes: "Consulta de rotina"
-            },
-            {
-                id: 4,
-                patientId: 4,
-                patientName: "Carlos Oliveira",
-                patientEmail: "carlos@example.com",
-                date: new Date(2025, 11, 10, 16, 0).toISOString(),
-                duration: 30,
-                type: "em_grupo",
-                status: "realizada",
-                notes: "Ajuste de dieta"
-            },
-            {
-                id: 5,
-                patientId: 5,
-                patientName: "Fernanda Lima",
-                patientEmail: "fernanda@example.com",
-                date: new Date(2025, 11, 14, 11, 0).toISOString(),
-                duration: 45,
-                type: "antropometria",
-                status: "agendada",
-                notes: "Medição antropométrica"
+        const fetchAppointments = async () => {
+            try {
+                const response = await api.get('/appointments/');
+                const appointmentsData = response.data.map((app: any) => ({
+                    id: app.id,
+                    patientId: app.patient.id,
+                    patientName: app.patient.name,
+                    patientEmail: app.patient.email,
+                    date: app.date,
+                    duration: app.duration || 60,
+                    type: app.type || 'presencial',
+                    status: app.status || 'agendada',
+                    meetingLink: app.meeting_link || app.meetingLink,
+                    notes: app.notes || app.description || ''
+                }));
+                setAppointments(appointmentsData);
+            } catch (error) {
+                console.error('Erro ao carregar compromissos:', error);
+                toast.error('Erro ao carregar compromissos. Usando dados temporários.');
+
+                // Dados mockados como fallback
+                const mockAppointments: Appointment[] = [
+                    {
+                        id: 1,
+                        patientId: 1,
+                        patientName: "Maria Silva",
+                        patientEmail: "maria@example.com",
+                        date: new Date(2025, 11, 12, 9, 0).toISOString(),
+                        duration: 60,
+                        type: "primeira_vez",
+                        status: "confirmada",
+                        notes: "Avaliação inicial"
+                    },
+                    {
+                        id: 2,
+                        patientId: 2,
+                        patientName: "João Santos",
+                        patientEmail: "joao@example.com",
+                        date: new Date(2025, 11, 12, 10, 30).toISOString(),
+                        duration: 45,
+                        type: "online",
+                        status: "agendada",
+                        meetingLink: "https://meet.google.com/xxx-xxxx",
+                        notes: "Retorno online"
+                    },
+                    {
+                        id: 3,
+                        patientId: 3,
+                        patientName: "Ana Costa",
+                        patientEmail: "ana@example.com",
+                        date: new Date(2025, 11, 15, 14, 0).toISOString(),
+                        duration: 60,
+                        type: "retorno",
+                        status: "agendada",
+                        notes: "Consulta de rotina"
+                    },
+                    {
+                        id: 4,
+                        patientId: 4,
+                        patientName: "Carlos Oliveira",
+                        patientEmail: "carlos@example.com",
+                        date: new Date(2025, 11, 10, 16, 0).toISOString(),
+                        duration: 30,
+                        type: "em_grupo",
+                        status: "realizada",
+                        notes: "Ajuste de dieta"
+                    },
+                    {
+                        id: 5,
+                        patientId: 5,
+                        patientName: "Fernanda Lima",
+                        patientEmail: "fernanda@example.com",
+                        date: new Date(2025, 11, 14, 11, 0).toISOString(),
+                        duration: 45,
+                        type: "antropometria",
+                        status: "agendada",
+                        notes: "Medição antropométrica"
+                    }
+                ];
+                setAppointments(mockAppointments);
             }
-        ]
-        setAppointments(mockAppointments)
+        };
+
+        const fetchPendingRequests = async () => {
+            try {
+                // Buscar compromissos com status 'agendada' que ainda não ocorreram
+                const response = await api.get('/appointments/');
+                const now = new Date();
+                const pendingAppointments = response.data.filter((app: any) => {
+                    const appointmentDate = new Date(app.date);
+                    return app.status === 'agendada' && appointmentDate > now;
+                });
+
+                const pendingRequestsData = pendingAppointments.map((app: any) => ({
+                    id: app.id,
+                    patientName: app.patient.name,
+                    date: app.date,
+                    time: format(new Date(app.date), 'HH:mm'),
+                    reason: app.type || 'Consulta'
+                }));
+                setPendingRequests(pendingRequestsData);
+            } catch (error) {
+                console.error('Erro ao carregar solicitações pendentes:', error);
+                // Não definir dados mockados para solicitações pendentes para manter a limpeza
+                setPendingRequests([]);
+            }
+        };
+
+        fetchAppointments();
+        fetchPendingRequests();
+
+        // Carregar pacientes reais da API
+        const fetchPatients = async () => {
+            try {
+                const response = await api.get('/patients/');
+                const patientsData = response.data.map((pat: any) => ({
+                    id: pat.id,
+                    name: pat.user.name,
+                    email: pat.user.email
+                }));
+                setPatients(patientsData);
+            } catch (error) {
+                console.error('Erro ao carregar pacientes:', error);
+                // Não definir dados mockados para manter a limpeza
+                setPatients([]);
+            }
+        };
+
+        fetchPatients();
     }, [])
 
     // Filtrar compromissos com base nos filtros aplicados
@@ -307,9 +376,9 @@ export default function CalendarPage() {
         } catch (error: any) {
             console.error("Erro ao mover consulta:", error);
             console.error("Detalhes do erro:", error.response?.data);
-            
+
             let errorMessage = "Erro ao mover consulta. Por favor, tente novamente.";
-            
+
             if (error.response?.data) {
                 // Tenta extrair mensagem de erro de campos comuns do Django/DRF
                 if (error.response.data.error) errorMessage = error.response.data.error;
@@ -325,7 +394,7 @@ export default function CalendarPage() {
                     }
                 }
             }
-            
+
             toast.error(errorMessage);
         }
     };
@@ -413,12 +482,19 @@ export default function CalendarPage() {
 
                 {/* Header */}
                 <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-                    <div>
-                        <h1 className="text-h1 capitalize font-normal">Agenda de consultas</h1>
-                        <p className="text-subtitle mt-1 flex items-center gap-2">
-                            <Calendar className="h-4 w-4 text-amber-500" />
-                            {new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
-                        </p>
+                    <div className="flex items-center gap-4">
+                        <IconWrapper
+                            icon={Calendar}
+                            variant="amber"
+                            size="xl"
+                            className="ring-4 ring-background border border-white/10 dark:border-white/20 shadow-md"
+                        />
+                        <div>
+                            <h1 className="text-h1 capitalize font-normal">Agenda de consultas</h1>
+                            <p className="text-subtitle mt-1 flex items-center gap-2 opacity-70">
+                                {new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+                            </p>
+                        </div>
                     </div>
 
                     <div className="flex flex-wrap gap-3">
@@ -436,7 +512,12 @@ export default function CalendarPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                     <Card variant="glass">
                         <CardContent className="p-6 flex items-center gap-4">
-                            <IconWrapper icon={Clock} variant="blue" size="lg" />
+                            <IconWrapper
+                                icon={Clock}
+                                variant="blue"
+                                size="xl"
+                                className="ring-4 ring-background border border-white/10 dark:border-white/20 shadow-lg"
+                            />
                             <div>
                                 <p className="text-data-value font-normal">{appointments.filter(a => a.status === 'agendada').length}</p>
                                 <p className="text-data-label font-normal">Agendadas</p>
@@ -446,7 +527,12 @@ export default function CalendarPage() {
 
                     <Card variant="glass">
                         <CardContent className="p-6 flex items-center gap-4">
-                            <IconWrapper icon={CheckCircle2} variant="green" size="lg" />
+                            <IconWrapper
+                                icon={CheckCircle2}
+                                variant="green"
+                                size="xl"
+                                className="ring-4 ring-background border border-white/10 dark:border-white/20 shadow-lg"
+                            />
                             <div>
                                 <p className="text-data-value font-normal">{appointments.filter(a => a.status === 'confirmada').length}</p>
                                 <p className="text-data-label font-normal">Confirmadas</p>
@@ -456,7 +542,12 @@ export default function CalendarPage() {
 
                     <Card variant="glass">
                         <CardContent className="p-6 flex items-center gap-4">
-                            <IconWrapper icon={Users} variant="violet" size="lg" />
+                            <IconWrapper
+                                icon={Users}
+                                variant="violet"
+                                size="xl"
+                                className="ring-4 ring-background border border-white/10 dark:border-white/20 shadow-lg"
+                            />
                             <div>
                                 <p className="text-data-value font-normal">{appointments.filter(a => new Date(a.date) > new Date()).length}</p>
                                 <p className="text-data-label font-normal">Hoje</p>
@@ -466,7 +557,12 @@ export default function CalendarPage() {
 
                     <Card variant="glass">
                         <CardContent className="p-6 flex items-center gap-4">
-                            <IconWrapper icon={AlertCircle} variant="amber" size="lg" />
+                            <IconWrapper
+                                icon={AlertCircle}
+                                variant="amber"
+                                size="xl"
+                                className="ring-4 ring-background border border-white/10 dark:border-white/20 shadow-lg"
+                            />
                             <div>
                                 <p className="text-data-value font-normal">{appointments.filter(a => a.status === 'faltou' || a.status === 'cancelada').length}</p>
                                 <p className="text-data-label font-normal">Pendentes</p>

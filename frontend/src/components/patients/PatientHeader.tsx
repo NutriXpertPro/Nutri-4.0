@@ -6,6 +6,9 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { MessageSquare, Calendar, Edit, Phone, Mail } from "lucide-react"
+import { useRouter } from "next/navigation"
+import api from "@/services/api"
+import { useAuth } from "@/contexts/auth-context"
 
 import { EditPatientDialog } from "./EditPatientDialog"
 
@@ -36,6 +39,78 @@ const defaultPatient = {
 
 export function PatientHeader({ patient = defaultPatient, fullData, className }: PatientHeaderProps) {
     const [isEditOpen, setIsEditOpen] = React.useState(false)
+    const router = useRouter();
+    const { user } = useAuth();
+
+    const handleOpenMessage = async () => {
+        if (!fullData) return;
+
+        try {
+            // Primeiro, tentamos encontrar uma conversa existente com o paciente
+            const response = await api.get('/messages/conversations/');
+            const conversations = response.data;
+
+            // Procurar uma conversa que contenha o paciente como participante
+            let conversation = conversations.find((conv: any) =>
+                conv.participants.some((p: any) => p.id === (isNaN(Number(fullData.id)) ? fullData.id : parseInt(fullData.id)))
+            );
+
+            // Se não encontrar uma conversa existente, criamos uma nova
+            if (!conversation) {
+                // Criamos uma conversa com o paciente como participante
+                // O backend automaticamente adiciona o usuário autenticado como participante
+                const patientId = isNaN(Number(fullData.id)) ? fullData.id : parseInt(fullData.id);
+
+                try {
+                    // Enviar o ID do paciente como participante
+                    const newConversationResponse = await api.post('/messages/conversations/', {
+                        participants: [patientId]
+                    });
+                    conversation = newConversationResponse.data;
+                } catch (createError: any) {
+                    console.error('Erro ao criar conversa:', createError);
+                    // Verificar se é um erro 400 e tentar uma abordagem alternativa
+                    if (createError.response?.status === 400) {
+                        // Se o erro for 400, pode ser um problema com a validação do ManyToManyField
+                        // Tentar criar uma conversa vazia e deixar o backend adicionar os participantes
+                        try {
+                            // Primeiro, vamos tentar encontrar o ID do usuário autenticado
+                            const currentUserId = user?.id || JSON.parse(localStorage.getItem('user') || '{}')?.id;
+
+                            if (currentUserId) {
+                                // Tentar criar uma conversa vazia e adicionar participantes separadamente
+                                // Mas como não temos um endpoint para isso, vamos tentar uma abordagem diferente
+                                // Vamos tentar criar a conversa com ambos os participantes explicitamente
+                                const newConversationResponse = await api.post('/messages/conversations/', {
+                                    participants: [currentUserId, patientId]
+                                });
+                                conversation = newConversationResponse.data;
+                            } else {
+                                throw createError; // Se não tivermos o ID do usuário, lançar o erro original
+                            }
+                        } catch (fallbackError: any) {
+                            console.error('Erro ao criar conversa com abordagem alternativa:', fallbackError);
+                            throw fallbackError;
+                        }
+                    } else {
+                        throw createError; // Para outros tipos de erro, lançar o erro original
+                    }
+                }
+            }
+
+            // Navegar para a página de mensagens com o ID da conversa
+            router.push(`/messages?conversation=${conversation.id}`);
+        } catch (error) {
+            console.error('Erro ao abrir conversa com o paciente:', error);
+            // Se houver erro, redirecionar para a página de mensagens genérica
+            router.push('/messages');
+        }
+    };
+
+    const handleScheduleAppointment = () => {
+        // Redirecionar para a página de calendário em vez de uma rota inexistente
+        router.push('/calendar');
+    };
 
     return (
         <div className={cn("relative mb-8 overflow-hidden rounded-3xl border border-border/50 bg-card/30 backdrop-blur-sm shadow-sm", className)}>
@@ -47,8 +122,8 @@ export function PatientHeader({ patient = defaultPatient, fullData, className }:
             <div className="px-6 md:px-10 pb-8 -mt-12 flex flex-col md:flex-row items-end md:items-center gap-6 relative z-10">
                 {/* Avatar Grande */}
                 <div className="relative group">
-                    <Avatar className="h-32 w-32 border-4 border-background shadow-2xl transition-transform group-hover:scale-105">
-                        <AvatarImage src={patient.avatar} />
+                    <Avatar className="h-32 w-32 border-4 border-background shadow-2xl transition-transform group-hover:scale-105 overflow-hidden">
+                        <AvatarImage src={patient.avatar || (patient as any).photo} className="h-full w-full object-cover" />
                         <AvatarFallback className="text-4xl bg-primary/10 text-primary">
                             {patient.name.substring(0, 2).toUpperCase()}
                         </AvatarFallback>
@@ -85,7 +160,6 @@ export function PatientHeader({ patient = defaultPatient, fullData, className }:
                             {patient.email}
                         </div>
                         <div className="flex items-center gap-1.5 text-subtitle">
-                            <Phone className="h-3.5 w-3.5 text-green-600" />
                             {patient.phone}
                         </div>
                     </div>
@@ -93,11 +167,21 @@ export function PatientHeader({ patient = defaultPatient, fullData, className }:
 
                 {/* Ações */}
                 <div className="flex items-center gap-2 mb-2 w-full md:w-auto">
-                    <Button variant="outline" size="sm" className="h-9 gap-2 flex-1 md:flex-none glass-card-hover border-destructive/20 text-destructive hover:bg-destructive/5 hover:border-destructive/40">
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-9 gap-2 flex-1 md:flex-none glass-card-hover border-destructive/20 text-destructive hover:bg-destructive/5 hover:border-destructive/40"
+                        onClick={handleOpenMessage}
+                    >
                         <MessageSquare className="h-4 w-4" />
                         Mensagem
                     </Button>
-                    <Button variant="default" size="sm" className="h-9 gap-2 flex-1 md:flex-none shadow-lg shadow-primary/20">
+                    <Button
+                        variant="default"
+                        size="sm"
+                        className="h-9 gap-2 flex-1 md:flex-none shadow-lg shadow-primary/20"
+                        onClick={handleScheduleAppointment}
+                    >
                         <Calendar className="h-4 w-4 text-amber-300" />
                         Agendar
                     </Button>

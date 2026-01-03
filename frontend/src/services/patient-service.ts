@@ -14,6 +14,10 @@ export interface Patient {
     created_at: string
     target_weight?: number
     target_body_fat?: number
+    avatar?: string
+    age?: number
+    weight?: number
+    height?: number
 }
 
 export interface CreatePatientDTO {
@@ -55,19 +59,41 @@ const patientService = {
         return response.data
     },
 
-    update: async (id: number, data: Partial<CreatePatientDTO>) => {
+    update: async (id: number, data: any) => {
+        // Se houver arquivo, usar FormData
+        if (data.profile_picture instanceof File || data.profile_picture === null) {
+            const formData = new FormData()
+            Object.entries(data).forEach(([key, value]) => {
+                if (value !== undefined) {
+                    if (value === null) {
+                        formData.append(key, '')
+                    } else if (value instanceof File) {
+                        formData.append(key, value)
+                    } else {
+                        formData.append(key, String(value))
+                    }
+                }
+            })
+            const response = await api.patch<Patient>(`/patients/${id}/`, formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            })
+            return response.data
+        }
+
         const response = await api.patch<Patient>(`/patients/${id}/`, data)
         return response.data
     },
 
-    delete: async (id: number) => {
-        const response = await api.delete(`/patients/${id}/`)
+    delete: async (id: number, hardDelete: boolean = false) => {
+        const response = await api.delete(`/patients/${id}/`, {
+            params: { hard_delete: hardDelete }
+        })
         return response.data
     },
 
-    search: async (query: string): Promise<{ id: number; name: string }[]> => {
+    search: async (query: string): Promise<{ id: number; name: string; avatar?: string }[]> => {
         if (query.length < 2) return Promise.resolve([]);
-        const response = await api.get<{ id: number; name: string }[]>(`/patients/search/?q=${encodeURIComponent(query)}`);
+        const response = await api.get<{ id: number; name: string; avatar?: string }[]>(`/patients/search/?q=${encodeURIComponent(query)}`);
         return response.data;
     }
 }

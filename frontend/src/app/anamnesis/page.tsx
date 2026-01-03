@@ -2,6 +2,8 @@
 
 import * as React from "react"
 import { DashboardLayout } from "@/components/layout"
+import { StatCard } from "@/components/dashboard/StatCard"
+import { IconWrapper } from "@/components/ui/IconWrapper"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -14,7 +16,6 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { anamnesisService, AnamnesisTemplate } from "@/services/anamnesis-service"
 import {
-    ClipboardList,
     Plus,
     Search,
     FileText,
@@ -46,6 +47,11 @@ import {
     List,
     Edit,
     Eye,
+    TrendingUp,
+    TrendingDown,
+    Dumbbell,
+    Flame,
+    ClipboardList,
 } from "lucide-react"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
@@ -67,10 +73,11 @@ import {
 interface StandardSection {
     id: string
     title: string
-    icon: React.ReactNode
+    icon: any
     description: string
     fields: string[]
     color: string
+    variant: "blue" | "indigo" | "emerald" | "rose" | "amber" | "violet" | "pink"
 }
 
 // Seções da anamnese padrão baseadas no modelo do backend
@@ -78,58 +85,65 @@ const STANDARD_SECTIONS: StandardSection[] = [
     {
         id: "identificacao",
         title: "1. Identificação",
-        icon: <User className="h-5 w-5" />,
+        icon: User,
         description: "Dados pessoais e contato do paciente",
         fields: ["Nome", "Idade", "Sexo", "Data de Nascimento", "Profissão", "Email", "Telefone"],
-        color: "from-blue-500/20 to-blue-500/5"
+        color: "from-blue-500/20 to-blue-500/5",
+        variant: "blue"
     },
     {
         id: "rotina",
         title: "2. Rotina",
-        icon: <Moon className="h-5 w-5" />,
+        icon: Moon,
         description: "Horários de sono, treino e disponibilidade",
         fields: ["Hora que acorda", "Hora que dorme", "Dificuldade para dormir", "Horário de treino", "Tempo disponível para treino", "Dias de treino por semana"],
-        color: "from-indigo-500/20 to-indigo-500/5"
+        color: "from-indigo-500/20 to-indigo-500/5",
+        variant: "indigo"
     },
     {
         id: "nutricao",
         title: "3. Nutrição e Hábitos",
-        icon: <Activity className="h-5 w-5" />,
+        icon: Activity,
         description: "Peso, altura, restrições alimentares e preferências",
         fields: ["Peso", "Altura", "Status do peso", "Alimentos restritos", "Já fez dieta antes?", "Resultado da dieta", "Funcionamento intestinal", "Litros de água/dia", "Vontade de doce (0-10)", "Horários de maior apetite", "Preferência de lanches", "Frutas preferidas"],
-        color: "from-emerald-500/20 to-emerald-500/5"
+        color: "from-emerald-500/20 to-emerald-500/5",
+        variant: "emerald"
     },
     {
         id: "saude",
         title: "4. Histórico de Saúde",
-        icon: <Heart className="h-5 w-5" />,
+        icon: Heart,
         description: "Doenças, medicamentos, intolerâncias e hábitos",
         fields: ["Doença familiar", "Problema de saúde atual", "Detalhes dos problemas", "Problema articular", "Uso de medicamentos", "Detalhes medicamentos", "Uso de cigarros", "Intolerância alimentar", "Detalhes intolerância", "Uso de anticoncepcional", "Termogênico utilizado", "Uso de álcool", "Frequência álcool", "Já usou anabolizante", "Problemas com anabolizante", "Pretende usar anabolizante"],
-        color: "from-rose-500/20 to-rose-500/5"
+        color: "from-rose-500/20 to-rose-500/5",
+        variant: "rose"
     },
     {
         id: "objetivos",
         title: "5. Objetivos",
-        icon: <Target className="h-5 w-5" />,
+        icon: TrendingUp,
         description: "Metas do tratamento e compromisso com acompanhamento",
         fields: ["Objetivo principal", "Compromisso com relatórios semanais"],
-        color: "from-amber-500/20 to-amber-500/5"
+        color: "from-emerald-500/20 to-emerald-500/5",
+        variant: "emerald"
     },
     {
         id: "medidas",
         title: "6. Medidas",
-        icon: <Ruler className="h-5 w-5" />,
+        icon: Ruler,
         description: "Circunferências corporais em centímetros",
         fields: ["Pescoço (cm)", "Cintura (cm)", "Quadril (cm) - Feminino"],
-        color: "from-purple-500/20 to-purple-500/5"
+        color: "from-violet-500/20 to-violet-500/5",
+        variant: "violet"
     },
     {
         id: "fotos",
         title: "7. Fotos",
-        icon: <Camera className="h-5 w-5" />,
+        icon: Camera,
         description: "Registro fotográfico para acompanhamento visual",
         fields: ["Foto de frente", "Foto de lado", "Foto de costas"],
-        color: "from-pink-500/20 to-pink-500/5"
+        color: "from-pink-500/20 to-pink-500/5",
+        variant: "pink"
     },
 ]
 
@@ -277,67 +291,43 @@ export default function AnamnesisPage() {
                             }}
                         />
 
-                        <Button onClick={handleNewAnamnesis} className="gap-2 shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all">
-                            <Plus className="h-4 w-4" />
-                            Nova Anamnese
+                        <Button onClick={handleNewAnamnesis} className="shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all">
+                            Anamnese
                         </Button>
 
                         <Button onClick={() => setShowTemplateBuilder(true)} className="gap-2">
                             <LayoutTemplate className="h-4 w-4" />
-                            Templates
+                            Novo Template
                         </Button>
                     </div>
                 </div>
 
                 {/* Stats Cards Premium */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <Card className="bg-linear-to-br from-card/80 to-card/40 backdrop-blur-xl border-border/40 hover:shadow-lg transition-all group">
-                        <CardContent className="p-5 flex items-start justify-between">
-                            <div className="space-y-2">
-                                <p className="text-data-label">Anamneses</p>
-                                <p className="text-data-value text-4xl !font-normal">24</p>
-                            </div>
-                            <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center">
-                                <List className="h-6 w-6 text-primary" />
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    <Card className="bg-linear-to-br from-card/80 to-card/40 backdrop-blur-xl border-border/40 hover:shadow-lg transition-all group">
-                        <CardContent className="p-5 flex items-start justify-between">
-                            <div className="space-y-2">
-                                <p className="text-data-label">Templates Criados</p>
-                                <p className="text-data-value text-4xl !font-normal">{templates?.length || 0}</p>
-                            </div>
-                            <div className="h-12 w-12 rounded-xl bg-violet-500/10 flex items-center justify-center">
-                                <LayoutTemplate className="h-6 w-6 text-violet-500" />
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    <Card className="bg-linear-to-br from-card/80 to-card/40 backdrop-blur-xl border-border/40 hover:shadow-lg transition-all group">
-                        <CardContent className="p-5 flex items-start justify-between">
-                            <div className="space-y-2">
-                                <p className="text-data-label">Pendentes</p>
-                                <p className="text-data-value text-4xl !font-normal">8</p>
-                            </div>
-                            <div className="h-12 w-12 rounded-xl bg-destructive/10 flex items-center justify-center">
-                                <Clock className="h-6 w-6 text-destructive" />
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    <Card className="bg-linear-to-br from-card/80 to-card/40 backdrop-blur-xl border-border/40 hover:shadow-lg transition-all group">
-                        <CardContent className="p-5 flex items-start justify-between">
-                            <div className="space-y-2">
-                                <p className="text-data-label">Completas</p>
-                                <p className="text-data-value text-4xl !font-normal">16</p>
-                            </div>
-                            <div className="h-12 w-12 rounded-xl bg-emerald-500/10 flex items-center justify-center">
-                                <CheckCircle2 className="h-6 w-6 text-emerald-500" />
-                            </div>
-                        </CardContent>
-                    </Card>
+                    <StatCard
+                        title="Anamneses"
+                        value={24}
+                        icon={List}
+                        variant="theme"
+                    />
+                    <StatCard
+                        title="Templates Criados"
+                        value={templates?.length || 0}
+                        icon={LayoutTemplate}
+                        variant="violet"
+                    />
+                    <StatCard
+                        title="Pendentes"
+                        value={8}
+                        icon={Clock}
+                        variant="rose"
+                    />
+                    <StatCard
+                        title="Completas"
+                        value={16}
+                        icon={CheckCircle2}
+                        variant="green"
+                    />
                 </div>
 
                 {/* Tabs Principal */}
@@ -436,13 +426,15 @@ export default function AnamnesisPage() {
                                             <CardHeader className="cursor-pointer hover:bg-muted/20 transition-colors">
                                                 <div className="flex items-center justify-between">
                                                     <div className="flex items-center gap-4">
-                                                        <div className={cn(
-                                                            "h-12 w-12 rounded-xl flex items-center justify-center transition-all",
-                                                            `bg-linear-to-br ${section.color}`,
-                                                            expandedSections.includes(section.id) ? "scale-110 shadow-lg" : ""
-                                                        )}>
-                                                            {section.icon}
-                                                        </div>
+                                                        <IconWrapper
+                                                            icon={section.icon}
+                                                            variant={section.variant}
+                                                            size="lg"
+                                                            className={cn(
+                                                                "ring-4 ring-background border border-white/10 dark:border-white/20 shadow-md transition-all",
+                                                                expandedSections.includes(section.id) ? "scale-110 shadow-lg" : ""
+                                                            )}
+                                                        />
                                                         <div>
                                                             <CardTitle className="text-lg flex items-center gap-2">
                                                                 {section.title}

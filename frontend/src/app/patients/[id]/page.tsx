@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { useParams } from "next/navigation"
+import { useParams, useSearchParams } from "next/navigation"
 import { DashboardLayout } from "@/components/layout"
 import { PatientHeader } from "@/components/patients/PatientHeader"
 import { PatientOverviewTab } from "@/components/patients/PatientOverviewTab"
@@ -12,10 +12,11 @@ import { PatientAnamnesisTab } from "@/components/patients/PatientAnamnesisTab"
 import { PatientTimelineTab } from "@/components/patients/PatientTimelineTab"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent } from "@/components/ui/card"
-import { Loader2 } from "lucide-react"
+import { Loader2, LayoutDashboard, ClipboardList, BarChart3, Utensils, Stethoscope, Calendar } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { usePatient } from "@/hooks/usePatients"
 import { useAuth } from "@/contexts/auth-context"
+import { useDietEditorStore } from "@/stores/diet-editor-store"
 
 export default function PatientDetailsPage() {
     // Usar useParams hook - mais confiável para client components
@@ -25,8 +26,28 @@ export default function PatientDetailsPage() {
     const rawId = params?.id
     const patientId = typeof rawId === 'string' ? parseInt(rawId, 10) : 0
 
+    // Seleção de aba via query param
+    const searchParams = useSearchParams()
+    const tabParam = searchParams.get('tab')
+    const [activeTab, setActiveTab] = React.useState(tabParam || 'overview')
+    const setPatientStore = useDietEditorStore(state => state.setPatient)
+
+    // Atualizar aba se o parâmetro mudar
+    React.useEffect(() => {
+        if (tabParam) {
+            setActiveTab(tabParam)
+        }
+    }, [tabParam])
+
     const { isAuthenticated, isLoading: isAuthLoading } = useAuth()
     const { patient, isLoading: isPatientLoading, error } = usePatient(patientId)
+
+    // Sincronizar com o store do editor de dieta
+    React.useEffect(() => {
+        if (patient) {
+            setPatientStore(patient as any)
+        }
+    }, [patient, setPatientStore])
 
     // Loading combinado: auth + patient + validação do ID
     const isLoading = isAuthLoading || isPatientLoading || patientId === 0
@@ -53,9 +74,10 @@ export default function PatientDetailsPage() {
         name: patient.name,
         email: patient.email,
         phone: patient.phone || "",
-        age: calculateAge(patient.birth_date),
+        age: patient.age || calculateAge(patient.birth_date),
         occupation: patient.goal || "Não informado",
         status: patient.status ? "active" as const : "inactive" as const,
+        avatar: patient.avatar,
         adesao: 85 // TODO: buscar da API
     } : undefined
 
@@ -95,28 +117,32 @@ export default function PatientDetailsPage() {
             <div className="w-full max-w-full space-y-6">
                 <PatientHeader patient={patientData} fullData={patient} />
 
-                <Tabs defaultValue="overview" className="mt-10">
+                <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-10">
                     <TabsList className="flex items-center gap-1 bg-muted/20 p-1.5 rounded-[1.5rem] border border-border/5 w-fit mb-8">
                         {[
-                            { value: 'overview', label: 'Visão Geral' },
-                            { value: 'context', label: 'Contexto' },
-                            { value: 'analysis', label: 'Análise' },
-                            { value: 'diet', label: 'Dieta' },
-                            { value: 'anamnesis', label: 'Anamnese' },
-                            { value: 'timeline', label: 'Timeline' }
-                        ].map((tab) => (
-                            <TabsTrigger
-                                key={tab.value}
-                                value={tab.value}
-                                className={cn(
-                                    "px-6 h-10 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all duration-500",
-                                    "data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-lg data-[state=active]:shadow-primary/10",
-                                    "hover:text-primary hover:bg-background/20"
-                                )}
-                            >
-                                {tab.label}
-                            </TabsTrigger>
-                        ))}
+                            { value: 'overview', label: 'Visão Geral', icon: LayoutDashboard },
+                            { value: 'context', label: 'Contexto', icon: ClipboardList },
+                            { value: 'analysis', label: 'Análise', icon: BarChart3 },
+                            { value: 'diet', label: 'Dieta', icon: Utensils },
+                            { value: 'anamnesis', label: 'Anamnese', icon: Stethoscope },
+                            { value: 'timeline', label: 'Timeline', icon: Calendar }
+                        ].map((tab) => {
+                            const Icon = tab.icon;
+                            return (
+                                <TabsTrigger
+                                    key={tab.value}
+                                    value={tab.value}
+                                    className={cn(
+                                        "px-6 h-10 rounded-2xl text-[11px] font-normal uppercase tracking-widest transition-all duration-500 flex items-center gap-2",
+                                        "data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-lg data-[state=active]:shadow-primary/10",
+                                        "text-muted-foreground hover:text-foreground hover:bg-background/20"
+                                    )}
+                                >
+                                    <Icon className="h-4 w-4" />
+                                    {tab.label}
+                                </TabsTrigger>
+                            )
+                        })}
                     </TabsList>
 
                     <div className="mt-6 space-y-6">

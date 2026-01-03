@@ -2,8 +2,9 @@ import * as React from "react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
-import { Scale, Target, Plus, Loader2 } from "lucide-react"
+import { Scale, Target, Plus, Loader2, FileText, Calendar, ChevronRight, MessageSquare } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
+import { useDietEditorStore } from "@/stores/diet-editor-store"
 import { Button } from "@/components/ui/button"
 import { NewEvaluationDialog } from "@/components/evaluations/NewEvaluationDialog"
 import { useQuery } from "@tanstack/react-query"
@@ -41,6 +42,31 @@ interface PatientAnalysisTabProps {
 
 export function PatientAnalysisTab({ patientId }: PatientAnalysisTabProps) {
     const [isNewEvaluationOpen, setIsNewEvaluationOpen] = React.useState(false)
+    const [noteForm, setNoteForm] = React.useState({
+        content: '',
+        title: '',
+        category: 'evolution',
+        date: new Date().toISOString().split('T')[0]
+    })
+    const patient = useDietEditorStore(state => state.patient)
+    const addNote = useDietEditorStore(state => state.addNote)
+
+    const handleAddNote = () => {
+        if (!patient) {
+            // Se não houver paciente no contexto, avisar o usuário
+            alert("Erro: Nenhum paciente selecionado. Navegue a partir de um perfil de paciente para salvar notas.")
+            return
+        }
+        if (noteForm.content.trim() && noteForm.title.trim()) {
+            addNote({
+                title: noteForm.title,
+                category: noteForm.category,
+                content: noteForm.content,
+                date: noteForm.date
+            })
+            setNoteForm(prev => ({ ...prev, content: '', title: '' }))
+        }
+    }
 
     // Fetch Evaluations
     const { data: evaluations = [], isLoading } = useQuery({
@@ -82,15 +108,34 @@ export function PatientAnalysisTab({ patientId }: PatientAnalysisTabProps) {
 
     return (
         <div className="space-y-8 pb-12">
+            {/* Informações do Paciente */}
+            <div className="p-4 bg-background/40 rounded-xl border border-border/10">
+                <div className="flex items-center gap-4">
+                    <div className="w-14 h-14 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 border-2 border-background shadow-lg overflow-hidden flex items-center justify-center">
+                        {patientId && (
+                            <img
+                                src={`https://api.dicebear.com/6.x/initials/svg?seed=${patientId}&backgroundColor=b6e3f4,c0aede,d1d4f9&size=64`}
+                                alt="Avatar do paciente"
+                                className="w-full h-full object-cover"
+                            />
+                        )}
+                    </div>
+                    <div>
+                        <h3 className="text-lg font-normal">Análise Corporal do Paciente</h3>
+                        <p className="text-sm text-muted-foreground">Acompanhamento de métricas e evolução</p>
+                    </div>
+                </div>
+            </div>
+
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-1">
                 <div>
-                    <p className="text-[10px] font-black text-primary uppercase tracking-[0.2em] mb-1">Performance & Métricas</p>
-                    <h3 className="text-2xl font-black tracking-tight text-foreground">Análise Corporal</h3>
+                    <h3 className="text-xl font-normal tracking-tight text-foreground">Performance & Métricas</h3>
+                    <p className="text-[10px] font-normal text-muted-foreground uppercase tracking-widest">Análise Corporal</p>
                 </div>
                 <div className="flex items-center gap-2">
                     {patientId && (
-                        <Button onClick={() => setIsNewEvaluationOpen(true)} className="gap-2 h-11 px-6 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-primary/20 hover:scale-105 transition-all">
-                            <IconWrapper icon={Plus} variant="ghost" size="sm" className="bg-white/20" />
+                        <Button onClick={() => setIsNewEvaluationOpen(true)} className="gap-2 h-11 px-6 rounded-2xl text-[10px] font-normal uppercase tracking-widest shadow-xl shadow-primary/20 hover:scale-105 transition-all">
+                            <IconWrapper icon={Plus} variant="indigo" size="sm" className="bg-primary/20" />
                             Nova Avaliação
                         </Button>
                     )}
@@ -111,14 +156,15 @@ export function PatientAnalysisTab({ patientId }: PatientAnalysisTabProps) {
                 </div>
             ) : evaluations.length === 0 ? (
                 <Card variant="glass" className="border-dashed border-2 py-20 bg-primary/5 flex flex-col items-center justify-center text-center">
-                    <div className="w-16 h-16 rounded-full bg-background flex items-center justify-center mb-4 shadow-inner border border-border/10">
-                        <Scale className="h-8 w-8 text-muted-foreground/40" />
+                    <div className="w-16 h-16 rounded-full bg-background flex items-center justify-center mb-4 shadow-inner border-2 border-primary/20">
+                        <Scale className="h-8 w-8 text-foreground" strokeWidth={1.5} />
                     </div>
-                    <h3 className="text-lg font-black tracking-tight">Nenhuma avaliação registrada</h3>
-                    <p className="text-sm font-bold text-muted-foreground/60 max-w-sm mt-1 mb-8">
+                    <h3 className="text-lg font-normal tracking-tight">Nenhuma avaliação registrada</h3>
+                    <p className="text-sm font-normal text-muted-foreground/60 max-w-sm mt-1 mb-8">
                         Registe a primeira avaliação física para começar a acompanhar a evolução do paciente.
                     </p>
-                    <Button variant="outline" onClick={() => setIsNewEvaluationOpen(true)} className="rounded-xl font-black text-[10px] uppercase tracking-widest px-8">
+                    <Button onClick={() => setIsNewEvaluationOpen(true)} className="gap-2 h-11 px-6 rounded-2xl text-[10px] font-normal uppercase tracking-widest shadow-xl shadow-primary/20 hover:scale-105 transition-all">
+                        <IconWrapper icon={Plus} variant="indigo" size="sm" className="bg-primary/20" />
                         Criar primeira avaliação
                     </Button>
                 </Card>
@@ -130,10 +176,10 @@ export function PatientAnalysisTab({ patientId }: PatientAnalysisTabProps) {
                             <CardHeader className="pb-2">
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-4">
-                                        <IconWrapper icon={Scale} variant="blue" size="md" />
+                                        <IconWrapper icon={Scale} variant="blue" size="md" iconClassName="stroke-[1.5]" />
                                         <div>
-                                            <CardTitle className="text-lg font-black tracking-tight">Evolução de Peso</CardTitle>
-                                            <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Progresso histórico</p>
+                                            <CardTitle className="text-lg font-normal tracking-tight">Evolução de Peso</CardTitle>
+                                            <p className="text-[10px] font-normal text-muted-foreground uppercase tracking-widest">Progresso histórico</p>
                                         </div>
                                     </div>
                                     {weightChange && (
@@ -265,8 +311,147 @@ export function PatientAnalysisTab({ patientId }: PatientAnalysisTabProps) {
                     </Card>
                 </>
             )}
+
+            {/* Anotações do Nutricionista */}
+            <Card variant="outline" className="border-border/10 bg-muted/5 rounded-[2.5rem] overflow-hidden">
+                <CardHeader className="p-8 pb-4">
+                    <div className="flex items-center gap-3">
+                        <IconWrapper icon={FileText} variant="amber" size="md" />
+                        <div>
+                            <CardTitle className="text-xl font-normal tracking-tight">Evolução Clínica e Notas</CardTitle>
+                            <p className="text-[10px] font-normal text-muted-foreground uppercase tracking-widest">Diário de bordo do paciente</p>
+                        </div>
+                    </div>
+                </CardHeader>
+                <CardContent className="p-0">
+                    <div className="flex flex-col md:flex-row">
+                        {/* Timeline de Anotações (Esquerda/Topo em Mobile) */}
+                        <div className="flex-1 p-6 space-y-8 border-b md:border-b-0 md:border-r border-border/10 bg-background/30 min-h-[400px]">
+                            {patient?.notes && patient.notes.length > 0 ? (
+                                <div className="space-y-8 relative before:absolute before:inset-y-0 before:left-[19px] before:w-[2px] before:bg-border/30">
+                                    {patient.notes.map((note: any, idx: number) => {
+                                        const noteDate = new Date(note.date || note.created_at || Date.now())
+                                        return (
+                                            <div key={note.id || idx} className="relative pl-10 group">
+                                                {/* Timeline Dot */}
+                                                <div className="absolute left-0 top-1.5 w-10 h-10 flex items-center justify-center z-10 transition-transform group-hover:scale-110">
+                                                    <div className="w-2.5 h-2.5 rounded-full bg-primary ring-4 ring-background" />
+                                                </div>
+
+                                                {/* Card */}
+                                                <div className="bg-background/60 backdrop-blur-sm rounded-xl border border-border/10 p-4 shadow-sm hover:shadow-md transition-all">
+                                                    <div className="flex justify-between items-start mb-2">
+                                                        <div className="flex items-center gap-2">
+                                                            <Badge variant={
+                                                                note.category === 'alert' ? 'destructive' :
+                                                                    note.category === 'success' ? 'default' :
+                                                                        note.category === 'conduta' ? 'secondary' : 'outline'
+                                                            } className="h-5 text-[10px] uppercase font-bold tracking-wider rounded-md">
+                                                                {note.category === 'alert' ? 'Alerta' :
+                                                                    note.category === 'success' ? 'Conquista' :
+                                                                        note.category === 'conduta' ? 'Conduta' : 'Evolução'}
+                                                            </Badge>
+                                                            <span className="text-[10px] font-bold text-muted-foreground uppercase flex items-center gap-1">
+                                                                <Calendar className="w-3 h-3" />
+                                                                {format(noteDate, "dd/MM/yyyy")}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                    <h4 className="text-sm font-bold text-foreground mb-1">{note.title || 'Sem título'}</h4>
+                                                    <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">
+                                                        {note.content}
+                                                    </p>
+                                                    <div className="flex items-center justify-between mt-3 pt-3 border-t border-border/5">
+                                                        <span className="text-[10px] font-medium text-muted-foreground flex items-center gap-1.5">
+                                                            <div className="w-4 h-4 rounded-full bg-primary/10 flex items-center justify-center text-[8px] font-bold text-primary">
+                                                                {note.nutritionist_name?.[0] || 'N'}
+                                                            </div>
+                                                            {note.nutritionist_name || 'Nutricionista'}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )
+                                    })}
+                                </div>
+                            ) : (
+                                <div className="h-full flex flex-col items-center justify-center text-center opacity-40 p-10">
+                                    <MessageSquare className="w-8 h-8 mb-3" />
+                                    <p className="text-sm font-medium">Nenhuma anotação clínica.</p>
+                                    <p className="text-xs">Registre a primeira evolução ao lado.</p>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Formulário de Nova Anotação (Direita/Baixo) */}
+                        <div className="w-full md:w-[380px] p-6 bg-muted/5">
+                            <h4 className="text-sm font-bold uppercase tracking-widest text-muted-foreground mb-6 flex items-center gap-2">
+                                <Plus className="w-4 h-4" /> Nova Evolução
+                            </h4>
+
+                            <div className="space-y-4">
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div className="space-y-1.5">
+                                        <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground ml-1">Data</label>
+                                        <input
+                                            type="date"
+                                            value={noteForm.date}
+                                            onChange={e => setNoteForm(prev => ({ ...prev, date: e.target.value }))}
+                                            className="w-full px-3 py-2 bg-background border border-border/20 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all font-medium tabular-nums"
+                                        />
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground ml-1">Categoria</label>
+                                        <Select
+                                            value={noteForm.category}
+                                            onValueChange={val => setNoteForm(prev => ({ ...prev, category: val }))}
+                                        >
+                                            <SelectTrigger className="h-[38px] bg-background border-border/20 text-xs font-medium">
+                                                <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="evolution">Evolução</SelectItem>
+                                                <SelectItem value="conduta">Conduta</SelectItem>
+                                                <SelectItem value="alert">Alerta</SelectItem>
+                                                <SelectItem value="success">Sucesso</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-1.5">
+                                    <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground ml-1">Assunto / Título</label>
+                                    <input
+                                        placeholder="Ex: Ajuste de macronutrientes..."
+                                        value={noteForm.title}
+                                        onChange={e => setNoteForm(prev => ({ ...prev, title: e.target.value }))}
+                                        className="w-full px-3 py-2 bg-background border border-border/20 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-muted-foreground/40 font-medium"
+                                    />
+                                </div>
+
+                                <div className="space-y-1.5">
+                                    <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground ml-1">Conteúdo da Evolução</label>
+                                    <textarea
+                                        rows={8}
+                                        placeholder="Descreva a evolução do paciente, queixas, observações clínicas..."
+                                        value={noteForm.content}
+                                        onChange={e => setNoteForm(prev => ({ ...prev, content: e.target.value }))}
+                                        className="w-full px-3 py-2 bg-background border border-border/20 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-muted-foreground/40 resize-none font-normal leading-relaxed"
+                                    />
+                                </div>
+
+                                <Button
+                                    className="w-full h-10 mt-2 gap-2 font-medium shadow-lg shadow-primary/10 hover:shadow-primary/20 transition-all"
+                                    onClick={handleAddNote}
+                                    disabled={!noteForm.title || !noteForm.content}
+                                >
+                                    <Plus className="w-4 h-4" /> Registrar Evolução
+                                </Button>
+                            </div>
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
         </div>
     )
 }
-
-

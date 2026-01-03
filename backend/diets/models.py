@@ -597,3 +597,160 @@ class DietViewLog(models.Model):
 
     def __str__(self):
         return f"{self.patient.user.name} visualizou {self.diet.name} em {self.viewed_at.strftime('%Y-%m-%d %H:%M')}"
+
+
+class MealPreset(models.Model):
+    """
+    Modelo para armazenar pr-sets de refeies personalizados por nutricionista
+    """
+    MEAL_TYPE_CHOICES = [
+        ('cafe_da_manha', 'Café da Manhã'),
+        ('almoco', 'Almoço'),
+        ('jantar', 'Jantar'),
+        ('lanche_manha', 'Lanche da Manhã'),
+        ('lanche_tarde', 'Lanche da Tarde'),
+        ('ceia', 'Ceia'),
+        ('suplemento', 'Suplemento'),
+    ]
+
+    DIET_TYPE_CHOICES = [
+        ('balanced', 'Balanceado'),
+        ('lowcarb', 'Low Carb'),
+        ('highcarb', 'High Carb'),
+        ('ketogenic', 'Cetogênico'),
+        ('vegetarian', 'Vegetariano'),
+        ('vegan', 'Vegano'),
+        ('hypertrophy', 'Hipertrofia'),
+        ('weight_loss', 'Perda de Peso'),
+        ('weight_gain', 'Ganho de Peso'),
+        ('custom', 'Personalizado'),
+    ]
+
+    nutritionist = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='meal_presets',
+        help_text="Nutricionista proprietário do preset"
+    )
+    name = models.CharField(max_length=255, help_text="Nome do preset")
+    meal_type = models.CharField(
+        max_length=20,
+        choices=MEAL_TYPE_CHOICES,
+        help_text="Tipo de refeição para este preset"
+    )
+    diet_type = models.CharField(
+        max_length=20,
+        choices=DIET_TYPE_CHOICES,
+        default='balanced',
+        help_text="Tipo de dieta para este preset"
+    )
+    description = models.TextField(blank=True, null=True, help_text="Descrição opcional do preset")
+
+    # Estrutura JSON para armazenar os alimentos do preset
+    foods = models.JSONField(
+        help_text="Lista de alimentos no preset",
+        default=list
+    )
+
+    # Calorias totais calculadas para facilitar busca e filtragem
+    total_calories = models.IntegerField(default=0, help_text="Calorias totais calculadas")
+    total_protein = models.DecimalField(max_digits=8, decimal_places=2, default=0, help_text="Proteínas totais em g")
+    total_carbs = models.DecimalField(max_digits=8, decimal_places=2, default=0, help_text="Carboidratos totais em g")
+    total_fats = models.DecimalField(max_digits=8, decimal_places=2, default=0, help_text="Gorduras totais em g")
+
+    is_active = models.BooleanField(default=True, help_text="Se o preset está ativo")
+    is_public = models.BooleanField(default=False, help_text="Se o preset pode ser compartilhado com outros")
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['meal_type', 'diet_type', 'name']
+        verbose_name = "Preset de Refeição"
+        verbose_name_plural = "Presets de Refeições"
+        indexes = [
+            models.Index(fields=['nutritionist', 'meal_type']),
+            models.Index(fields=['nutritionist', 'diet_type']),
+            models.Index(fields=['meal_type', 'diet_type']),
+            models.Index(fields=['is_active']),
+        ]
+        unique_together = ['nutritionist', 'name', 'meal_type', 'diet_type']
+
+    def __str__(self):
+        return f"{self.name} ({self.get_meal_type_display()} - {self.get_diet_type_display()})"
+
+    def save(self, *args, **kwargs):
+        """Sanitizar campos de texto antes de salvar"""
+        if self.name:
+            self.name = sanitize_string(self.name)
+        if self.description:
+            self.description = sanitize_string(self.description)
+        super().save(*args, **kwargs)
+
+
+class DefaultPreset(models.Model):
+    """
+    Modelo para armazenar presets padro por tipo de refeio e tipo de dieta
+    """
+    MEAL_TYPE_CHOICES = [
+        ('cafe_da_manha', 'Café da Manhã'),
+        ('almoco', 'Almoço'),
+        ('jantar', 'Jantar'),
+        ('lanche_manha', 'Lanche da Manhã'),
+        ('lanche_tarde', 'Lanche da Tarde'),
+        ('ceia', 'Ceia'),
+        ('suplemento', 'Suplemento'),
+    ]
+
+    DIET_TYPE_CHOICES = [
+        ('balanced', 'Balanceado'),
+        ('lowcarb', 'Low Carb'),
+        ('highcarb', 'High Carb'),
+        ('ketogenic', 'Cetogênico'),
+        ('vegetarian', 'Vegetariano'),
+        ('vegan', 'Vegano'),
+        ('hypertrophy', 'Hipertrofia'),
+        ('weight_loss', 'Perda de Peso'),
+        ('weight_gain', 'Ganho de Peso'),
+        ('custom', 'Personalizado'),
+    ]
+
+    nutritionist = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='default_presets',
+        help_text="Nutricionista proprietário do preset padrão"
+    )
+    meal_type = models.CharField(
+        max_length=20,
+        choices=MEAL_TYPE_CHOICES,
+        help_text="Tipo de refeição para este preset padrão"
+    )
+    diet_type = models.CharField(
+        max_length=20,
+        choices=DIET_TYPE_CHOICES,
+        help_text="Tipo de dieta para este preset padrão"
+    )
+    preset = models.ForeignKey(
+        'MealPreset',
+        on_delete=models.CASCADE,
+        help_text="Preset selecionado como padrão"
+    )
+    is_active = models.BooleanField(default=True, help_text="Se o preset padrão está ativo")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ['nutritionist', 'meal_type', 'diet_type']
+        ordering = ['nutritionist', 'meal_type', 'diet_type']
+        verbose_name = "Preset Padrão"
+        verbose_name_plural = "Presets Padrão"
+
+    def __str__(self):
+        return f"{self.get_meal_type_display()} - {self.get_diet_type_display()} (Padrão)"
+
+    def save(self, *args, **kwargs):
+        """Validar que o preset pertence ao mesmo nutricionista"""
+        if self.preset.nutritionist != self.nutritionist:
+            raise ValidationError("O preset deve pertencer ao mesmo nutricionista.")
+        super().save(*args, **kwargs)

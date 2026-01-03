@@ -107,7 +107,7 @@ export function ShareEvolution({ patientId, evaluationId }: ShareEvolutionProps)
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Share2 className="h-5 w-5" />
+          <Share2 className="h-5 w-5 text-violet-500" />
           Compartilhar Evolução
         </CardTitle>
       </CardHeader>
@@ -118,7 +118,7 @@ export function ShareEvolution({ patientId, evaluationId }: ShareEvolutionProps)
             size="sm"
             onClick={() => setShareMethod("link")}
           >
-            <Link className="h-4 w-4 mr-2" />
+            <Link className="h-4 w-4 mr-2 text-violet-500" />
             Link
           </Button>
           <Button
@@ -126,7 +126,7 @@ export function ShareEvolution({ patientId, evaluationId }: ShareEvolutionProps)
             size="sm"
             onClick={() => setShareMethod("email")}
           >
-            <Mail className="h-4 w-4 mr-2" />
+            <Mail className="h-4 w-4 mr-2 text-violet-500" />
             Email
           </Button>
           <Button
@@ -134,7 +134,7 @@ export function ShareEvolution({ patientId, evaluationId }: ShareEvolutionProps)
             size="sm"
             onClick={() => setShareMethod("chat")}
           >
-            <MessageSquare className="h-4 w-4 mr-2" />
+            <MessageSquare className="h-4 w-4 mr-2 text-emerald-500" />
             Xpert Messenger
           </Button>
         </div>

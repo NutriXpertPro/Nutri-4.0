@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils"
 import { cva, type VariantProps } from "class-variance-authority"
 
 const iconWrapperVariants = cva(
-    "relative flex items-center justify-center rounded-xl transition-all duration-300",
+    "relative flex items-center justify-center shrink-0 rounded-xl transition-all duration-300",
     {
         variants: {
             variant: {
@@ -14,6 +14,9 @@ const iconWrapperVariants = cva(
                 green: "bg-green-500/10 text-green-500",
                 violet: "bg-violet-500/10 text-violet-500",
                 emerald: "bg-emerald-500/10 text-emerald-500",
+                rose: "bg-rose-500/10 text-rose-500",
+                pink: "bg-pink-500/10 text-pink-500",
+                indigo: "bg-indigo-500/10 text-indigo-500",
                 ghost: "bg-transparent text-muted-foreground",
             },
             size: {

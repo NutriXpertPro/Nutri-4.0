@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -30,6 +31,7 @@ import {
     Activity,
     Zap,
 } from "lucide-react"
+import api from "@/services/api"
 
 interface Patient {
     id: string
@@ -73,6 +75,27 @@ function getGoalIcon(goal: string) {
 }
 
 export function PatientCard({ patient, className }: PatientCardProps) {
+    const router = useRouter();
+
+    const handleOpenMessage = async () => {
+        try {
+            // Usar o novo endpoint que encontra ou cria a conversa automaticamente
+            // O backend converte o patient_profile_id para user_id corretamente
+            const response = await api.post('/messages/conversations/find-or-create-by-patient/', {
+                patient_id: patient.id
+            });
+
+            const conversation = response.data;
+
+            // Navegar para a página de mensagens com o ID da conversa
+            router.push(`/messages?conversation=${conversation.id}`);
+        } catch (error) {
+            console.error('Erro ao abrir conversa com o paciente:', error);
+            // Se houver erro, redirecionar para a página de mensagens genérica
+            router.push('/messages');
+        }
+    };
+
     return (
         <Card
             variant="glass"
@@ -84,11 +107,11 @@ export function PatientCard({ patient, className }: PatientCardProps) {
             )}
         >
             <CardContent className="p-6">
-                {/* Header: Avatar + Name + Menu */}
+                {/* Header: Avatar + Name */}
                 <div className="flex items-start gap-4 mb-6">
                     <div className="relative">
-                        <Avatar className="h-16 w-16 border-2 border-background shadow-md">
-                            <AvatarImage src={patient.avatar} />
+                        <Avatar className="h-16 w-16 border-2 border-background shadow-md overflow-hidden">
+                            <AvatarImage src={patient.avatar} className="h-full w-full object-cover" />
                             <AvatarFallback className="text-lg bg-primary/10 text-primary">
                                 {patient.name.substring(0, 2).toUpperCase()}
                             </AvatarFallback>
@@ -103,7 +126,7 @@ export function PatientCard({ patient, className }: PatientCardProps) {
                         <div className="flex items-center gap-2 mb-1">
                             <User className="h-5 w-5 text-muted-foreground" />
                             <h3 className="text-lg tracking-tight truncate group-hover:text-primary transition-colors font-normal">
-                              {patient.name.startsWith('Paciente ') ? patient.name.substring(9) : patient.name}
+                                {patient.name.startsWith('Paciente ') ? patient.name.substring(9) : patient.name}
                             </h3>
                         </div>
                         {patient.goal ? (
@@ -115,58 +138,34 @@ export function PatientCard({ patient, className }: PatientCardProps) {
                             <p className="text-[10px] text-muted-foreground/40 capitalize tracking-wide">Paciente cadastrado</p>
                         )}
                     </div>
-
-                    {/* Actions Menu */}
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 rounded-xl bg-muted/20 opacity-0 group-hover:opacity-100 transition-all hover:bg-primary/10 hover:text-primary"
-                            >
-                                <MoreVertical className="h-4 w-4" />
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="rounded-2xl border-border/10 shadow-2xl p-1 w-48">
-                            <DropdownMenuItem asChild className="rounded-xl h-10 text-sm">
-                                <Link href={`/patients/${patient.id}`}>
-                                    <Eye className="mr-2 h-4 w-4 opacity-40" />
-                                    Ver Perfil
-                                </Link>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem className="rounded-xl h-10 text-sm focus:text-destructive focus:bg-destructive/5">
-                                <MessageSquare className="mr-2 h-4 w-4 text-destructive opacity-40 group-hover:opacity-100 transition-opacity" />
-                                Enviar Mensagem
-                            </DropdownMenuItem>
-                            <DropdownMenuItem asChild className="rounded-xl h-10 text-sm focus:text-primary focus:bg-primary/5">
-                                <Link href={`/diets/new?patient=${patient.id}`}>
-                                    <UtensilsCrossed className="mr-2 h-4 w-4 text-primary opacity-40 group-hover:opacity-100 transition-opacity" />
-                                    Criar Dieta
-                                </Link>
-                            </DropdownMenuItem>
-                            <div className="h-px bg-border/5 my-1" />
-                            <DropdownMenuItem className="rounded-xl h-10 text-sm text-destructive focus:text-destructive focus:bg-destructive/5">
-                                <Trash2 className="mr-2 h-4 w-4 opacity-40" />
-                                Excluir
-                            </DropdownMenuItem>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
                 </div>
 
                 {/* Info Grid */}
                 <div className="grid grid-cols-1 gap-3 mb-6">
-                    <div className="flex items-center gap-3 p-2.5 rounded-2xl bg-muted/20 border border-border/5 group/info hover:bg-muted/40 transition-colors">
+                    <a
+                        href={`mailto:${patient.email}`}
+                        className="flex items-center gap-3 p-2.5 rounded-2xl bg-muted/20 border border-border/5 group/info hover:bg-muted/40 transition-colors cursor-pointer"
+                    >
                         <div className="p-2 rounded-xl bg-background shadow-sm text-blue-500 group-hover/info:scale-110 transition-transform">
                             <Mail className="h-3.5 w-3.5" />
                         </div>
-                        <span className="text-xs text-muted-foreground truncate">{patient.email}</span>
-                    </div>
+                        <span className="text-xs text-muted-foreground truncate hover:text-blue-500 transition-colors">{patient.email}</span>
+                    </a>
                     <div className="flex items-center gap-3 p-2.5 rounded-2xl bg-muted/20 border border-border/5 group/info hover:bg-muted/40 transition-colors">
                         <div className="p-2 rounded-xl bg-background shadow-sm text-green-600 group-hover/info:scale-110 transition-transform">
                             <Phone className="h-3.5 w-3.5" />
                         </div>
                         <span className="text-xs text-muted-foreground">{patient.phone || '(11) 99999-9999'}</span>
                     </div>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-9 px-3 rounded-xl border-border/20 text-[10px] uppercase tracking-widest hover:bg-destructive hover:text-white hover:border-destructive transition-all shadow-sm"
+                        onClick={handleOpenMessage}
+                    >
+                        <MessageSquare className="h-3.5 w-3.5 mr-1 text-destructive" />
+                        Mensagem
+                    </Button>
                 </div>
 
                 {/* Footer: Progress + CTA */}

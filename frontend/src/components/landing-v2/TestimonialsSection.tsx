@@ -8,19 +8,19 @@ const testimonials = [
   {
     name: "Dra. Juliana Mendes",
     role: "Nutricionista Esportiva",
-    text: "O nível de detalhe da anamnese metabólica mudou minha forma de atender. Consigo identificar problemas no sono e digestão que passavam despercebidos. O app do paciente reduziu em 80% as mensagens de dúvida no WhatsApp.",
-    rating: 5
-  },
-  {
-    name: "Dr. Ricardo Alencar",
-    role: "Especialista em Hipertrofia",
-    text: "Saí de planilhas de Excel para o Nutri Xpert Pro e meu faturamento dobrou. A gestão financeira integrada me mostrou onde eu estava perdendo dinheiro. A interface dark é linda e os pacientes adoram.",
+    text: "O nível de detalhes e informações do aplicativo com praticidade mudou minha forma de atender, com ele consigo ter muito mais rapidez no atendimento e precisão, nas informações além de ser muito intuitivo, diferente dos demais aplicativos que ou faltam funções ou tem que fazer um curso pra poder usar, e o detalhe do sistema de mensagens próprio me dando privacidade de meu número pessoal.",
     rating: 5
   },
   {
     name: "Dra. Carla Souza",
     role: "Nutrição Funcional",
-    text: "Finalmente um software que entende a bioquímica e não apenas calorias. As ferramentas de rastreamento de sintomas são fantásticas. O suporte é rápido e eficiente.",
+    text: "Finalmente um software que entende a necessidade do nutricionista sem tanta burocracia e tela inúteis.",
+    rating: 5
+  },
+  {
+    name: "Dr. Ricardo Alencar",
+    role: "Especialista em Hipertrofia",
+    text: "Já usei planilhas e vários outros aplicativos famosos, desde Diet Box e Web Diet até outros mais. Posso afirmar que nada se compara a esse aplicativo, pois ele me dá total controle de tudo com poucos cliques. O recurso dos alimentos favoritos e refeições pré-sets que eu mesmo crio é excelente: com um simples clique já está lançado na refeição, bastando apenas colocar as quantidades. Isso é impressionante e prático.",
     rating: 5
   }
 ];

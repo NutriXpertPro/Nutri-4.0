@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import * as React from "react";
 import { DashboardLayout } from "@/components/layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -23,8 +24,13 @@ import {
   Eye,
   Edit,
   Trash2,
-  Phone
+  Phone,
+  ClipboardList,
+  Weight,
+  PieChart,
+  Dumbbell
 } from "lucide-react";
+import { StatCard } from "@/components/dashboard/StatCard";
 import { evaluationService, Evaluation } from "@/services/evaluation-service";
 import { useQuery } from "@tanstack/react-query";
 import { FaTape, FaDraftingCompass, FaClipboardList, FaWeight, FaChartPie } from "react-icons/fa";
@@ -47,7 +53,6 @@ import {
 } from "@/components/ui/dialog";
 
 export default function EvaluationsPage() {
-  const [filteredEvaluations, setFilteredEvaluations] = useState<Evaluation[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedPatient, setSelectedPatient] = useState<string | null>(null);
   const [evaluationFormDialogOpen, setEvaluationFormDialogOpen] = useState(false);
@@ -80,19 +85,14 @@ export default function EvaluationsPage() {
   console.log('🔍 DEBUG - Patients loading:', patientsLoading);
 
   // Filtrar avaliações com base na busca
-  useEffect(() => {
-    if (!searchQuery) {
-      setFilteredEvaluations(evaluations);
-      return;
-    }
+  const filteredEvaluations = React.useMemo(() => {
+    if (!searchQuery) return evaluations;
 
-    const filtered = evaluations.filter(evaluation =>
+    return evaluations.filter(evaluation =>
       evaluation.patient.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       evaluation.patient.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
       evaluation.notes?.toLowerCase().includes(searchQuery.toLowerCase())
     );
-
-    setFilteredEvaluations(filtered);
   }, [searchQuery, evaluations]);
 
   return (
@@ -103,10 +103,7 @@ export default function EvaluationsPage() {
           <div>
             <h1 className="text-h1 capitalize font-normal">Avaliações Físicas</h1>
             <div className="text-subtitle mt-1 flex items-center gap-2">
-              <div className="flex gap-1">
-                <FaTape className="h-4 w-4 text-sky-500" />
-                <FaDraftingCompass className="h-4 w-4 text-amber-500" />
-              </div>
+              <Ruler className="h-4 w-4 text-emerald-500" />
               Gerencie as avaliações físicas dos seus pacientes
             </div>
           </div>
@@ -131,71 +128,37 @@ export default function EvaluationsPage() {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card>
-            <CardHeader className="pb-2">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-data-label">
-                  TOTAL DE AVALIAÇÕES
-                </CardTitle>
-                <FaClipboardList className="h-4 w-4 text-violet-500" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-data-value font-normal">{evaluations.length}</div>
-              <p className="text-[10px] text-muted-foreground tracking-[0.1em] font-normal">+5 Este mês</p>
-            </CardContent>
-          </Card>
+          <StatCard
+            title="Total de Avaliações"
+            value={evaluations.length}
+            icon={ClipboardList}
+            variant="violet"
+            subtitle="+5 Este mês"
+          />
 
-          <Card>
-            <CardHeader className="pb-2">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-data-label">
-                  MÉDIA PESO
-                </CardTitle>
-                <FaWeight className="h-4 w-4 text-emerald-500" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-data-value font-normal">
-                {evaluations.length ? (evaluations.reduce((sum, e) => sum + e.weight, 0) / evaluations.length).toFixed(1) : '0'} kg
-              </div>
-              <p className="text-[10px] text-muted-foreground tracking-[0.1em] font-normal">±0.5 Kg</p>
-            </CardContent>
-          </Card>
+          <StatCard
+            title="Média Peso"
+            value={`${evaluations.length ? (evaluations.reduce((sum, e) => sum + e.weight, 0) / evaluations.length).toFixed(1) : '0'} kg`}
+            icon={Weight}
+            variant="green"
+            subtitle="±0.5 Kg"
+          />
 
-          <Card>
-            <CardHeader className="pb-2">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-data-label">
-                  Média gordura
-                </CardTitle>
-                <FaChartPie className="h-4 w-4 text-orange-500" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-data-value font-normal">
-                {evaluations.length ? (evaluations.reduce((sum, e) => sum + e.body_fat, 0) / evaluations.length).toFixed(1) : '0'} %
-              </div>
-              <p className="text-[10px] text-muted-foreground tracking-[0.1em] font-normal">-1.2% Médio</p>
-            </CardContent>
-          </Card>
+          <StatCard
+            title="Média Gordura"
+            value={`${evaluations.length ? (evaluations.reduce((sum, e) => sum + e.body_fat, 0) / evaluations.length).toFixed(1) : '0'} %`}
+            icon={PieChart}
+            variant="amber"
+            subtitle="-1.2% Médio"
+          />
 
-          <Card>
-            <CardHeader className="pb-2">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-data-label">
-                  Média músculo
-                </CardTitle>
-                <GiBiceps className="h-4 w-4 text-amber-700" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-data-value font-normal">
-                {evaluations.length ? (evaluations.reduce((sum, e) => sum + e.muscle_mass, 0) / evaluations.length).toFixed(1) : '0'} kg
-              </div>
-              <p className="text-[10px] text-muted-foreground tracking-[0.1em] font-normal">+0.8 Kg Médio</p>
-            </CardContent>
-          </Card>
+          <StatCard
+            title="Média Músculo"
+            value={`${evaluations.length ? (evaluations.reduce((sum, e) => sum + e.muscle_mass, 0) / evaluations.length).toFixed(1) : '0'} kg`}
+            icon={Dumbbell}
+            variant="blue"
+            subtitle="+0.8 Kg Médio"
+          />
         </div>
 
         {/* Charts Section */}
@@ -204,13 +167,13 @@ export default function EvaluationsPage() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <TrendingUp className="h-5 w-5" />
+                <TrendingUp className="h-5 w-5 text-emerald-500" />
                 Gráficos Evolutivos
               </CardTitle>
             </CardHeader>
             <CardContent className="flex flex-col items-center justify-center h-64">
               <div className="text-center text-muted-foreground">
-                <TrendingUp className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                <TrendingUp className="h-12 w-12 mx-auto mb-2 opacity-50 text-emerald-500" />
                 <p>Visualização de gráficos de evolução</p>
                 <p className="text-sm mt-1">Peso • Água • Gordura • Músculo</p>
               </div>
@@ -221,13 +184,13 @@ export default function EvaluationsPage() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Ruler className="h-5 w-5" />
+                <Ruler className="h-5 w-5 text-violet-500" />
                 Antropometria
               </CardTitle>
             </CardHeader>
             <CardContent className="flex flex-col items-center justify-center h-64">
               <div className="text-center text-muted-foreground">
-                <Ruler className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                <Ruler className="h-12 w-12 mx-auto mb-2 opacity-50 text-violet-500" />
                 <p>Gráfico de medidas corporais</p>
                 <p className="text-sm mt-1">Braço • Abdômen • Quadril • Cintura • etc</p>
               </div>
@@ -240,7 +203,7 @@ export default function EvaluationsPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="flex items-center gap-2">
-              <FileText className="h-5 w-5" />
+              <FileText className="h-5 w-5 text-violet-500" />
               Histórico de Avaliações
             </CardTitle>
             {selectedPatient && (
@@ -256,8 +219,8 @@ export default function EvaluationsPage() {
               </div>
             ) : filteredEvaluations.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12">
-                <FileText className="h-12 w-12 text-muted-foreground mb-4" />
-                <h3 className="text-lg font-semibold">Nenhuma avaliação encontrada</h3>
+                <FileText className="h-12 w-12 text-violet-300 mb-4" />
+                <h3 className="text-lg font-normal">Nenhuma avaliação encontrada</h3>
                 <p className="text-muted-foreground mb-4">
                   {searchQuery ? "Nenhuma avaliação corresponde à sua busca" : "Comece adicionando avaliações para seus pacientes"}
                 </p>
@@ -316,7 +279,7 @@ export default function EvaluationsPage() {
           <Card className="flex-1 min-w-[250px]">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <FileText className="h-5 w-5" />
+                <FileText className="h-5 w-5 text-violet-500" />
                 Ficha Personalizada
               </CardTitle>
             </CardHeader>
@@ -325,7 +288,7 @@ export default function EvaluationsPage() {
                 className="w-full"
                 onClick={() => setPatientSelectionDialogOpen(true)}
               >
-                <FileText className="h-4 w-4 mr-2" />
+                <FileText className="h-4 w-4 mr-2 text-violet-500" />
                 Criar Ficha Antropométrica
               </Button>
             </CardContent>
@@ -334,7 +297,7 @@ export default function EvaluationsPage() {
           <Card className="flex-1 min-w-[250px]">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Upload className="h-5 w-5" />
+                <Upload className="h-5 w-5 text-blue-500" />
                 Upload Externo
               </CardTitle>
             </CardHeader>
@@ -344,7 +307,7 @@ export default function EvaluationsPage() {
                 className="w-full"
                 onClick={() => setExternalExamDialogOpen(true)}
               >
-                <Upload className="h-4 w-4 mr-2" />
+                <Upload className="h-4 w-4 mr-2 text-blue-500" />
                 Upload de Exame Externo
               </Button>
             </CardContent>
@@ -353,7 +316,7 @@ export default function EvaluationsPage() {
           <Card className="flex-1 min-w-[250px]">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Share2 className="h-5 w-5" />
+                <Share2 className="h-5 w-5 text-sky-500" />
                 Compartilhar
               </CardTitle>
             </CardHeader>
@@ -363,7 +326,7 @@ export default function EvaluationsPage() {
                 className="w-full"
                 onClick={() => setShareEvolutionDialogOpen(true)}
               >
-                <Share2 className="h-4 w-4 mr-2" />
+                <Share2 className="h-4 w-4 mr-2 text-sky-500" />
                 Compartilhar Evolução
               </Button>
             </CardContent>

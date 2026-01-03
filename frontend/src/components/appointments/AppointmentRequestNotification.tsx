@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Clock, Check, X, User, Calendar } from "lucide-react"
+import { IconWrapper } from "@/components/ui/IconWrapper"
 import { format, parseISO } from "date-fns"
 import { ptBR } from "date-fns/locale"
 
@@ -35,10 +36,13 @@ export function AppointmentRequestNotification({
     <div className="relative">
       <Card variant="glass" className="overflow-hidden">
         <CardHeader className="pb-3 relative">
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-xl bg-green-500/10 flex items-center justify-center text-green-500">
-              <Clock className="h-5 w-5" />
-            </div>
+          <div className="flex items-center gap-4">
+            <IconWrapper
+              icon={Clock}
+              variant="green"
+              size="xl"
+              className="ring-4 ring-background border border-white/10 dark:border-white/20 shadow-md"
+            />
             <div>
               <CardTitle className="flex items-center gap-2">
                 <span className="text-foreground">

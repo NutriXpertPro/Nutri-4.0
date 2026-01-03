@@ -2,30 +2,30 @@ import os
 import sys
 import django
 
-# Adicionar o diretório do projeto ao path
-sys.path.append(r'C:\Nutri 4.0\backend')
-
-# Configurar o ambiente Django
+# Adiciona o diretório do projeto ao caminho do Python
+sys.path.append(os.path.join(os.path.dirname(__file__)))
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'setup.settings')
 
-# Configurar o django
 django.setup()
 
 from users.models import User
 
-# Verificar usuários existentes
-users = User.objects.all()
-print('Total de usuários:', users.count())
+def check_users():
+    print("Verificando usuários cadastrados...")
 
-print("\nListando todos os usuários:")
-for user in users:
-    print(f'ID: {user.id}, Email: {user.email}, Ativo: {user.is_active}')
+    # Verifica todos os usuários
+    users = User.objects.all()
+    print(f"Total de usuários: {users.count()}")
 
-# Verificar se o usuário específico existe
-try:
-    specific_user = User.objects.get(email='andersoncarlosvp@gmail.com')
-    print(f"\nUsuário encontrado com email 'andersoncarlosvp@gmail.com':")
-    print(f'ID: {specific_user.id}, Email: {specific_user.email}, Ativo: {specific_user.is_active}')
-    print(f'Senha definida: {specific_user.has_usable_password()}')
-except User.DoesNotExist:
-    print(f"\nNenhum usuário encontrado com email 'andersoncarlosvp@gmail.com'")
+    for user in users:
+        print(f"ID: {user.id}, Email: {user.email}, Tipo: {user.user_type}, Nome: {user.name}")
+
+    # Verifica apenas nutricionistas
+    nutritionists = User.objects.filter(user_type='nutricionista')
+    print(f"\nNutricionistas: {nutritionists.count()}")
+
+    for nutritionist in nutritionists:
+        print(f"ID: {nutritionist.id}, Email: {nutritionist.email}, Nome: {nutritionist.name}, Título: {nutritionist.professional_title}")
+
+if __name__ == "__main__":
+    check_users()

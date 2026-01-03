@@ -29,27 +29,27 @@ export function TimelineEvent({ event }: TimelineEventProps) {
       <CardHeader className="pb-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="space-y-1">
-            <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest opacity-60">{config.label}</p>
-            <CardTitle className="text-lg font-black tracking-tight group-hover:text-primary transition-colors">
+            <p className="text-[10px] font-normal text-muted-foreground uppercase tracking-widest opacity-60">{config.label}</p>
+            <CardTitle className="text-lg font-normal tracking-tight text-primary transition-colors">
               {event.title}
             </CardTitle>
           </div>
-          <Badge variant="outline" className="h-7 px-3 rounded-xl text-[10px] font-black uppercase tracking-widest border-border/10 bg-muted/20 text-muted-foreground whitespace-nowrap">
+          <Badge variant="outline" className="h-7 px-3 rounded-xl text-[10px] font-normal uppercase tracking-widest border-border/10 bg-muted/20 text-muted-foreground whitespace-nowrap">
             {formattedDate}
           </Badge>
         </div>
-        <p className="text-sm font-bold text-muted-foreground/80 mt-2 leading-relaxed">
+        <p className="text-sm font-normal text-muted-foreground/80 mt-2 leading-relaxed">
           {event.description}
         </p>
       </CardHeader>
       <CardContent className="pt-0 pb-6">
-        <div className="flex items-center gap-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/30">
+        <div className="flex items-center gap-4 text-[10px] font-normal uppercase tracking-widest text-muted-foreground/60 transition-colors group-hover:text-muted-foreground/80">
           <span className="flex items-center gap-1.5 border-r border-border/10 pr-4">
-            <div className="w-1.5 h-1.5 rounded-full bg-primary/20" />
+            <div className="w-1.5 h-1.5 rounded-full bg-primary" />
             Ref: #{event.id}
           </span>
           <span className="flex items-center gap-1.5">
-            <Activity className="h-3 w-3" />
+            <Activity className="h-3 w-3 text-primary" />
             Sincronizado
           </span>
         </div>

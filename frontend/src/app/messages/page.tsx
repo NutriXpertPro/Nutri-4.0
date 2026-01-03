@@ -1,12 +1,16 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/auth-context';
 import WhatsAppStyleMessages from '@/components/organisms/WhatsAppStyleMessages';
 import { initializeNotificationService } from '@/services/notification-service';
+import { MessageSquare } from 'lucide-react';
+import { IconWrapper } from '@/components/ui/IconWrapper';
 
 const XpertMessengerPage: React.FC = () => {
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
+  const searchParams = useSearchParams();
   const { user } = useAuth();
 
   // Inicializar o serviço de notificação e bloquear scroll global quando nesta página
@@ -29,6 +33,14 @@ const XpertMessengerPage: React.FC = () => {
     };
   }, []);
 
+  // Verificar se há um ID de conversa na URL ao carregar a página
+  useEffect(() => {
+    const conversationId = searchParams?.get('conversation');
+    if (conversationId) {
+      setSelectedConversationId(conversationId);
+    }
+  }, [searchParams]);
+
   const handleSelectConversation = (conversationId: string) => {
     setSelectedConversationId(conversationId);
   };
@@ -38,13 +50,14 @@ const XpertMessengerPage: React.FC = () => {
       {/* Conversations List - Left Panel */}
       <div className="w-1/3 border-r bg-background flex flex-col" style={{ height: '100%', maxHeight: '100%', overflow: 'hidden' }}>
         <div className="p-4 border-b flex-shrink-0">
-          <h1 className="text-xl font-normal text-foreground">Xpert Messenger</h1>
+          <h1 className="text-xl font-normal text-foreground mb-2">
+            <span className="text-emerald-500 font-bold drop-shadow-[0_1px_4px_rgba(16,185,129,0.2)]">
+              <span className="text-3xl font-black">X</span>pert
+            </span>
+            <span className="ml-1 text-[#000000] font-bold">Messenger</span>
+          </h1>
           <div className="text-sm text-muted-foreground flex items-center gap-2">
-            <div className="w-4 h-4">
-              <svg className="w-4 h-4 text-primary" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M18 5v8a2 2 0 01-2 2h-5l-5 4v-4H4a2 2 0 01-2-2V5a2 2 0 012-2h12a2 2 0 012 2zM7 8H5v2h2V8zm2 0h2v2H9V8zm6 0h-2v2h2V8z" clipRule="evenodd" />
-              </svg>
-            </div>
+            <MessageSquare className="w-4 h-4 text-emerald-500" />
             Converse com seus pacientes
           </div>
         </div>
@@ -66,10 +79,19 @@ const XpertMessengerPage: React.FC = () => {
         ) : (
           <div className="flex-1 flex items-center justify-center">
             <div className="text-center p-8">
-              <div className="mx-auto bg-muted rounded-full p-4 w-16 h-16 flex items-center justify-center mb-4">
-                <div className="w-8 h-8 bg-green-500 rounded-full"></div>
-              </div>
-              <h2 className="text-xl font-semibold text-foreground mb-2">Xpert Messenger</h2>
+              <IconWrapper
+                icon={MessageSquare}
+                variant="green"
+                size="xl"
+                glow
+                className="mx-auto mb-4 ring-4 ring-background border border-white/10 dark:border-white/20 shadow-lg"
+              />
+              <h2 className="text-xl font-semibold text-foreground mb-2">
+                <span className="text-emerald-500 font-bold drop-shadow-[0_1px_4px_rgba(16,185,129,0.2)]">
+                  <span className="text-3xl font-black">X</span>pert
+                </span>
+                <span className="ml-1 text-[#000000] font-bold">Messenger</span>
+              </h2>
               <div className="text-muted-foreground max-w-md">
                 Selecione uma conversa para começar a conversar com seu paciente.
                 Mantenha-se em contato para melhorar o acompanhamento nutricional.

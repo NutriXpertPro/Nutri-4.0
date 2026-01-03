@@ -6,6 +6,7 @@ from django.db.models import Q
 from .models import Conversation, Message
 from .serializers import ConversationSerializer, MessageSerializer
 from automation.tasks import send_new_message_notifications
+from patients.models import PatientProfile
 
 class ConversationViewSet(viewsets.ModelViewSet):
     """
@@ -24,6 +25,48 @@ class ConversationViewSet(viewsets.ModelViewSet):
         conversation = serializer.save()
         # Add the current user to the conversation
         conversation.participants.add(self.request.user)
+
+    @action(detail=False, methods=['post'], url_path='find-or-create-by-patient')
+    def find_or_create_by_patient(self, request):
+        """
+        Encontra ou cria uma conversa com um paciente usando o patient_profile_id.
+        Converte automaticamente para o user_id correto.
+        """
+        patient_id = request.data.get('patient_id')
+        
+        if not patient_id:
+            return Response(
+                {'error': 'patient_id é obrigatório'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            # Buscar o PatientProfile e obter o user_id associado
+            patient_profile = PatientProfile.objects.get(id=patient_id)
+            patient_user = patient_profile.user
+        except PatientProfile.DoesNotExist:
+            return Response(
+                {'error': 'Paciente não encontrado'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        # Buscar uma conversa existente entre o nutricionista e o paciente
+        existing_conversation = Conversation.objects.filter(
+            participants=request.user
+        ).filter(
+            participants=patient_user
+        ).first()
+        
+        if existing_conversation:
+            serializer = self.get_serializer(existing_conversation)
+            return Response(serializer.data)
+        
+        # Criar uma nova conversa
+        conversation = Conversation.objects.create()
+        conversation.participants.add(request.user, patient_user)
+        
+        serializer = self.get_serializer(conversation)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 class MessageViewSet(viewsets.ModelViewSet):
     """

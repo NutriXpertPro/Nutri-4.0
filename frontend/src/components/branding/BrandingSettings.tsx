@@ -7,26 +7,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Upload, Palette, Image as ImageIcon, User, Phone, MapPin, Mail } from 'lucide-react';
+import { Upload, Palette, Image as ImageIcon, User, Phone, MapPin, Mail, PenLine } from 'lucide-react';
 import api from '@/services/api';
+import { BrandingSettings } from '@/services/settings-service';
 
-interface BrandingSettings {
-  id?: string;
-  logo?: string;
-  primary_color: string;
-  secondary_color: string;
-  business_name: string;
-  crn_number: string;
-  professional_license: string;
-  email_signature: string;
-  phone: string;
-  address: string;
-  document_header: string;
-  document_footer: string;
-  is_active: boolean;
-}
-
-const BrandingSettings = () => {
+const BrandingSettingsComponent = () => {
   const [branding, setBranding] = useState<BrandingSettings>({
     primary_color: '#22c55e',
     secondary_color: '#059669',
@@ -41,42 +26,61 @@ const BrandingSettings = () => {
     is_active: true
   });
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [signaturePreview, setSignaturePreview] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const signatureInputRef = useRef<HTMLInputElement>(null);
 
   // Carregar configurações de branding do backend
   useEffect(() => {
+    let isMounted = true; // Flag para evitar atualizações em componentes desmontados
+
     const fetchBranding = async () => {
       try {
         setLoading(true);
         const response = await api.get('/branding/branding/me');
-        setBranding(response.data);
 
-        if (response.data.logo) {
-          setLogoPreview(response.data.logo);
-        }
-      } catch (error) {
-        console.error('Erro ao carregar configurações de branding:', error);
-        // Criar configurações padrão se não existirem
-        try {
-          const response = await api.patch('/branding/branding/me', {
-            primary_color: '#22c55e',
-            secondary_color: '#059669'
-          });
+        if (isMounted) { // Verificar se o componente ainda está montado
           setBranding(response.data);
+
           if (response.data.logo) {
             setLogoPreview(response.data.logo);
           }
-        } catch (createError) {
-          console.error('Erro ao criar configurações de branding:', createError);
+          if (response.data.signature_image) {
+            setSignaturePreview(response.data.signature_image);
+          }
+        }
+      } catch (error) {
+        if (isMounted) { // Verificar se o componente ainda está montado
+          console.error('Erro ao carregar configurações de branding:', error);
+          // Criar configurações padrão se não existirem
+          try {
+            const response = await api.patch('/branding/branding/me', {
+              primary_color: '#22c55e',
+              secondary_color: '#059669'
+            });
+            setBranding(response.data);
+            if (response.data.logo) {
+              setLogoPreview(response.data.logo);
+            }
+          } catch (createError) {
+            console.error('Erro ao criar configurações de branding:', createError);
+          }
         }
       } finally {
-        setLoading(false);
+        if (isMounted) { // Verificar se o componente ainda está montado
+          setLoading(false);
+        }
       }
     };
 
     fetchBranding();
+
+    // Cleanup function para definir isMounted como false quando o componente for desmontado
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   // Manipular mudança de arquivo de logo
@@ -91,6 +95,18 @@ const BrandingSettings = () => {
     }
   };
 
+  // Manipular mudança de arquivo de assinatura
+  const handleSignatureChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setSignaturePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   // Salvar configurações de branding
   const handleSave = async () => {
     try {
@@ -98,7 +114,7 @@ const BrandingSettings = () => {
 
       // Adicionar campos de texto
       Object.entries(branding).forEach(([key, value]) => {
-        if (key !== 'logo' && key !== 'id') {
+        if (key !== 'logo' && key !== 'signature_image' && key !== 'id') {
           formData.append(key, String(value));
         }
       });
@@ -106,6 +122,11 @@ const BrandingSettings = () => {
       // Adicionar arquivo de logo se existir
       if (fileInputRef.current?.files?.[0]) {
         formData.append('logo', fileInputRef.current.files[0]);
+      }
+
+      // Adicionar arquivo de assinatura se existir
+      if (signatureInputRef.current?.files?.[0]) {
+        formData.append('signature_image', signatureInputRef.current.files[0]);
       }
 
       const response = await api.patch('/branding/branding/me', formData, {
@@ -201,6 +222,70 @@ const BrandingSettings = () => {
                   </Button>
                   <p className="text-xs text-muted-foreground mt-1">
                     Formatos: JPG, PNG (máx. 5MB)
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Assinatura Digital */}
+            <div>
+              <label htmlFor="signature-upload" className="text-sm font-normal leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                Assinatura Digital
+              </label>
+              <p className="text-xs text-muted-foreground mb-2">
+                O fundo será removido automaticamente
+              </p>
+              <div className="mt-2 flex items-center space-x-4">
+                {signaturePreview ? (
+                  <div className="relative">
+                    <div className="w-40 h-20 border rounded-lg bg-white flex items-center justify-center p-2">
+                      <img
+                        src={signaturePreview}
+                        alt="Pré-visualização da assinatura"
+                        className="max-w-full max-h-full object-contain"
+                        style={{ mixBlendMode: 'multiply' }}
+                      />
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="absolute -top-2 -right-2 h-6 w-6 p-0"
+                      onClick={() => {
+                        setSignaturePreview(null);
+                        if (signatureInputRef.current) {
+                          signatureInputRef.current.value = '';
+                        }
+                      }}
+                    >
+                      ×
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center w-40 h-20 border-2 border-dashed rounded-lg bg-muted">
+                    <PenLine className="h-6 w-6 text-muted-foreground" />
+                  </div>
+                )}
+
+                <div>
+                  <Input
+                    id="signature-upload"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleSignatureChange}
+                    ref={signatureInputRef}
+                    className="hidden"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => signatureInputRef.current?.click()}
+                  >
+                    <Upload className="h-4 w-4 mr-2" />
+                    Selecionar Assinatura
+                  </Button>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    PNG ou JPG • Fundo branco ou transparente
                   </p>
                 </div>
               </div>
@@ -386,8 +471,8 @@ const BrandingSettings = () => {
           </Button>
         </div>
       </CardContent>
-    </Card>
+    </Card >
   );
 };
 
-export default BrandingSettings;
+export default BrandingSettingsComponent;

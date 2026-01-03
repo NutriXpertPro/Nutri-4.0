@@ -24,3 +24,7 @@ class AutomationTemplateViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         # Associar o template ao usuário autenticado
         serializer.save(created_by=self.request.user)
+    
+    def perform_update(self, serializer):
+        # Manter o usuário original ao atualizar
+        serializer.save()

@@ -14,7 +14,7 @@ export interface DashboardAppointment {
     type: string;
     duration: number;
     status: string;
-    photo: string | null;
+    avatar: string | null;
 }
 
 export interface DashboardFeaturedPatient {
@@ -31,7 +31,7 @@ export interface DashboardFeaturedPatient {
         bmi_trend: number;
         muscle_mass_trend: number;
     };
-    photo: string | null;
+    avatar: string | null;
 }
 
 export const dashboardService = {

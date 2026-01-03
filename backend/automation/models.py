@@ -18,6 +18,7 @@ class AutomationTemplate(models.Model):
     trigger = models.CharField(max_length=50, choices=TRIGGER_CHOICES, verbose_name="Gatilho")
     content = models.TextField(verbose_name="Conteúdo da Mensagem")
     is_active = models.BooleanField(default=True, verbose_name="Ativo")
+    delay_hours = models.IntegerField(default=0, verbose_name="Atraso em Horas", blank=True, null=True)
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,

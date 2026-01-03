@@ -2,12 +2,16 @@
 
 import * as React from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { User, MessageSquare, Phone, Target, TrendingUp, TrendingDown } from "lucide-react"
+import api from "@/services/api"
+import { useAuth } from "@/contexts/auth-context"
+import { IconWrapper } from "@/components/ui/IconWrapper"
 
 export interface Metric {
     label: string
@@ -30,6 +34,9 @@ interface PacienteEmFocoProps {
 }
 
 export function PacienteEmFoco({ patient, className }: PacienteEmFocoProps) {
+    const router = useRouter();
+    const { user } = useAuth();
+
     if (!patient) {
         return (
             <Card className={cn(
@@ -41,34 +48,105 @@ export function PacienteEmFoco({ patient, className }: PacienteEmFocoProps) {
                 <h3 className="text-lg font-semibold text-muted-foreground">Nenhum paciente em foco</h3>
                 <p className="text-sm text-muted-foreground mt-1">Agende uma consulta para destacar o próximo paciente.</p>
                 <Button asChild className="mt-4">
-                    <Link href="/appointments/new">Agendar Consulta</Link>
+                    <Link href="/calendar">Agendar Consulta</Link>
                 </Button>
             </Card>
         )
     }
 
+    const handleOpenMessage = async () => {
+        try {
+            // Primeiro, tentamos encontrar uma conversa existente com o paciente
+            const response = await api.get('/messages/conversations/');
+            const conversations = response.data;
+
+            // Procurar uma conversa que contenha o paciente como participante
+            let conversation = conversations.find((conv: any) =>
+                conv.participants.some((p: any) => p.id === (isNaN(Number(patient.id)) ? patient.id : parseInt(patient.id)))
+            );
+
+            // Se não encontrar uma conversa existente, criamos uma nova
+            if (!conversation) {
+                // Criamos uma conversa com o paciente como participante
+                // O backend automaticamente adiciona o usuário autenticado como participante
+                const patientId = isNaN(Number(patient.id)) ? patient.id : parseInt(patient.id);
+
+                try {
+                    // Enviar o ID do paciente como participante
+                    const newConversationResponse = await api.post('/messages/conversations/', {
+                        participants: [patientId]
+                    });
+                    conversation = newConversationResponse.data;
+                } catch (err: any) {
+                    const createError = err;
+                    console.error('Erro ao criar conversa:', createError);
+                    // Verificar se é um erro 400 e tentar uma abordagem alternativa
+                    if (createError.response?.status === 400) {
+                        // Se o erro for 400, pode ser um problema com a validação do ManyToManyField
+                        // Tentar criar uma conversa vazia e deixar o backend adicionar os participantes
+                        try {
+                            // Primeiro, vamos tentar encontrar o ID do usuário autenticado
+                            const currentUserId = user?.id || JSON.parse(localStorage.getItem('user') || '{}')?.id;
+
+                            if (currentUserId) {
+                                // Tentar criar uma conversa vazia e adicionar participantes separadamente
+                                // Mas como não temos um endpoint para isso, vamos tentar uma abordagem diferente
+                                // Vamos tentar criar a conversa com ambos os participantes explicitamente
+                                const newConversationResponse = await api.post('/messages/conversations/', {
+                                    participants: [currentUserId, patientId]
+                                });
+                                conversation = newConversationResponse.data;
+                            } else {
+                                throw createError; // Se não tivermos o ID do usuário, lançar o erro original
+                            }
+                        } catch (fallbackError) {
+                            console.error('Erro ao criar conversa com abordagem alternativa:', fallbackError);
+                            throw fallbackError;
+                        }
+                    } else {
+                        throw createError; // Para outros tipos de erro, lançar o erro original
+                    }
+                }
+            }
+
+            // Navegar para a página de mensagens com o ID da conversa
+            router.push(`/messages?conversation=${conversation.id}`);
+        } catch (error) {
+            console.error('Erro ao abrir conversa com o paciente:', error);
+            // Se houver erro, redirecionar para a página de mensagens genérica
+            router.push('/messages');
+        }
+    };
+
     return (
-            <Card className={cn(
-                "h-full relative overflow-hidden",
-                // Destaque visual
-                "border-primary/20 bg-linear-to-br from-primary/5 to-transparent",
-                className
-            )}>
-                {/* Gradient accent */}
-                <div className="absolute top-0 right-0 w-32 h-32 bg-linear-to-bl from-primary/10 to-transparent rounded-bl-full" />
+        <Card className={cn(
+            "h-full relative overflow-hidden",
+            // Destaque visual
+            "border-primary/20 bg-linear-to-br from-primary/5 to-transparent",
+            className
+        )}>
+            {/* Gradient accent */}
+            <div className="absolute top-0 right-0 w-32 h-32 bg-linear-to-bl from-primary/10 to-transparent rounded-bl-full" />
 
             <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-2 text-lg !font-normal">
-                    <User className="h-5 w-5 text-amber-500" />
-                    Próximo Paciente
-                </CardTitle>
+                <div className="flex items-center gap-4">
+                    <IconWrapper
+                        icon={User}
+                        variant="amber"
+                        size="md"
+                        className="ring-4 ring-background border border-white/10 dark:border-white/20 shadow-md"
+                    />
+                    <CardTitle className="text-lg !font-normal">
+                        Próximo Paciente
+                    </CardTitle>
+                </div>
             </CardHeader>
 
             <CardContent className="space-y-6">
                 {/* Patient Info */}
                 <div className="flex items-center gap-4">
-                    <Avatar className="h-16 w-16 border-2 border-background shadow-md">
-                        <AvatarImage src={patient.avatar} />
+                    <Avatar className="h-16 w-16 border-2 border-background shadow-md overflow-hidden">
+                        <AvatarImage src={patient.avatar} className="h-full w-full object-cover" />
                         <AvatarFallback className="text-lg bg-primary/10 text-primary !font-normal">
                             {patient.name.substring(0, 2).toUpperCase()}
                         </AvatarFallback>
@@ -114,19 +192,21 @@ export function PacienteEmFoco({ patient, className }: PacienteEmFocoProps) {
                 </div>
 
                 {/* Actions */}
-                <div className="flex items-center gap-2 pt-2">
-                    <Button size="sm" className="flex-1 gap-2" asChild>
+                <div className="flex items-center justify-center gap-2 pt-2">
+                    <Button size="sm" className="gap-2" asChild>
                         <Link href={`/patients/${patient.id}`}>
                             <User className="h-4 w-4" />
                             Ver Perfil
                         </Link>
                     </Button>
-                    <Button size="sm" variant="outline" className="gap-2 text-destructive border-destructive/20 hover:bg-destructive/5">
+                    <Button
+                        size="sm"
+                        variant="outline"
+                        className="gap-2 text-destructive border-destructive/20 hover:bg-destructive/5"
+                        onClick={handleOpenMessage}
+                    >
                         <MessageSquare className="h-4 w-4" />
                         Mensagem
-                    </Button>
-                    <Button size="icon-sm" variant="ghost" className="text-green-600 hover:bg-green-50">
-                        <Phone className="h-4 w-4" />
                     </Button>
                 </div>
             </CardContent>

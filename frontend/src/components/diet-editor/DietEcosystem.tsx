@@ -1,10 +1,15 @@
 "use client"
 
-import React from 'react'
+import React, { useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { EcoHeader } from './ecosystem/hud/EcoHeader'
-import { useDietEditorStore, useDietEditorPatient } from '@/stores/diet-editor-store'
+import { useDietEditorStore, useDietEditorPatient, PatientContext } from '@/stores/diet-editor-store'
 import { DietTemplateWorkspace } from './DietTemplateWorkspace'
+import { useQuery } from '@tanstack/react-query'
+import patientService, { Patient } from '@/services/patient-service'
+import { evaluationService } from '@/services/evaluation-service'
+import { anamnesisService } from '@/services/anamnesis-service'
+import api from '@/services/api'
 
 // Import Patient Tabs Components
 import { PatientOverviewTab } from "@/components/patients/PatientOverviewTab"
@@ -19,10 +24,134 @@ export function DietEcosystem() {
     const activeTab = useDietEditorStore(state => state.activeTab)
     const setActiveTab = useDietEditorStore(state => state.setActiveTab)
     const patient = useDietEditorPatient()
+    const setPatient = useDietEditorStore(state => state.setPatient)
+    const calculateMetabolics = useDietEditorStore(state => state.calculateMetabolics)
 
     // Ensure we have a patient context or ID for the tabs
     const patientContext = patient || MOCK_PATIENT
     const patientId = String(patientContext.id)
+
+    // Fetch complete patient data from API
+    const { data: completePatient, isLoading, error } = useQuery({
+        queryKey: ['patient', patientId],
+        queryFn: () => patientService.getById(Number(patientId)),
+        enabled: !!patientId && patientId !== '1' // Only fetch if not using mock patient
+    })
+
+    // Update the store patient with complete data when available
+    useEffect(() => {
+        if (completePatient && !isLoading) {
+            // Fetch patient profile data to get weight, height, and other metrics
+            const fetchPatientProfile = async () => {
+                try {
+                    // Fetch the most recent evaluation to get weight and height
+                    const evaluations = await evaluationService.listByPatient(completePatient.id);
+                    const latestEvaluation = evaluations.length > 0
+                        ? evaluations.reduce((latest, current) =>
+                            new Date(current.date) > new Date(latest.date) ? current : latest
+                        )
+                        : null;
+
+                    // Fetch Anamnesis
+                    let anamnesisData = null
+                    try {
+                        const responses = await anamnesisService.listResponses(completePatient.id)
+                        if (responses && responses.length > 0) {
+                            // Get most recent - prioritize filled_date
+                            anamnesisData = responses.sort((a, b) => new Date(b.filled_date).getTime() - new Date(a.filled_date).getTime())[0]
+                        }
+                    } catch (e) {
+                        console.warn('Failed to fetch anamnesis', e)
+                    }
+
+                    // Fetch Exams
+                    let examsData: any[] = []
+                    try {
+                        const { data } = await api.get(`/evaluations/external-exams/?patient=${completePatient.id}`)
+                        examsData = data || []
+                    } catch (e) {
+                        console.warn('Failed to fetch exams', e)
+                    }
+
+                    // Calculate Initial Weight (First evaluation or Current if only one)
+                    let initialWeight = undefined
+                    if (evaluations.length > 0) {
+                        const sortedByDate = [...evaluations].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+                        initialWeight = Number(sortedByDate[0].weight)
+                    }
+
+                    const mappedPatient: PatientContext = {
+                        id: completePatient.id,
+                        name: completePatient.name,
+                        status: completePatient.status,
+                        avatar: completePatient.avatar,
+                        age: completePatient.birth_date ?
+                            new Date().getFullYear() - new Date(completePatient.birth_date).getFullYear() : 0,
+                        sex: (completePatient.gender === 'M' || completePatient.gender === 'F') ? completePatient.gender : 'M',
+                        weight: latestEvaluation?.weight ? Number(latestEvaluation.weight) : 70,
+                        height: latestEvaluation?.height ? Number(latestEvaluation.height) / 100 : 1.70,
+                        bodyFat: latestEvaluation?.body_fat ? Number(latestEvaluation.body_fat) : undefined,
+                        muscleMass: latestEvaluation?.muscle_mass ? Number(latestEvaluation.muscle_mass) : undefined,
+                        goal: completePatient.goal || '',
+                        restrictions: [],
+                        allergies: [],
+                        initial_weight: initialWeight || (latestEvaluation?.weight ? Number(latestEvaluation.weight) : 70),
+                        anamnesis: anamnesisData,
+                        exams: examsData,
+                        notes: [],
+                        // Mapped new fields
+                        birth_date: completePatient.birth_date,
+                        phone: completePatient.phone,
+                        email: completePatient.email,
+                        start_date: completePatient.start_date,
+                        created_at: completePatient.created_at,
+                        service_type: completePatient.service_type,
+                        // If backend doesn't support these directly yet, we leave them undefined or map from somewhere else if available
+                        medications: [],
+                        pathologies: []
+                    }
+                    setPatient(mappedPatient)
+
+                    // Trigger recalculation of metabolic values after patient data is updated
+                    setTimeout(() => {
+                        calculateMetabolics()
+                    }, 100) // Small delay to ensure state is updated
+                } catch (error) {
+                    console.error('Error fetching patient profile:', error)
+
+                    // Fallback to basic patient data if evaluation fetch fails
+                    const mappedPatient: PatientContext = {
+                        id: completePatient.id,
+                        name: completePatient.name,
+                        status: completePatient.status,
+                        avatar: completePatient.avatar,
+                        age: completePatient.birth_date ?
+                            new Date().getFullYear() - new Date(completePatient.birth_date).getFullYear() : 0,
+                        sex: (completePatient.gender === 'M' || completePatient.gender === 'F') ? completePatient.gender : 'M',
+                        weight: 70,
+                        height: 1.70,
+                        bodyFat: undefined,
+                        muscleMass: undefined,
+                        goal: completePatient.goal || '',
+                        restrictions: [],
+                        allergies: [],
+                        initial_weight: 70,
+                        anamnesis: null,
+                        exams: [],
+                        notes: []
+                    }
+                    setPatient(mappedPatient)
+
+                    // Trigger recalculation of metabolic values after patient data is updated
+                    setTimeout(() => {
+                        calculateMetabolics()
+                    }, 100) // Small delay to ensure state is updated
+                }
+            }
+
+            fetchPatientProfile()
+        }
+    }, [completePatient, isLoading, setPatient, setPatient, calculateMetabolics])
 
     // Shared Drawer Animation Variants
     // Both the Diet Template and the Tabs use this "Drawer from Ceiling" effect
@@ -40,7 +169,7 @@ export function DietEcosystem() {
                 <motion.div
                     key="diet-template-workspace"
                     {...drawerVariants}
-                    className="w-full min-h-[calc(100vh-120px)] bg-background/95 backdrop-blur-sm border-b border-border/10 rounded-b-3xl shadow-2xl relative pointer-events-auto px-2 md:px-4 mt-[30px]"
+                    className="w-full min-h-[calc(100vh-120px)] bg-background/95 backdrop-blur-sm border-b border-border/10 rounded-b-3xl shadow-2xl relative pointer-events-auto px-2 md:px-4 mt-[10px]"
                     onClick={(e) => e.stopPropagation()}
                     style={{ zIndex: 10 }}
                 >
@@ -56,13 +185,13 @@ export function DietEcosystem() {
                 content = <PatientOverviewTab />
                 break;
             case 'context':
-                content = <PatientContextTab />
+                content = <PatientContextTab patient={patientContext as PatientContext} />
                 break;
             case 'analysis':
                 content = <PatientAnalysisTab patientId={Number(patientId)} />
                 break;
             case 'anamnesis':
-                content = <PatientAnamnesisTab patientId={Number(patientId)} patient={patientContext as any} />
+                content = <PatientAnamnesisTab patientId={Number(patientId)} patient={completePatient as any} />
                 break;
             default:
                 return null
@@ -79,6 +208,25 @@ export function DietEcosystem() {
                     {content}
                 </div>
             </motion.div>
+        )
+    }
+
+    if (isLoading) {
+        return (
+            <div className="w-full min-h-screen flex items-center justify-center bg-background">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+            </div>
+        )
+    }
+
+    if (error) {
+        return (
+            <div className="w-full min-h-screen flex items-center justify-center bg-background text-foreground">
+                <div className="text-center">
+                    <h2 className="text-xl font-semibold">Erro ao carregar dados do paciente</h2>
+                    <p className="text-muted-foreground mt-2">{(error as Error).message}</p>
+                </div>
+            </div>
         )
     }
 

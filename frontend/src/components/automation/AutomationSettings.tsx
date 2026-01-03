@@ -28,59 +28,50 @@ interface AutomationTemplate {
 }
 
 const AutomationSettings = () => {
-  const [templates, setTemplates] = useState<AutomationTemplate[]>([
-    {
-      id: '1',
-      name: 'Confirmação de Agendamento',
-      trigger: 'appointment_confirmation',
-      content: 'Olá {patient_name}, sua consulta com {nutritionist_name} foi confirmada para {appointment_date} às {appointment_time}.',
-      is_active: true,
-    },
-    {
-      id: '2',
-      name: 'Lembrete 24h',
-      trigger: 'appointment_reminder',
-      content: 'Olá {patient_name}, lembre-se da sua consulta amanhã com {nutritionist_name} às {appointment_time}.',
-      is_active: true,
-    },
-    {
-      id: '3',
-      name: 'Aniversário',
-      trigger: 'birthday',
-      content: 'Feliz aniversário, {patient_name}! Desejamos um ótimo dia repleto de saúde e bem-estar.',
-      is_active: false,
-    }
-  ]);
-
+  const [templates, setTemplates] = useState<AutomationTemplate[]>([]);
   const [currentTemplate, setCurrentTemplate] = useState<AutomationTemplate | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);
 
   // Carregar templates do backend
   useEffect(() => {
+    let isMounted = true; // Flag para evitar atualizações em componentes desmontados
+
     const fetchTemplates = async () => {
       try {
         setLoading(true);
-        const response = await api.get('/automation/templates');
-        setTemplates(response.data);
+        const response = await api.get('/automation/templates/');
+
+        if (isMounted) { // Verificar se o componente ainda está montado
+          setTemplates(response.data);
+        }
       } catch (error) {
-        console.error('Erro ao carregar templates de automação:', error);
-        // Usar dados mockados em caso de erro
-        setTemplates([
-          {
-            id: '1',
-            name: 'Confirmação de Agendamento',
-            trigger: 'appointment_confirmation',
-            content: 'Olá {patient_name}, sua consulta com {nutritionist_name} foi confirmada para {appointment_date} às {appointment_time}.',
-            is_active: true,
-          }
-        ]);
+        if (isMounted) { // Verificar se o componente ainda está montado
+          console.error('Erro ao carregar templates de automação:', error);
+          // Usar dados mockados em caso de erro
+          setTemplates([
+            {
+              id: '1',
+              name: 'Confirmação de Agendamento',
+              trigger: 'appointment_confirmation',
+              content: 'Olá {patient_name}, sua consulta com {nutritionist_name} foi confirmada para {appointment_date} às {appointment_time}.',
+              is_active: true,
+            }
+          ]);
+        }
       } finally {
-        setLoading(false);
+        if (isMounted) { // Verificar se o componente ainda está montado
+          setLoading(false);
+        }
       }
     };
 
     fetchTemplates();
+
+    // Cleanup function para definir isMounted como false quando o componente for desmontado
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const handleAddTemplate = () => {
@@ -102,7 +93,7 @@ const AutomationSettings = () => {
     if (!id) return;
 
     try {
-      await api.delete(`/automation/templates/${id}`);
+      await api.delete(`/automation/templates/${id}/`);
       setTemplates(templates.filter(template => template.id !== id));
     } catch (error) {
       console.error('Erro ao deletar template:', error);
@@ -115,11 +106,11 @@ const AutomationSettings = () => {
     try {
       if (currentTemplate.id) {
         // Atualizar template existente
-        const response = await api.patch(`/automation/templates/${currentTemplate.id}`, currentTemplate);
+        const response = await api.patch(`/automation/templates/${currentTemplate.id}/`, currentTemplate);
         setTemplates(templates.map(t => t.id === currentTemplate.id ? response.data : t));
       } else {
         // Criar novo template
-        const response = await api.post('/automation/templates', currentTemplate);
+        const response = await api.post('/automation/templates/', currentTemplate);
         setTemplates([...templates, response.data]);
       }
       setIsEditing(false);

@@ -45,7 +45,7 @@ export function DietTopBar() {
                 </div>
 
                 {/* 3. Favorites Quick Bar - Premium Carousel */}
-                <div className="flex items-center gap-4 pt-2 border-t border-border/5">
+                <div className="flex items-center gap-4 pt-2 border-t border-border/5 translate-y-[35px]">
                     <div className="flex items-center gap-2 min-w-max text-[10px] font-black text-amber-500/80 mx-1 uppercase tracking-widest">
                         <Star className="w-4 h-4 fill-amber-500/20" />
                         Favoritos

@@ -9,8 +9,11 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Configuração do python-decouple
 from decouple import config, Csv
 
-# Tenta carregar .env local se existir, apenas para debug/dev local explícito se necessário
-# Mas em produção confiamos no config padrão que lê os.environ
+# Tenta carregar .env local se existir
+# IMPORTANTE: Para SMTP do Google, adicione no seu .env:
+# EMAIL_HOST_USER=seu-email@gmail.com
+# EMAIL_HOST_PASSWORD=sua-senha-de-app (Gerada em Segurança > Senha de App na conta Google)
+# DEFAULT_FROM_EMAIL=Seu Nome <seu-email@gmail.com>
 try:
     from decouple import Config, RepositoryEnv, undefined
     env_path = BASE_DIR / '.env'
@@ -232,15 +235,36 @@ SIMPLE_JWT = {
     'JTI_CLAIM': 'jti',
 }
 
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+# Configurações de E-mail
+EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='')
+EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
+
+# Se DEBUG=True e não houver credenciais SMTP, usa o console para facilitar o desenvolvimento
+if DEBUG and not EMAIL_HOST_USER:
+    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+    print("DEBUG: Using CONSOLE email backend because EMAIL_HOST_USER is empty.")
+else:
+    EMAIL_BACKEND = config('EMAIL_BACKEND', default='django.core.mail.backends.smtp.EmailBackend')
+
+EMAIL_HOST = config('EMAIL_HOST', default='smtp.gmail.com')
+EMAIL_PORT = config('EMAIL_PORT', default=587, cast=int)
+EMAIL_USE_TLS = config('EMAIL_USE_TLS', default=True, cast=bool)
+DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='Nutri Xpert <noreply@nutrixpertpro.com>')
 
 # Configurações do Celery
+# Em ambiente de desenvolvimento local (Windows) sem Redis, usamos ALWAYS_EAGER
+# Isso faz com que as tasks rodem sincronicamente na mesma thread/processo
+if DEBUG:
+    CELERY_TASK_ALWAYS_EAGER = True
+    CELERY_TASK_EAGER_PROPAGATES = True
+
 CELERY_BROKER_URL = config('CELERY_BROKER_URL', default='redis://localhost:6379/0')
 CELERY_RESULT_BACKEND = config('CELERY_RESULT_BACKEND', default='redis://localhost:6379/0')
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = 'America/Sao_Paulo'
+CELERY_BROKER_CONNECTION_TIMEOUT = 1 # Timeout curto para não travar se tentar conectar
 
 # Configuração de arquivos de mídia
 MEDIA_URL = '/media/'

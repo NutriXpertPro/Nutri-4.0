@@ -1,7 +1,6 @@
 "use client"
 
-import { useState } from "react"
-import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -13,8 +12,11 @@ import {
     MessageSquare,
     ChevronRight
 } from "lucide-react"
+import { IconWrapper } from "@/components/ui/IconWrapper"
 import { format, parseISO, isToday, isAfter, isBefore, addMinutes } from "date-fns"
 import { cn } from "@/lib/utils"
+import api from "@/services/api"
+import { toast } from "sonner"
 
 export interface Appointment {
     id: string
@@ -30,6 +32,7 @@ export interface Appointment {
 interface AgendaDoDiaProps {
     appointments?: Appointment[]
     className?: string
+    hideViewAgendaButton?: boolean
 }
 
 // Mock data - será substituído por dados da API
@@ -69,14 +72,84 @@ const mockAppointments: Appointment[] = [
     },
 ]
 
-export function AgendaDoDia({ appointments = mockAppointments, className }: AgendaDoDiaProps) {
+export function AgendaDoDia({ appointments = mockAppointments, className, hideViewAgendaButton = false }: AgendaDoDiaProps) {
+    const router = useRouter();
+
+    const handleOpenMessage = async (appointment: Appointment) => {
+        try {
+            // Primeiro, tentamos encontrar uma conversa existente com o paciente
+            const response = await api.get('/messages/conversations/');
+            const conversations = response.data;
+
+            // Procurar uma conversa que contenha o paciente como participante
+            let conversation = conversations.find((conv: any) =>
+                conv.participants.some((p: any) => p.name === appointment.patientName)
+            );
+
+            // Se não encontrar uma conversa existente, criamos uma nova
+            if (!conversation) {
+                // Para criar uma nova conversa, precisamos do ID do paciente
+                // Isso exigiria uma chamada adicional para obter o ID do paciente pelo nome
+                const patientsResponse = await api.get('/patients/');
+                const patient = patientsResponse.data.find((p: any) => p.user.name === appointment.patientName);
+
+                if (patient) {
+                    const newConversationResponse = await api.post('/messages/conversations/', {
+                        participants: [patient.id]
+                    });
+                    conversation = newConversationResponse.data;
+                }
+            }
+
+            // Navegar para a página de mensagens com o ID da conversa
+            if (conversation) {
+                router.push(`/messages?conversation=${conversation.id}`);
+            } else {
+                router.push('/messages');
+            }
+        } catch (error) {
+            console.error('Erro ao abrir conversa com o paciente:', error);
+            // Se houver erro, redirecionar para a página de mensagens genérica
+            router.push('/messages');
+        }
+    };
+
+    const handleShareLink = () => {
+        console.log('handleShareLink chamado!');
+        const calendarUrl = `${window.location.origin}/calendar`;
+        console.log('URL a ser copiada:', calendarUrl);
+
+        if (!navigator.clipboard) {
+            console.error('API de clipboard não disponível');
+            toast.error('Seu navegador não suporta copiar para área de transferência');
+            return;
+        }
+
+        navigator.clipboard.writeText(calendarUrl)
+            .then(() => {
+                console.log('Link copiado com sucesso!');
+                toast.success('Link copiado para área de transferência!');
+            })
+            .catch(err => {
+                console.error('Erro ao copiar link:', err);
+                toast.error('Erro ao copiar link. Tente novamente.');
+            });
+    };
+
     return (
         <Card variant="glass" className={cn("h-full", className)}>
             <CardHeader className="flex flex-row items-center justify-between pb-3">
-                <CardTitle className="flex items-center gap-2 text-lg">
-                    <Calendar className="h-5 w-5 text-amber-500" />
-                    Agenda de Hoje
-                </CardTitle>
+                <div className="flex items-center gap-4">
+                    <IconWrapper
+                        icon={Calendar}
+                        variant="amber"
+                        size="xl"
+                        className="ring-4 ring-background border border-white/10 dark:border-white/20 shadow-md"
+                    />
+                    <CardTitle className="text-lg">
+                        Agenda de Hoje
+                    </CardTitle>
+                </div>
                 <Badge variant="secondary" className="font-normal">
                     {appointments.length} consultas
                 </Badge>
@@ -159,19 +232,13 @@ export function AgendaDoDia({ appointments = mockAppointments, className }: Agen
 
                 {/* Ações rápidas */}
                 <div className="flex items-center gap-2 pt-4 border-t mt-4">
-                    <Button size="sm" variant="ghost" className="flex-1 gap-2 text-green-600 hover:bg-green-50 hover:text-green-700">
-                        <Phone className="h-4 w-4" />
-                        Ligar
-                    </Button>
-                    <Button size="sm" variant="ghost" className="flex-1 gap-2 text-destructive hover:bg-destructive/5 hover:text-destructive">
+                    <Button size="sm" variant="ghost" className="flex-1 gap-2 text-destructive hover:bg-destructive/5 hover:text-destructive" onClick={() => appointments.length > 0 ? handleOpenMessage(appointments[0]) : router.push('/messages')}>
                         <MessageSquare className="h-4 w-4" />
                         Mensagem
                     </Button>
-                    <Button size="sm" className="flex-1 gap-2" asChild>
-                        <Link href="/calendar">
-                            Ver Agenda
-                            <ChevronRight className="h-4 w-4" />
-                        </Link>
+                    <Button size="sm" className="flex-1 gap-2" onClick={handleShareLink}>
+                        Enviar Link
+                        <ChevronRight className="h-4 w-4" />
                     </Button>
                 </div>
             </CardContent>

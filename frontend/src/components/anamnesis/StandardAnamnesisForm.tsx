@@ -33,7 +33,13 @@ import {
     Loader2,
     Upload,
     Check,
+    TrendingDown,
+    TrendingUp,
+    Dumbbell,
+    Flame,
+    ClipboardList,
 } from "lucide-react"
+import { IconWrapper } from "@/components/ui/IconWrapper"
 import { cn } from "@/lib/utils"
 
 interface StandardAnamnesisFormProps {
@@ -41,6 +47,22 @@ interface StandardAnamnesisFormProps {
     onBack: () => void
     initialData?: Partial<StandardAnamnesisData>
     onSave?: (data: StandardAnamnesisData) => Promise<void>
+}
+
+// Helper para obter ícone e cor baseado no objetivo
+const getObjectiveConfig = (objective: string) => {
+    switch (objective) {
+        case "Emagrecimento":
+            return { icon: TrendingDown, variant: "blue" as const }
+        case "Ganho de massa muscular":
+            return { icon: Dumbbell, variant: "amber" as const }
+        case "Ganho de peso":
+            return { icon: TrendingUp, variant: "indigo" as const }
+        case "Trincar o shape":
+            return { icon: Flame, variant: "rose" as const }
+        default:
+            return { icon: Target, variant: "emerald" as const }
+    }
 }
 
 // Interface baseada no modelo Django Anamnesis
@@ -763,10 +785,15 @@ export function StandardAnamnesisForm({ patientId, onBack, initialData, onSave }
                         <CollapsibleTrigger asChild>
                             <CardHeader className="cursor-pointer hover:bg-muted/20 transition-colors">
                                 <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-3">
-                                        <div className="h-10 w-10 rounded-lg bg-amber-500/10 flex items-center justify-center text-amber-500">
-                                            <Target className="h-5 w-5" />
-                                        </div>
+                                    <div className="flex items-center gap-4">
+                                        <IconWrapper
+                                            {...getObjectiveConfig(formData.objetivo)}
+                                            size="lg"
+                                            className={cn(
+                                                "ring-4 ring-background border border-white/10 dark:border-white/20 shadow-md transition-all",
+                                                expandedSections.includes("objetivos") ? "scale-110 shadow-lg" : ""
+                                            )}
+                                        />
                                         <div>
                                             <CardTitle className="text-lg">5. Objetivos</CardTitle>
                                             <CardDescription>Metas e compromisso</CardDescription>
@@ -936,7 +963,12 @@ export function StandardAnamnesisForm({ patientId, onBack, initialData, onSave }
                     <p className="text-sm text-muted-foreground hidden sm:block">
                         Progresso: <strong>{progress}%</strong>
                     </p>
-                    <Button onClick={handleSave} disabled={isSaving} size="lg" className="gap-2">
+                    <Button
+                        onClick={handleSave}
+                        disabled={isSaving}
+                        size="lg"
+                        className="gap-2 bg-primary hover:bg-primary/90 text-primary-foreground transition-colors"
+                    >
                         {isSaving ? (
                             <Loader2 className="h-4 w-4 animate-spin" />
                         ) : (

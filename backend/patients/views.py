@@ -39,8 +39,24 @@ class PatientDetailView(generics.RetrieveUpdateDestroyAPIView):
         return PatientProfile.objects.filter(nutritionist=self.request.user, is_active=True)
 
     def perform_destroy(self, instance):
-        instance.is_active = False
-        instance.save()
+        from notifications.models import Notification
+        
+        # 1. Remover notificações associadas a este paciente
+        # O padrão da mensagem é "... [PID:{id}]"
+        # Usamos icontains para garantir, mas o formato é específico
+        Notification.objects.filter(
+            user=self.request.user,
+            message__contains=f"[PID:{instance.id}]"
+        ).delete()
+
+        # 2. Verificar se é Hard Delete (exclusão permanente)
+        hard_delete = self.request.query_params.get('hard_delete', 'false').lower() == 'true'
+
+        if hard_delete:
+            instance.delete()
+        else:
+            instance.is_active = False
+            instance.save()
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -132,7 +148,11 @@ def patient_search_view(request):
 
     # Return a simplified structure for the autocomplete component
     results = [
-        {"id": patient.id, "name": patient.user.name}
+        {
+            "id": patient.id, 
+            "name": patient.user.name,
+            "avatar": request.build_absolute_uri(patient.user.profile.profile_picture.url) if patient.user.profile.profile_picture else None
+        }
         for patient in patients
     ]
     

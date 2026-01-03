@@ -16,7 +16,7 @@ interface StatCardProps {
         isPositive?: boolean
     }
     subtitle?: string
-    variant?: "theme" | "blue" | "amber" | "green" | "violet"
+    variant?: "theme" | "blue" | "amber" | "green" | "violet" | "rose" | "pink" | "indigo"
     className?: string
 }
 
@@ -117,7 +117,7 @@ export function StatCard({
                         variant={iconVariant as any}
                         size="xl"
                         glow
-                        className="group-hover:scale-110 group-hover:rotate-3 transition-transform"
+                        className="group-hover:scale-110 transition-transform ring-4 ring-background border border-white/10 dark:border-white/20 shadow-lg"
                     />
                 </div>
             </CardContent>

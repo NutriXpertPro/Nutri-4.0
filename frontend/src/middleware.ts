@@ -16,7 +16,7 @@ const protectedRoutes = [
 ]
 
 // Lista de rotas públicas (não autenticadas)
-const publicRoutes = ['/login', '/register', '/']
+const publicRoutes = ['/login', '/register', '/auth', '/']
 
 export function middleware(request: NextRequest) {
     const token = request.cookies.get('accessToken')?.value
@@ -32,8 +32,8 @@ export function middleware(request: NextRequest) {
         return NextResponse.redirect(new URL('/login', request.url))
     }
 
-    // Rotas públicas (Login/Register) - redireciona se já estiver logado
-    if ((pathname === '/login' || pathname === '/register') && token) {
+    // Rotas públicas (Login/Register/Auth) - redireciona se já estiver logado
+    if ((pathname === '/login' || pathname === '/register' || pathname === '/auth') && token) {
         return NextResponse.redirect(new URL('/dashboard', request.url))
     }
 
@@ -56,6 +56,7 @@ export const config = {
         // Rotas públicas
         '/login/:path*',
         '/register/:path*',
+        '/auth/:path*',
     ],
 }
 

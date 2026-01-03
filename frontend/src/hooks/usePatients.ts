@@ -29,7 +29,8 @@ export function usePatients() {
     })
 
     const deletePatient = useMutation({
-        mutationFn: (id: number) => patientService.delete(id),
+        mutationFn: ({ id, hardDelete }: { id: number; hardDelete?: boolean }) =>
+            patientService.delete(id, hardDelete),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['patients'] })
         },

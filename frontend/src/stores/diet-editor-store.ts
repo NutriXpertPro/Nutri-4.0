@@ -33,7 +33,8 @@ export interface DietDayPlan {
 export interface PatientContext {
     id: number
     name: string
-    photo?: string
+    status?: boolean
+    avatar?: string
     age: number
     sex: 'M' | 'F'
     weight: number
@@ -43,6 +44,19 @@ export interface PatientContext {
     goal: string
     restrictions: string[]
     allergies: string[]
+    initial_weight?: number
+    anamnesis?: any
+    exams?: any[]
+    notes?: any[]
+    // New fields for Context Tab
+    birth_date?: string
+    phone?: string
+    email?: string
+    start_date?: string
+    created_at?: string
+    service_type?: string
+    medications?: string[]
+    pathologies?: string[]
 }
 
 // Workspace Meal Types (for DietTemplateWorkspace)
@@ -60,8 +74,49 @@ export interface WorkspaceMealFood {
     preferred: boolean
     unidade_caseira?: string
     peso_unidade_caseira_g?: number
+    medidas?: Array<{ label: string; weight: number }>
     originalId?: number | string // ID from source (TACO, TBCA etc)
     source?: string // Table source
+}
+
+// Meal Preset Types
+export interface MealPresetFood {
+    id: number;
+    food_name: string;
+    quantity: number;
+    unit: string;
+    calories: number;
+    protein: number;
+    carbs: number;
+    fats: number;
+    fiber?: number;
+}
+
+export interface MealPreset {
+    id: number;
+    name: string;
+    meal_type: string;
+    diet_type: string;
+    description?: string;
+    foods: MealPresetFood[];
+    total_calories: number;
+    total_protein: number;
+    total_carbs: number;
+    total_fats: number;
+    is_active: boolean;
+    created_at: string;
+    updated_at: string;
+}
+
+// Default Preset Types
+export interface DefaultPreset {
+    id: number;
+    meal_type: string;
+    diet_type: string;
+    preset: number; // ID do MealPreset
+    is_active: boolean;
+    created_at: string;
+    updated_at: string;
 }
 
 export interface WorkspaceMeal {
@@ -176,6 +231,15 @@ interface DietEditorState {
     validityEndDate: string
     favorites: Food[]
 
+    // Meal Presets State
+    mealPresets: MealPreset[]
+    presetsLoading: boolean
+    favoritePresetIds: number[]
+
+    // Default Presets State
+    defaultPresets: DefaultPreset[]
+    defaultPresetsLoading: boolean
+
     // Actions
     setPatient: (patient: PatientContext | null) => void
     setDietName: (name: string) => void
@@ -224,6 +288,29 @@ interface DietEditorState {
     loadFavorites: () => Promise<void>
     addFoodToWorkspaceMeal: (mealId: number, food: Food) => void
     removeFoodFromWorkspaceMeal: (mealId: number, foodId: number) => void
+
+    // Meal Preset Actions
+    loadMealPresets: () => Promise<void>
+    createMealPreset: (preset: Omit<MealPreset, 'id' | 'created_at' | 'updated_at'>) => Promise<void>
+    updateMealPreset: (id: number, preset: Partial<MealPreset>) => Promise<void>
+    deleteMealPreset: (id: number) => Promise<void>
+    getPresetsByMealType: (mealType: string) => MealPreset[]
+    getPresetsByDietType: (dietType: string) => MealPreset[]
+    searchMealPresets: (query: string) => MealPreset[]
+    toggleFavoritePreset: (presetId: number) => void
+    getFavoritePresets: () => MealPreset[]
+    isPresetFavorite: (presetId: number) => boolean
+
+    // Default Preset Actions
+    loadDefaultPresets: () => Promise<void>
+    setDefaultPreset: (mealType: string, dietType: string, presetId: number) => Promise<void>
+    removeDefaultPreset: (mealType: string, dietType: string) => Promise<void>
+    getDefaultPreset: (mealType: string, dietType: string) => DefaultPreset | undefined
+    applyDefaultPreset: (mealId: string, mealType: string, dietType: string) => void
+    setPresetAsDefault: (presetId: number, mealType: string, dietType: string) => Promise<void>
+
+    // Patient Actions (Transient for UI)
+    addNote: (note: { title: string; category: string; content: string; date: string }) => void
 }
 
 // Helper: Generate unique ID
@@ -364,10 +451,10 @@ const initialState = {
     dietType: 'normocalorica' as DietType,
     activityLevel: 1.55,
     goalAdjustment: 0,
-    tmb: 1618,
-    get: 2508,
-    targetCalories: 2508,
-    targetMacros: { carbs: 314, protein: 125, fats: 84, fiber: 25 },
+    tmb: 0,
+    get: 0,
+    targetCalories: 0,
+    targetMacros: { carbs: 0, protein: 0, fats: 0, fiber: 25 },
     customMacros: { carbs: 40, protein: 30, fats: 30 },
     customTargets: {},
     activeTab: 'diet',
@@ -393,6 +480,15 @@ const initialState = {
     validityStartDate: '',
     validityEndDate: '',
     favorites: [],
+
+    // Meal Presets state
+    mealPresets: [],
+    presetsLoading: false,
+    favoritePresetIds: [],
+
+    // Default Presets state
+    defaultPresets: [],
+    defaultPresetsLoading: false,
 }
 
 // Zustand Store
@@ -421,6 +517,82 @@ export const useDietEditorStore = create<DietEditorState>((set, get) => ({
             customTargets: dietType === 'personalizada' ? state.customTargets : {}
         }))
         get().calculateMetabolics()
+
+        // Auto-apply default presets for this diet type
+        const state = get();
+        const { weekPlan, currentDayIndex, defaultPresets, mealPresets } = state;
+        const currentMeals = weekPlan[currentDayIndex].meals;
+        let hasUpdates = false;
+
+        // Mapeamento de nomes de refeição para IDs de meal_type (simplificado)
+        // Idealmente isso seria mais robusto, mas vamos usar uma heurística baseada no nome
+        const normalizeMealType = (name: string): string => {
+            const n = name.toLowerCase();
+            if (n.includes('café') || n.includes('manhã')) return 'cafe_da_manha';
+            if (n.includes('almoço')) return 'almoco';
+            if (n.includes('jantar')) return 'jantar';
+            if (n.includes('lanche')) return n.includes('manhã') ? 'lanche_manha' : 'lanche_tarde';
+            if (n.includes('ceia')) return 'ceia';
+            if (n.includes('suplemento')) return 'suplemento';
+            return 'outros';
+        };
+
+        const newWeekPlan = [...weekPlan];
+        const updatedMeals = [...currentMeals]; // Create a copy of meals
+
+        updatedMeals.forEach((meal, index) => {
+            // Find default preset for this meal type + new diet type
+            // Precisamos saber o 'meal_type' (id) da refeição atual. 
+            // Como Meal não tem 'type' explícito (só name), vamos inferir ou teria que ter.
+            // O ideal seria que Meal tivesse um campo meal_type herdado.
+            // Vamos tentar inferir pelo nome ou usar um mapeamento se disponível.
+
+            // Tentativa de mapear pelo nome padrão (que geralmente é confiável se não editado)
+            const typeId = normalizeMealType(meal.name);
+
+            const defaultPreset = defaultPresets.find(dp =>
+                dp.meal_type === typeId && dp.diet_type === dietType && dp.is_active
+            );
+
+            if (defaultPreset) {
+                const preset = mealPresets.find(p => p.id === defaultPreset.preset);
+                if (preset) {
+                    // Apply preset items to this meal
+                    // This replaces existing items or appends? Usually presets replace or append.
+                    // The user request implies "filling", potentially replacing empty ones or just adding.
+                    // Let's assume append for now to be safe, or replace if empty.
+                    // Or clearer: The user says "automatically filled". I will append for now.
+
+                    const newItems: FoodItem[] = preset.foods.map(food => ({
+                        id: generateId(),
+                        food: null,
+                        customName: food.food_name,
+                        quantity: food.quantity,
+                        unit: food.unit,
+                        calories: food.calories,
+                        protein: food.protein,
+                        carbs: food.carbs,
+                        fats: food.fats,
+                        fiber: food.fiber || 0
+                    }));
+
+                    updatedMeals[index] = {
+                        ...meal,
+                        items: newItems // Substitui os itens atuais pelos do preset (mais agressivo, mas parece ser o desejo para "troca de dieta")
+                        // Se quiser apenas adicionar: items: [...meal.items, ...newItems]
+                    };
+                    hasUpdates = true;
+                }
+            }
+        });
+
+        if (hasUpdates) {
+            newWeekPlan[currentDayIndex] = {
+                ...newWeekPlan[currentDayIndex],
+                meals: updatedMeals
+            };
+            set({ weekPlan: newWeekPlan, isDirty: true });
+        }
     },
 
     setActivityLevel: (activityLevel) => {
@@ -728,6 +900,7 @@ export const useDietEditorStore = create<DietEditorState>((set, get) => ({
                     preferred: false,
                     unidade_caseira: food.unidade_caseira ?? undefined,
                     peso_unidade_caseira_g: food.peso_unidade_caseira_g ?? undefined,
+                    medidas: food.medidas,
                     originalId: food.id,
                     source: food.source
                 }
@@ -745,6 +918,364 @@ export const useDietEditorStore = create<DietEditorState>((set, get) => ({
             })
         })
     },
+
+    addNote: (data) => {
+        const { patient } = get()
+        if (!patient) return
+
+        const newNote = {
+            id: Date.now(),
+            content: data.content,
+            title: data.title,
+            category: data.category,
+            date: data.date,
+            created_at: new Date().toISOString(),
+            nutritionist_name: 'Nutricionista' // Placeholder
+        }
+
+        const updatedNotes = [newNote, ...(patient.notes || [])]
+
+        set({
+            patient: {
+                ...patient,
+                notes: updatedNotes
+            },
+            isDirty: true
+        })
+    },
+
+    // Meal Preset Actions
+    loadMealPresets: async () => {
+        set({ presetsLoading: true });
+        try {
+            // Tenta carregar do localStorage primeiro
+            if (typeof window !== 'undefined') {
+                const savedPresets = localStorage.getItem('meal_presets');
+                const savedFavorites = localStorage.getItem('favorite_preset_ids');
+
+                if (savedPresets) {
+                    const favorites = savedFavorites ? JSON.parse(savedFavorites) : [];
+                    set({
+                        mealPresets: JSON.parse(savedPresets),
+                        favoritePresetIds: favorites,
+                        presetsLoading: false
+                    });
+                    return;
+                }
+            }
+
+            // Simulação de presets com alimentos para demonstração
+            const mockPresets: MealPreset[] = [
+                {
+                    id: 1,
+                    name: 'Café da Manhã',
+                    meal_type: 'cafe_da_manha',
+                    diet_type: 'normocalorica',
+                    description: '',
+                    foods: [
+                        { id: 1, food_name: 'Pão Integral', quantity: 60, unit: 'g', calories: 166, protein: 5, carbs: 29, fats: 2, fiber: 3 },
+                        { id: 2, food_name: 'Ovo Cozido', quantity: 70, unit: 'g', calories: 92, protein: 7, carbs: 0.6, fats: 6.3, fiber: 0 },
+                        { id: 3, food_name: 'Banana', quantity: 100, unit: 'g', calories: 89, protein: 1.1, carbs: 22.8, fats: 0.3, fiber: 2.6 },
+                        { id: 4, food_name: 'Café com Leite', quantity: 200, unit: 'ml', calories: 60, protein: 3.3, carbs: 6.8, fats: 2.5, fiber: 0 }
+                    ],
+                    total_calories: 407,
+                    total_protein: 16.5,
+                    total_carbs: 59.2,
+                    total_fats: 11.1,
+                    is_active: true,
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString(),
+                },
+                {
+                    id: 2,
+                    name: 'Almoço Low Carb',
+                    meal_type: 'almoco',
+                    diet_type: 'low_carb',
+                    description: '',
+                    foods: [
+                        { id: 1, food_name: 'Filé de Frango Grelhado', quantity: 150, unit: 'g', calories: 231, protein: 31, carbs: 0, fats: 12, fiber: 0 },
+                        { id: 2, food_name: 'Brócolis Cozido', quantity: 100, unit: 'g', calories: 34, protein: 2.8, carbs: 7, fats: 0.4, fiber: 2.6 },
+                        { id: 3, food_name: 'Abacate', quantity: 50, unit: 'g', calories: 80, protein: 1, carbs: 4, fats: 7, fiber: 3.4 }
+                    ],
+                    total_calories: 345,
+                    total_protein: 34.8,
+                    total_carbs: 11,
+                    total_fats: 19.4,
+                    is_active: true,
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString(),
+                },
+                {
+                    id: 3,
+                    name: 'Lanche da Tarde Proteico',
+                    meal_type: 'lanche_tarde',
+                    diet_type: 'hiperproteica',
+                    description: '',
+                    foods: [
+                        { id: 1, food_name: 'Iogurte Grego', quantity: 150, unit: 'g', calories: 100, protein: 10, carbs: 7, fats: 0, fiber: 0 },
+                        { id: 2, food_name: 'Castanha do Pará', quantity: 30, unit: 'g', calories: 187, protein: 4.3, carbs: 3.3, fats: 19.2, fiber: 2.4 }
+                    ],
+                    total_calories: 287,
+                    total_protein: 14.3,
+                    total_carbs: 10.3,
+                    total_fats: 19.2,
+                    is_active: true,
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString(),
+                }
+            ];
+            set({ mealPresets: mockPresets });
+
+            if (typeof window !== 'undefined') {
+                localStorage.setItem('meal_presets', JSON.stringify(mockPresets));
+            }
+        } catch (error) {
+            console.error('Erro ao carregar presets:', error);
+        } finally {
+            set({ presetsLoading: false });
+        }
+    },
+
+    createMealPreset: async (presetData) => {
+        set({ presetsLoading: true });
+        try {
+            const newPreset: MealPreset = {
+                ...presetData,
+                id: Date.now(),
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+                is_active: true,
+                foods: presetData.foods.map((f, i) => ({ ...f, id: Date.now() + i }))
+            };
+
+            const updatedPresets = [...get().mealPresets, newPreset];
+            set({ mealPresets: updatedPresets });
+
+            if (typeof window !== 'undefined') {
+                localStorage.setItem('meal_presets', JSON.stringify(updatedPresets));
+            }
+
+            return Promise.resolve();
+        } catch (error) {
+            console.error('Erro ao criar preset:', error);
+            throw error;
+        } finally {
+            set({ presetsLoading: false });
+        }
+    },
+
+    updateMealPreset: async (id, updates) => {
+        try {
+            const updatedPresets = get().mealPresets.map(p =>
+                p.id === id ? { ...p, ...updates, updated_at: new Date().toISOString() } : p
+            );
+            set({ mealPresets: updatedPresets });
+
+            if (typeof window !== 'undefined') {
+                localStorage.setItem('meal_presets', JSON.stringify(updatedPresets));
+            }
+        } catch (error) {
+            console.error('Erro ao atualizar preset:', error);
+            throw error;
+        }
+    },
+
+    deleteMealPreset: async (id) => {
+        try {
+            const updatedPresets = get().mealPresets.filter(p => p.id !== id);
+            set({ mealPresets: updatedPresets });
+
+            if (typeof window !== 'undefined') {
+                localStorage.setItem('meal_presets', JSON.stringify(updatedPresets));
+            }
+        } catch (error) {
+            console.error('Erro ao deletar preset:', error);
+            throw error;
+        }
+    },
+
+    getPresetsByMealType: (mealType) => {
+        return get().mealPresets.filter(preset => preset.meal_type === mealType);
+    },
+
+    getPresetsByDietType: (dietType) => {
+        return get().mealPresets.filter(preset => preset.diet_type === dietType);
+    },
+
+    searchMealPresets: (query) => {
+        if (!query) return get().mealPresets;
+        const lowerQuery = query.toLowerCase();
+        return get().mealPresets.filter(preset =>
+            preset.name.toLowerCase().includes(lowerQuery) ||
+            preset.description?.toLowerCase().includes(lowerQuery)
+        );
+    },
+
+    toggleFavoritePreset: (presetId) => {
+        const { favoritePresetIds } = get();
+        const isFavorite = favoritePresetIds.includes(presetId);
+        const newFavoriteIds = isFavorite
+            ? favoritePresetIds.filter(id => id !== presetId)
+            : [...favoritePresetIds, presetId];
+
+        set({ favoritePresetIds: newFavoriteIds });
+
+        if (typeof window !== 'undefined') {
+            localStorage.setItem('favorite_preset_ids', JSON.stringify(newFavoriteIds));
+        }
+    },
+
+    getFavoritePresets: () => {
+        const { mealPresets, favoritePresetIds } = get();
+        return mealPresets.filter(preset => favoritePresetIds.includes(preset.id));
+    },
+
+    isPresetFavorite: (presetId) => {
+        return get().favoritePresetIds.includes(presetId);
+    },
+
+    // Default Preset Actions
+    loadDefaultPresets: async () => {
+        set({ defaultPresetsLoading: true });
+        try {
+            // Tenta carregar do localStorage
+            if (typeof window !== 'undefined') {
+                const savedDefaults = localStorage.getItem('default_presets');
+                if (savedDefaults) {
+                    set({ defaultPresets: JSON.parse(savedDefaults), defaultPresetsLoading: false });
+                    return;
+                }
+            }
+
+            const mockDefaultPresets: DefaultPreset[] = [];
+            set({ defaultPresets: mockDefaultPresets });
+        } catch (error) {
+            console.error('Erro ao carregar presets padrão:', error);
+        } finally {
+            set({ defaultPresetsLoading: false });
+        }
+    },
+
+    setDefaultPreset: async (mealType, dietType, presetId) => {
+        try {
+            // Em uma implementação real, isso faria uma chamada à API
+            // const response = await api.post('/default-presets/', {
+            //     meal_type: mealType,
+            //     diet_type: dietType,
+            //     preset: presetId
+            // });
+
+            // Atualizar localmente
+            const existingPreset = get().defaultPresets.find(dp =>
+                dp.meal_type === mealType && dp.diet_type === dietType
+            );
+
+            const newDefaultPreset: DefaultPreset = {
+                id: existingPreset ? existingPreset.id : Date.now(),
+                meal_type: mealType,
+                diet_type: dietType,
+                preset: presetId,
+                is_active: true,
+                created_at: existingPreset ? existingPreset.created_at : new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            };
+
+            let updatedDefaults;
+            if (existingPreset) {
+                updatedDefaults = get().defaultPresets.map(dp =>
+                    dp.meal_type === mealType && dp.diet_type === dietType
+                        ? newDefaultPreset
+                        : dp
+                );
+            } else {
+                updatedDefaults = [...get().defaultPresets, newDefaultPreset];
+            }
+
+            set({ defaultPresets: updatedDefaults });
+
+            if (typeof window !== 'undefined') {
+                localStorage.setItem('default_presets', JSON.stringify(updatedDefaults));
+            }
+        } catch (error) {
+            console.error('Erro ao definir preset padrão:', error);
+            throw error;
+        }
+    },
+
+    removeDefaultPreset: async (mealType, dietType) => {
+        try {
+            const updatedDefaults = get().defaultPresets.filter(dp =>
+                !(dp.meal_type === mealType && dp.diet_type === dietType)
+            );
+            set({ defaultPresets: updatedDefaults });
+
+            if (typeof window !== 'undefined') {
+                localStorage.setItem('default_presets', JSON.stringify(updatedDefaults));
+            }
+        } catch (error) {
+            console.error('Erro ao remover preset padrão:', error);
+            throw error;
+        }
+    },
+
+    getDefaultPreset: (mealType, dietType) => {
+        return get().defaultPresets.find(dp =>
+            dp.meal_type === mealType && dp.diet_type === dietType
+        );
+    },
+
+    applyDefaultPreset: (mealId, mealType, dietType) => {
+        const defaultPreset = get().getDefaultPreset(mealType, dietType);
+        if (defaultPreset) {
+            const preset = get().mealPresets.find(p => p.id === defaultPreset.preset);
+            if (preset) {
+                // Verificar se a refeição está nos workspaceMeals (Contexto do Modal)
+                const workspaceMeal = get().workspaceMeals.find(m => m.id.toString() === mealId);
+
+                if (workspaceMeal) {
+                    const newFoods: WorkspaceMealFood[] = preset.foods.map(food => ({
+                        id: Date.now() + Math.random(),
+                        name: food.food_name,
+                        qty: food.quantity,
+                        unit: food.unit,
+                        measure: 'g',
+                        prep: '',
+                        ptn: food.protein,
+                        cho: food.carbs,
+                        fat: food.fats,
+                        fib: food.fiber || 0,
+                        preferred: false,
+                        originalId: undefined,
+                        source: 'CUSTOM'
+                    }));
+
+                    get().updateWorkspaceMeal(workspaceMeal.id, { foods: newFoods });
+                } else {
+                    // Fallback para o weekPlan (7 dias)
+                    get().applyPreset(mealId, preset.foods.map(food => ({
+                        food: null,
+                        customName: food.food_name,
+                        quantity: food.quantity,
+                        unit: food.unit,
+                        calories: food.calories,
+                        protein: food.protein,
+                        carbs: food.carbs,
+                        fats: food.fats,
+                        fiber: food.fiber || 0
+                    })));
+                }
+            }
+        }
+    },
+
+    setPresetAsDefault: async (presetId, mealType, dietType) => {
+        try {
+            await get().setDefaultPreset(mealType, dietType, presetId);
+        } catch (error) {
+            console.error('Erro ao definir preset como padrão:', error);
+            throw error;
+        }
+    }
 }))
 
 export const useDietEditorPatient = () => useDietEditorStore((state) => state.patient)

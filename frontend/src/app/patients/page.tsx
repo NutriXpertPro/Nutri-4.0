@@ -186,7 +186,7 @@ export default function PatientsPage() {
                 />
                 <StatCard
                     title="Média de Adesão"
-                    value="85%"
+                    value={isPatientsLoading ? "..." : "0%"}
                     icon={TrendingUp}
                     variant="violet"
                     trend={{ value: 2, label: "vs mês ant.", isPositive: true }}

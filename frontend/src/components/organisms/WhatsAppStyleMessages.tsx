@@ -12,6 +12,15 @@ import api from '@/services/api';
 import axios from 'axios';
 import { notificationService } from '@/services/notification-service';
 
+// Helper function to get initials from a name
+const getInitials = (name?: string) => {
+  if (!name) return '??';
+  const parts = name.trim().split(/\s+/);
+  if (parts.length === 0) return '??';
+  if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+};
+
 interface WhatsAppConversationsListProps {
   selectedConversationId: string | null;
   onConversationSelect: (conversationId: string) => void;
@@ -153,17 +162,16 @@ const WhatsAppConversationsList: React.FC<WhatsAppConversationsListProps> = ({
         {(['all', 'unread', 'favorites', 'groups'] as const).map((f) => (
           <button
             key={f}
-            className={`px-4 py-2 text-sm capitalize rounded-full transition-colors ${
-              filter === f
-                ? 'bg-primary text-primary-foreground'
-                : 'bg-muted text-muted-foreground hover:bg-muted/80'
-            }`}
+            className={`px-4 py-2 text-sm capitalize rounded-full transition-colors ${filter === f
+              ? 'bg-primary text-primary-foreground'
+              : 'bg-muted text-muted-foreground hover:bg-muted/80'
+              }`}
             onClick={() => setFilter(f)}
           >
             {f === 'all' ? 'Tudo' :
-             f === 'unread' ? 'Não lidas' :
-             f === 'favorites' ? 'Favoritos' :
-             'Grupos'}
+              f === 'unread' ? 'Não lidas' :
+                f === 'favorites' ? 'Favoritos' :
+                  'Grupos'}
           </button>
         ))}
       </div>
@@ -186,9 +194,9 @@ const WhatsAppConversationsList: React.FC<WhatsAppConversationsListProps> = ({
             >
               <CardContent className="p-3 flex items-center space-x-3">
                 <div className="relative">
-                  <Avatar className="w-12 h-12">
-                    <AvatarFallback className="bg-green-200 dark:bg-green-800 text-green-700 dark:text-green-300">
-                      <User className="w-6 h-6" />
+                  <Avatar className="h-16 w-16 border-4 border-background shadow-lg flex-shrink-0">
+                    <AvatarFallback className="bg-primary/10 text-primary font-semibold text-lg">
+                      {getInitials(participant?.name)}
                     </AvatarFallback>
                   </Avatar>
                   <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white dark:border-gray-900"></div>
@@ -252,25 +260,57 @@ const WhatsAppChatArea: React.FC<WhatsAppChatAreaProps> = ({ conversationId, cur
     const fetchMessages = async () => {
       try {
         setLoading(true);
-        // Buscar detalhes da conversa
-        const conversationResponse = await api.get(`/conversations/${conversationId}/`);
-        setConversation(conversationResponse.data);
+        // Primeiro tentar obter detalhes da conversa
+        let conversationDetails = null;
+        try {
+          const conversationResponse = await api.get(`/messages/conversations/${conversationId}/`);
+          conversationDetails = conversationResponse.data;
+        } catch (conversationError) {
+          // Se falhar, criar um objeto básico de conversa
+          conversationDetails = {
+            id: conversationId,
+            participants: [],
+            created_at: '',
+            updated_at: '',
+            last_message: '',
+            last_message_time: null,
+            unread_count: 0
+          };
+        }
 
         // Buscar mensagens da conversa
-        const response = await api.get(`/messages/?conversation=${conversationId}`);
+        const response = await api.get(`/messages/messages/?conversation=${conversationId}`);
         setMessages(response.data);
+
+        // Atualizar informações da conversa com base nas mensagens, se necessário
+        if (!conversationDetails.last_message && response.data && response.data.length > 0) {
+          const lastMessage = response.data[response.data.length - 1];
+          conversationDetails.last_message = lastMessage.content;
+          conversationDetails.last_message_time = lastMessage.timestamp;
+        }
+
+        setConversation(conversationDetails);
       } catch (error) {
         console.error('Erro ao carregar mensagens:', error);
         // Em caso de erro, tentar endpoints alternativos
         if (axios.isAxiosError(error) && error.response?.status === 404) {
           try {
-            // Tentar endpoint alternativo
-            const conversationResponse = await api.get(`/conversations/${conversationId}/`);
-            setConversation(conversationResponse.data);
-
-            // Para mensagens, usar dados do objeto de conversa se disponíveis
-            const messagesResponse = await api.get(`/conversations/${conversationId}/messages/`);
+            // Tentar endpoint alternativo para mensagens filtrando por conversa
+            const messagesResponse = await api.get(`/messages/messages/?conversation=${conversationId}`);
             setMessages(messagesResponse.data);
+
+            // Criar um objeto de conversa básico
+            setConversation({
+              id: conversationId,
+              participants: [],
+              created_at: '',
+              updated_at: '',
+              last_message: messagesResponse.data && messagesResponse.data.length > 0 ?
+                messagesResponse.data[0].content : '',
+              last_message_time: messagesResponse.data && messagesResponse.data.length > 0 ?
+                messagesResponse.data[0].timestamp : null,
+              unread_count: 0
+            });
           } catch (fallbackError) {
             console.error('Erro ao carregar mensagens com endpoint alternativo:', fallbackError);
           }
@@ -303,7 +343,7 @@ const WhatsAppChatArea: React.FC<WhatsAppChatAreaProps> = ({ conversationId, cur
 
     try {
       // Enviar mensagem através da API
-      const response = await api.post(`/messages/`, {
+      const response = await api.post(`/messages/messages/`, {
         content: message,
         conversation: conversationId
       });
@@ -344,12 +384,12 @@ const WhatsAppChatArea: React.FC<WhatsAppChatAreaProps> = ({ conversationId, cur
       <div className="bg-background text-foreground p-4 flex items-center justify-between border-b flex-shrink-0">
         <div className="flex items-center space-x-3">
           <div className="relative">
-            <Avatar className="w-10 h-10">
-              <AvatarFallback className="bg-secondary text-secondary-foreground">
-                <User className="w-6 h-6" />
+            <Avatar className="h-16 w-16 border-4 border-background shadow-lg flex-shrink-0">
+              <AvatarFallback className="bg-primary/10 text-primary font-semibold text-lg">
+                {getInitials(conversation?.participants.find(p => p.id !== currentUserId)?.name)}
               </AvatarFallback>
             </Avatar>
-            <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-border"></div>
+            <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-background"></div>
           </div>
           <div>
             <h2 className="font-semibold text-foreground">
@@ -459,7 +499,7 @@ const WhatsAppChatArea: React.FC<WhatsAppChatAreaProps> = ({ conversationId, cur
           </Button>
         )}
       </div>
-    </div>
+    </div >
   );
 };
 

@@ -30,7 +30,13 @@ const steps = [
     color: "bg-orange-500"
   },
   {
-    title: "Comunidade Xpert",
+    title: (
+      <>
+        Comunidade <span className="text-emerald-500" style={{ textShadow: '1px 1px 2px rgba(255,255,255,0.1)' }}>
+          <span style={{ fontSize: '1.3em', textShadow: '1px 1px 2px rgba(255,255,255,0.2)' }}>X</span>pert
+        </span>
+      </>
+    ),
     desc: "Networking e mentoria direta com os maiores nomes da nutrição de alta performance.",
     icon: Users,
     color: "bg-teal-500"
@@ -48,7 +54,7 @@ export default function Methodology() {
     <section className="py-24 bg-[#080808] relative">
       <div className="container px-4 md:px-6 mx-auto">
         <div className="text-center mb-20">
-          <h2 className="text-3xl md:text-5xl font-black text-white mb-6 uppercase tracking-tighter">O Ecossistema <span className="text-emerald-500">Xpert</span></h2>
+          <h2 className="text-3xl md:text-5xl font-black text-white mb-6 uppercase tracking-tighter">O Ecossistema <span className="text-emerald-500" style={{ textShadow: '1px 1px 2px rgba(255,255,255,0.1)' }}><span style={{ fontSize: '1.3em', textShadow: '1px 1px 2px rgba(255,255,255,0.2)' }}>X</span>pert</span></h2>
           <p className="text-neutral-500 max-w-2xl mx-auto text-lg">
             Muito além de um gerador de dietas. Uma metodologia completa para elevar o nível do seu atendimento.
           </p>

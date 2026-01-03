@@ -49,7 +49,7 @@ export default function DashboardPage() {
                 id: String(apt.id),
                 time: apt.time,
                 patientName: apt.patient_name,
-                patientAvatar: apt.photo || undefined, // Convert null/empty to undefined
+                patientAvatar: apt.avatar || undefined, // Convert null/empty to undefined
                 type: apt.type.toLowerCase() as "presencial" | "online",
                 duration: apt.duration,
                 description: apt.status === 'scheduled' ? 'Consulta Agendada' : apt.status,
@@ -62,7 +62,7 @@ export default function DashboardPage() {
                 const mappedFeatured: Patient = {
                     id: String(featuredData.id),
                     name: featuredData.name,
-                    avatar: featuredData.photo || undefined, // Convert null to undefined
+                    avatar: featuredData.avatar || undefined, // Convert null to undefined
                     goal: featuredData.goal,
                     metrics: [
                         { label: "Peso", value: `${featuredData.metrics.weight}kg`, trend: featuredData.metrics.weight_trend, isPositive: featuredData.metrics.weight_trend < 0 },

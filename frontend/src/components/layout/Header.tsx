@@ -126,7 +126,7 @@ export function Header({ className, sidebarCollapsed }: HeaderProps) {
                                 "transition-all duration-200"
                             )}
                             onFocus={() => setSearchFocused(true)}
-                            onBlur={() => setSearchFocus(false)}
+                            onBlur={() => setSearchFocused(false)}
                         />
                         <kbd className="absolute right-3 top-1/2 -translate-y-1/2 hidden md:inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground bg-muted rounded">
                             ⌘K
@@ -246,8 +246,8 @@ export function Header({ className, sidebarCollapsed }: HeaderProps) {
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                                 <Button variant="ghost" className="flex items-center gap-2 px-2">
-                                    <Avatar className="h-8 w-8">
-                                        <AvatarImage src={user?.avatar} />
+                                    <Avatar className="h-8 w-8 overflow-hidden">
+                                        <AvatarImage src={user?.avatar} className="h-full w-full object-cover" />
                                         <AvatarFallback className="bg-primary text-primary-foreground text-sm">
                                             {user?.name?.substring(0, 2).toUpperCase() || "NP"}
                                         </AvatarFallback>

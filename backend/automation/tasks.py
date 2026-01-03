@@ -227,7 +227,7 @@ def send_appointment_reminder_notifications():
             Notification.objects.create(
                 user=appointment.patient.user,
                 title="Lembrete de Consulta",
-                message=f"Sua consulta está marcada para {appointment.time.strftime('%H:%M')} hoje.",
+                message=f"Sua consulta está marcada para {appointment.time.strftime('%H:%M')} hoje. [ID:{appointment.id}]",
                 notification_type='appointment_reminder'
             )
 
@@ -237,7 +237,7 @@ def send_appointment_reminder_notifications():
             Notification.objects.create(
                 user=appointment.nutritionist,
                 title="Lembrete de Consulta",
-                message=f"Sua consulta com {appointment.patient.user.name} está marcada para {appointment.time.strftime('%H:%M')} hoje.",
+                message=f"Sua consulta com {appointment.patient.user.name} está marcada para {appointment.time.strftime('%H:%M')} hoje. [ID:{appointment.id}] [PID:{appointment.patient.id}]",
                 notification_type='appointment_reminder'
             )
 
@@ -267,7 +267,7 @@ def send_diet_expiry_notifications():
             Notification.objects.create(
                 user=diet.patient.user,
                 title="Dieta Próxima ao Vencimento",
-                message=f"Sua dieta '{diet.title}' está programada para expirar em 7 dias.",
+                message=f"Sua dieta '{diet.title}' está programada para expirar em 7 dias. [ID:{diet.id}]",
                 notification_type='diet_expiry'
             )
 
@@ -277,7 +277,7 @@ def send_diet_expiry_notifications():
             Notification.objects.create(
                 user=diet.nutritionist,
                 title="Dieta Próxima ao Vencimento",
-                message=f"A dieta de {diet.patient.user.name} ('{diet.title}') está programada para expirar em 7 dias.",
+                message=f"A dieta de {diet.patient.user.name} ('{diet.title}') está programada para expirar em 7 dias. [ID:{diet.id}] [PID:{diet.patient.id}]",
                 notification_type='diet_expiry'
             )
 
@@ -302,11 +302,16 @@ def send_new_message_notifications(message_id):
             if participant != message.sender:
                 # Verificar se o participante deve receber notificação de nova mensagem
                 if should_send_notification(participant, 'new_message'):
+                    # Tentar obter o ID do perfil do paciente se o remetente for um paciente
+                    patient_pid = ""
+                    if message.sender.user_type == 'paciente' and hasattr(message.sender, 'patient_profile'):
+                        patient_pid = f" [PID:{message.sender.patient_profile.id}]"
+
                     # Criar notificação para o participante
                     Notification.objects.create(
                         user=participant,
                         title="Nova Mensagem",
-                        message=f"{message.sender.name} enviou uma nova mensagem: {message.content[:50]}...",
+                        message=f"{message.sender.name} enviou uma nova mensagem: {message.content[:50]}... [ID:{conversation.id}]{patient_pid}",
                         notification_type='new_message'
                     )
     except Message.DoesNotExist:

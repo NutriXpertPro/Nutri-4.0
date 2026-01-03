@@ -106,7 +106,7 @@ export function PatientTimelineTab({ patientId }: PatientTimelineTabProps) {
                         event.type === 'lab_exam' ? Syringe : Activity}
                   variant={event.color as any}
                   size="md"
-                  className="shadow-xl ring-4 ring-background"
+                  className="shadow-xl ring-4 ring-background border border-white/10 dark:border-white/20"
                 />
               </div>
 

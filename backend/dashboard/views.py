@@ -109,6 +109,13 @@ class DashboardAppointmentsView(APIView):
 
         data = []
         for apt in appointments:
+            avatar_url = None
+            try:
+                if hasattr(apt.patient.user, 'profile') and apt.patient.user.profile.profile_picture:
+                    avatar_url = request.build_absolute_uri(apt.patient.user.profile.profile_picture.url)
+            except Exception:
+                pass
+
             data.append({
                 "id": apt.id,
                 "patient_name": apt.patient.user.name,
@@ -116,7 +123,7 @@ class DashboardAppointmentsView(APIView):
                 "type": "Presencial", 
                 "duration": 60,
                 "status": "scheduled",
-                "photo": None
+                "avatar": avatar_url
             })
         
         return Response(data)
@@ -172,16 +179,20 @@ class DashboardFeaturedPatientView(APIView):
                     "muscle_mass_trend": (latest_eval.muscle_mass or 0) - (previous_eval.muscle_mass or 0),
                 })
 
-        # O campo Photo não existe no modelo User ou PatientProfile.
-        # Retornando None para evitar o crash, conforme o contrato da API.
-        photo_url = None
+        # Buscar URL do avatar
+        avatar_url = None
+        try:
+            if hasattr(patient.user, 'profile') and patient.user.profile.profile_picture:
+                avatar_url = request.build_absolute_uri(patient.user.profile.profile_picture.url)
+        except Exception:
+            pass
 
         return Response({
             "id": patient.id,
             "name": patient.user.name,
             "goal": patient.get_goal_display() or "Saúde e Bem-estar",
             "metrics": metrics,
-            "photo": photo_url
+            "avatar": avatar_url
         })
 
 
@@ -237,7 +248,7 @@ class PatientDashboardView(APIView):
                 "id": patient_profile.id,
                 "name": patient_profile.user.name,
                 "goal": patient_profile.get_goal_display() or "Saúde e Bem-estar",
-                "photo": None  # Adicione a URL da foto do paciente se disponível
+                "avatar": request.build_absolute_uri(patient_profile.user.profile.profile_picture.url) if hasattr(patient_profile.user, 'profile') and patient_profile.user.profile.profile_picture else None
             },
             "next_appointment": {
                 "id": next_appointment.id,
@@ -254,7 +265,7 @@ class PatientDashboardView(APIView):
             "progress_metrics": {
                 "weight_change": 0,  # Calcular a diferença de peso desde a primeira avaliação
                 "body_fat_change": 0,  # Calcular a diferença de gordura corporal
-                "adherence_rate": 85,  # Taxa de adesão baseada em check-ins ou logs
+                "adherence_rate": 0,  # Taxa de adesão baseada em check-ins ou logs
             }
         }
 

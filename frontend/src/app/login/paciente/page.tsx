@@ -226,6 +226,13 @@ export default function PatientLoginPage() {
                         >
                             Esqueceu sua senha?
                         </button>
+
+                        <div className="text-sm text-center text-muted-foreground">
+                            É nutricionista?{" "}
+                            <Link href="/login" className="text-primary hover:underline font-medium">
+                                Acesse aqui
+                            </Link>
+                        </div>
                     </CardFooter>
                 </form>
             </Card>

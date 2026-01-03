@@ -8,6 +8,15 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { User, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
+// Helper function to get initials from a name
+const getInitials = (name?: string) => {
+  if (!name) return '??';
+  const parts = name.trim().split(/\s+/);
+  if (parts.length === 0) return '??';
+  if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+};
+
 interface ConversationListProps {
   onSelectConversation: (conversationId: string) => void;
   currentConversationId?: string;
@@ -85,9 +94,9 @@ const ConversationList: React.FC<ConversationListProps> = ({
             >
               <CardContent className="p-3 flex items-center space-x-3">
                 <div className="relative">
-                  <Avatar className="w-12 h-12">
-                    <AvatarFallback className="bg-green-200 dark:bg-green-800">
-                      <User className="w-6 h-6 text-green-700 dark:text-green-300" />
+                  <Avatar className="h-16 w-16 border-4 border-background shadow-lg flex-shrink-0">
+                    <AvatarFallback className="bg-primary/10 text-primary font-semibold text-lg">
+                      {getInitials(participant?.name)}
                     </AvatarFallback>
                   </Avatar>
                   <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white dark:border-gray-900"></div>

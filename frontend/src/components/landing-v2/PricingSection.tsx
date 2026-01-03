@@ -46,7 +46,7 @@ export default function PricingSection() {
                     </div>
                 )}
                 
-                <h3 className="text-xl font-bold text-white mb-2">Plano Xpert Mensal</h3>
+                <h3 className="text-xl font-bold text-white mb-2">Plano <span className="text-emerald-500" style={{ textShadow: '1px 1px 2px rgba(255,255,255,0.1)' }}><span style={{ fontSize: '24px', textShadow: '1px 1px 2px rgba(255,255,255,0.2)' }}>X</span>pert</span> Mensal</h3>
                 <p className="text-neutral-400 text-sm mb-6 h-10">
                     Flexibilidade total para você começar agora.
                 </p>
@@ -95,7 +95,7 @@ export default function PricingSection() {
                 )}
 
                 <h3 className="text-xl font-bold text-white mb-2 flex items-center gap-2">
-                    Xpert Anual Pro <Star className="w-4 h-4 fill-purple-500 text-purple-500" />
+                    <span className="text-emerald-500" style={{ textShadow: '1px 1px 2px rgba(255,255,255,0.1)' }}><span style={{ fontSize: '24px', textShadow: '1px 1px 2px rgba(255,255,255,0.2)' }}>X</span>pert</span> Anual Pro <Star className="w-4 h-4 fill-purple-500 text-purple-500" />
                 </h3>
                 <p className="text-neutral-400 text-sm mb-6 h-10">
                     Compromisso de longo prazo com sua carreira.

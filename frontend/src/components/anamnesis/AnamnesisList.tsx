@@ -13,7 +13,7 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table"
-import { 
+import {
     Search,
     FileText,
     Calendar,
@@ -25,8 +25,14 @@ import {
     Eye,
     Edit,
     Download,
-    Filter
+    Filter,
+    TrendingDown,
+    TrendingUp,
+    Dumbbell,
+    Flame
 } from "lucide-react"
+import { IconWrapper } from "@/components/ui/IconWrapper"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
 
@@ -38,6 +44,22 @@ interface AnamnesisItem {
     status: "completed" | "incomplete" | "pending"
     lastUpdated: Date
     completionPercentage: number
+}
+
+// Helper para obter ícone e cor baseado no objetivo
+const getObjectiveConfig = (objective: string) => {
+    switch (objective) {
+        case "Emagrecimento":
+            return { icon: TrendingDown, variant: "blue" as const }
+        case "Ganho de massa muscular":
+            return { icon: Dumbbell, variant: "amber" as const }
+        case "Ganho de peso":
+            return { icon: TrendingUp, variant: "indigo" as const }
+        case "Trincar o shape":
+            return { icon: Flame, variant: "rose" as const }
+        default:
+            return { icon: Target, variant: "emerald" as const }
+    }
 }
 
 interface AnamnesisListProps {
@@ -93,7 +115,7 @@ export function AnamnesisList({ onNewAnamnesis, onEdit, onView }: AnamnesisListP
                 completionPercentage: 100
             },
         ]
-        
+
         setTimeout(() => {
             setAnamnesisList(mockData)
             setIsLoading(false)
@@ -101,13 +123,13 @@ export function AnamnesisList({ onNewAnamnesis, onEdit, onView }: AnamnesisListP
     }, [])
 
     const filteredAnamnesis = anamnesisList.filter(item => {
-        const matchesSearch = 
+        const matchesSearch =
             item.patientName.toLowerCase().includes(searchQuery.toLowerCase()) ||
             item.patientEmail.toLowerCase().includes(searchQuery.toLowerCase()) ||
             item.objective.toLowerCase().includes(searchQuery.toLowerCase())
-        
+
         const matchesFilter = filterStatus ? item.status === filterStatus : true
-        
+
         return matchesSearch && matchesFilter
     })
 
@@ -134,11 +156,10 @@ export function AnamnesisList({ onNewAnamnesis, onEdit, onView }: AnamnesisListP
                         Gerencie as anamneses dos seus pacientes
                     </p>
                 </div>
-                
+
                 <div className="flex flex-wrap gap-3">
-                    <Button onClick={onNewAnamnesis} className="gap-2">
-                        <Plus className="h-4 w-4" />
-                        Nova Anamnese
+                    <Button onClick={onNewAnamnesis}>
+                        Anamnese
                     </Button>
                 </div>
             </div>
@@ -150,17 +171,16 @@ export function AnamnesisList({ onNewAnamnesis, onEdit, onView }: AnamnesisListP
                         {(['all', 'completed', 'incomplete', 'pending'] as const).map((f) => (
                             <button
                                 key={f}
-                                className={`px-4 py-2 text-sm capitalize rounded-full transition-colors ${
-                                    (f === 'all' && filterStatus === null) || filterStatus === f
-                                        ? 'bg-primary text-primary-foreground'
-                                        : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                                }`}
+                                className={`px-4 py-2 text-sm capitalize rounded-full transition-colors ${(f === 'all' && filterStatus === null) || filterStatus === f
+                                    ? 'bg-primary text-primary-foreground'
+                                    : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                                    }`}
                                 onClick={() => setFilterStatus(f === 'all' ? null : f)}
                             >
                                 {f === 'all' ? 'Todos' :
-                                f === 'completed' ? 'Completas' :
-                                f === 'incomplete' ? 'Incompletas' :
-                                'Pendentes'}
+                                    f === 'completed' ? 'Completas' :
+                                        f === 'incomplete' ? 'Incompletas' :
+                                            'Pendentes'}
                             </button>
                         ))}
                     </div>
@@ -218,8 +238,12 @@ export function AnamnesisList({ onNewAnamnesis, onEdit, onView }: AnamnesisListP
                                             </TableCell>
                                             <TableCell>
                                                 <div className="flex items-center gap-2">
-                                                    <Target className="h-4 w-4 text-muted-foreground" />
-                                                    {item.objective}
+                                                    <IconWrapper
+                                                        {...getObjectiveConfig(item.objective)}
+                                                        size="sm"
+                                                        className="ring-2 ring-background border border-white/5 shadow-sm"
+                                                    />
+                                                    <span className="text-sm font-medium">{item.objective}</span>
                                                 </div>
                                             </TableCell>
                                             <TableCell>
@@ -228,7 +252,7 @@ export function AnamnesisList({ onNewAnamnesis, onEdit, onView }: AnamnesisListP
                                             <TableCell>
                                                 <div className="flex items-center gap-2">
                                                     <div className="h-2 w-32 bg-muted rounded-full overflow-hidden">
-                                                        <div 
+                                                        <div
                                                             className="h-full bg-primary rounded-full"
                                                             style={{ width: `${item.completionPercentage}%` }}
                                                         />

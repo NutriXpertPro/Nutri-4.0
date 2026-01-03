@@ -12,7 +12,8 @@ from .serializers import (
     AlimentoTACOSerializer, AlimentoTBCASerializer, AlimentoUSDASerializer,
     UnifiedFoodSerializer, DietSerializer, MealSerializer, FoodItemSerializer
 )
-from .models import FavoriteFood
+from .models import FavoriteFood, MealPreset
+from .serializers import MealPresetSerializer, DefaultPresetSerializer
 from rest_framework.views import APIView
 
 class ToggleFavoriteView(APIView):
@@ -501,11 +502,31 @@ class FoodSearchViewSet(viewsets.ViewSet):
                     'medidas': mc_list
                 })
 
-        # Sort all results: Favorites first, then alphabetical (case insensitive)
-        # x.get('is_favorite', False) is True for favorites.
-        # We want True first. Python sorts False (0) then True (1). So we want descending on is_favorite (bools as ints).
-        # Actually (not True) is 0 (first), (not False) is 1 (last).
-        results.sort(key=lambda x: (not x.get('is_favorite', False), x['nome'].lower()))
+        # Sort all results: Favorites first, then by relevance and simplicity
+        # Relevance: items that start with the search term come first, then items that contain it
+        # Simplicity: fewer words and shorter names come first
+        def sort_key(x):
+            is_favorite = x.get('is_favorite', False)
+            nome_lower = x['nome'].lower()
+
+            # Check if the name starts with the search query
+            starts_with = nome_lower.startswith(search_query.lower()) if search_query else False
+
+            # Count words in the name
+            import re
+            words = re.split(r'[\s\-_,]+', nome_lower)
+            word_count = len([w for w in words if w])  # Count non-empty words
+            nome_length = len(nome_lower)
+
+            # Return tuple for sorting:
+            # 1. Not favorite first (so favorites come first)
+            # 2. Not starts_with (so items that start with query come first)
+            # 3. Word count (simpler names first)
+            # 4. Name length (shorter names first)
+            # 5. Alphabetical order
+            return (not is_favorite, not starts_with, word_count, nome_length, nome_lower)
+
+        results.sort(key=sort_key)
 
         # Limitar resultados totais para evitar sobrecarga (Aumentado para 1000)
         # Importante fazer isso DEPOIS do sort para não cortar favoritos que estariam no final da lista bruta
@@ -655,16 +676,80 @@ class MealViewSet(viewsets.ModelViewSet):
         return queryset
 
 
+class MealPresetViewSet(viewsets.ModelViewSet):
+    """ViewSet para gerenciamento de presets de refeições."""
+    serializer_class = MealPresetSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        queryset = MealPreset.objects.filter(nutritionist=self.request.user)
+
+        # Filtros opcionais
+        meal_type = self.request.query_params.get('meal_type')
+        if meal_type:
+            queryset = queryset.filter(meal_type=meal_type)
+
+        diet_type = self.request.query_params.get('diet_type')
+        if diet_type:
+            queryset = queryset.filter(diet_type=diet_type)
+
+        is_active = self.request.query_params.get('is_active')
+        if is_active is not None:
+            queryset = queryset.filter(is_active=is_active.lower() == 'true')
+
+        search = self.request.query_params.get('search')
+        if search:
+            queryset = queryset.filter(name__icontains=search)
+
+        return queryset
+
+    def perform_create(self, serializer):
+        # Associar automaticamente ao nutricionista autenticado
+        serializer.save(nutritionist=self.request.user)
+
+
 class FoodItemViewSet(viewsets.ModelViewSet):
     """ViewSet para gerenciamento de itens alimentares."""
     serializer_class = FoodItemSerializer
     permission_classes = [IsAuthenticated]
-    
+
     def get_queryset(self):
         queryset = FoodItem.objects.filter(meal__diet__patient__nutritionist=self.request.user)
-        
+
         meal_id = self.request.query_params.get('meal')
         if meal_id:
             queryset = queryset.filter(meal_id=meal_id)
-        
+
         return queryset
+
+
+class DefaultPresetViewSet(viewsets.ModelViewSet):
+    """ViewSet para gerenciamento de presets padro."""
+    serializer_class = DefaultPresetSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        queryset = DefaultPreset.objects.filter(nutritionist=self.request.user)
+
+        # Filtros opcionais
+        meal_type = self.request.query_params.get('meal_type')
+        if meal_type:
+            queryset = queryset.filter(meal_type=meal_type)
+
+        diet_type = self.request.query_params.get('diet_type')
+        if diet_type:
+            queryset = queryset.filter(diet_type=diet_type)
+
+        is_active = self.request.query_params.get('is_active')
+        if is_active is not None:
+            queryset = queryset.filter(is_active=is_active.lower() == 'true')
+
+        return queryset
+
+    def perform_create(self, serializer):
+        # Associar automaticamente ao nutricionista autenticado
+        serializer.save(nutritionist=self.request.user)
+
+    def perform_update(self, serializer):
+        # Garantir que o nutricionista não seja alterado
+        serializer.save(nutritionist=self.request.user)

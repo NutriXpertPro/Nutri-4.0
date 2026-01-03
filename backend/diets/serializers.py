@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import AlimentoTACO, AlimentoTBCA, AlimentoUSDA, Diet, Meal, FoodItem
+from .models import AlimentoTACO, AlimentoTBCA, AlimentoUSDA, Diet, Meal, FoodItem, MealPreset, DefaultPreset
 
 
 class AlimentoTACOSerializer(serializers.ModelSerializer):
@@ -92,6 +92,21 @@ class MealSerializer(serializers.ModelSerializer):
         ]
 
 
+class MealPresetSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MealPreset
+        fields = [
+            'id', 'name', 'meal_type', 'diet_type', 'description',
+            'foods', 'total_calories', 'total_protein', 'total_carbs', 'total_fats',
+            'is_active', 'is_public', 'created_at', 'updated_at'
+        ]
+        read_only_fields = ['created_at', 'updated_at', 'nutritionist']
+
+    def create(self, validated_data):
+        # O nutricionista ser definido automaticamente no viewset
+        return super().create(validated_data)
+
+
 class DietSerializer(serializers.ModelSerializer):
     meals_rel = MealSerializer(many=True, read_only=True)  # Atualizado para usar o novo related_name
     total_refeicoes = serializers.ReadOnlyField()
@@ -108,3 +123,20 @@ class DietSerializer(serializers.ModelSerializer):
             'meals_rel', 'total_refeicoes', 'tem_substituicoes'
         ]
         read_only_fields = ['created_at', 'updated_at']
+
+
+class DefaultPresetSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DefaultPreset
+        fields = [
+            'id', 'meal_type', 'diet_type', 'preset', 'is_active',
+            'created_at', 'updated_at'
+        ]
+        read_only_fields = ['created_at', 'updated_at', 'nutritionist']
+
+    def create(self, validated_data):
+        # O nutricionista será definido automaticamente no viewset
+        request = self.context.get('request')
+        if request:
+            validated_data['nutritionist'] = request.user
+        return super().create(validated_data)

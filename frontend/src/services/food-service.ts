@@ -5,7 +5,7 @@ export interface Food {
     id: number | string
     nome: string
     grupo: string
-    source: 'TACO' | 'TBCA' | 'USDA' | 'IBGE'
+    source: 'TACO' | 'TBCA' | 'USDA' | 'IBGE' | 'CUSTOM'
     energia_kcal: number
     proteina_g: number
     lipidios_g: number
@@ -15,6 +15,7 @@ export interface Food {
     peso_unidade_caseira_g?: number | null
     medidas?: Array<{ label: string; weight: number }>
     is_favorite?: boolean
+    originalId?: number | string | null
 }
 
 export interface FoodSearchResponse {

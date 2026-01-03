@@ -40,17 +40,14 @@ export default function DietsPage() {
             </div>
 
             {/* Empty State / Content Placeholder */}
-            <div className="relative flex flex-col items-center justify-center min-h-[32rem] text-center border-2 border-dashed rounded-lg bg-muted/10 overflow-hidden">
-                <img
-                    src="/refeicao-light.png"
-                    alt="Plano Alimentar"
-                    className="absolute inset-0 w-full h-full object-contain scale-x-175 dark:hidden"
-                />
-                <img
-                    src="/refeicao-dark.png"
-                    alt="Plano Alimentar"
-                    className="absolute inset-0 w-full h-full object-contain scale-x-175 hidden dark:block"
-                />
+            <div className="flex flex-col items-center justify-center min-h-[32rem] text-center border-2 border-dashed rounded-lg bg-muted/10">
+                <p className="text-muted-foreground text-lg">Nenhum plano alimentar criado ainda</p>
+                <p className="text-muted-foreground text-sm mt-2 mb-4">Crie seu primeiro plano alimentar usando o botão acima</p>
+                <Button asChild>
+                    <Link href="/diets/create">
+                        Criar Dieta
+                    </Link>
+                </Button>
             </div>
         </DashboardLayout>
     )

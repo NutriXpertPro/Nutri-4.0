@@ -79,6 +79,15 @@ class UserBranding(models.Model):
         verbose_name="Rodapé de Documentos"
     )
     
+    # Assinatura digital (imagem)
+    signature_image = models.ImageField(
+        upload_to='branding/signatures/',
+        blank=True,
+        null=True,
+        verbose_name="Assinatura Digital",
+        help_text="Imagem da assinatura (PNG/JPG). O fundo será removido automaticamente."
+    )
+    
     # Configurações gerais
     is_active = models.BooleanField(default=True, verbose_name="Ativo")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Criado em")

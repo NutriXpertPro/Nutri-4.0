@@ -46,6 +46,7 @@ import { cn } from "@/lib/utils"
 import { PatientScheduleLink } from "./PatientScheduleLink"
 import { GoogleCalendarSync } from "./GoogleCalendarSync"
 import GoogleCalendarIntegration from "@/components/integrations/GoogleCalendarIntegration"
+import { IconWrapper } from "@/components/ui/IconWrapper"
 
 interface Appointment {
     id: number
@@ -335,7 +336,7 @@ export function CalendarViewElegant({
                                         <div className="flex gap-1 ml-1">
                                             <Button
                                                 variant="ghost"
-                                                size="xs"
+                                                size="icon"
                                                 className="h-4 w-4 p-0.5 text-current"
                                                 onClick={(e) => {
                                                     e.stopPropagation();
@@ -346,7 +347,7 @@ export function CalendarViewElegant({
                                             </Button>
                                             <Button
                                                 variant="ghost"
-                                                size="xs"
+                                                size="icon"
                                                 className="h-4 w-4 p-0.5 text-current"
                                                 onClick={(e) => {
                                                     e.stopPropagation();
@@ -361,7 +362,7 @@ export function CalendarViewElegant({
                                         <div className="flex gap-1 mt-1">
                                             <Button
                                                 variant={app.status === "agendada" ? "default" : "outline"}
-                                                size="xs"
+                                                size="icon"
                                                 className="h-3.5 text-[0.6rem] px-1"
                                                 onClick={(e) => {
                                                     e.stopPropagation();
@@ -372,7 +373,7 @@ export function CalendarViewElegant({
                                             </Button>
                                             <Button
                                                 variant={app.status === "confirmada" ? "default" : "outline"}
-                                                size="xs"
+                                                size="icon"
                                                 className="h-3.5 text-[0.6rem] px-1"
                                                 onClick={(e) => {
                                                     e.stopPropagation();
@@ -383,7 +384,7 @@ export function CalendarViewElegant({
                                             </Button>
                                             <Button
                                                 variant={app.status === "realizada" ? "default" : "outline"}
-                                                size="xs"
+                                                size="icon"
                                                 className="h-3.5 text-[0.6rem] px-1"
                                                 onClick={(e) => {
                                                     e.stopPropagation();
@@ -569,10 +570,13 @@ export function CalendarViewElegant({
         <Card className="overflow-hidden bg-gradient-to-br from-card to-card/70 backdrop-blur-xl border-border/50 shadow-xl shadow-primary/5 relative">
             <CardHeader className="p-6 bg-gradient-to-r from-primary/5 to-secondary/5 relative">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                    <div className="flex items-center gap-3">
-                        <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-amber-500/30 to-amber-500/10 flex items-center justify-center text-amber-500">
-                            <CalendarIcon className="h-5 w-5" />
-                        </div>
+                    <div className="flex items-center gap-4">
+                        <IconWrapper
+                            icon={CalendarIcon}
+                            variant="amber"
+                            size="xl"
+                            className="ring-4 ring-background border border-white/10 dark:border-white/20 shadow-md"
+                        />
                         <div>
                             <h2 className="text-xl bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/70">
                                 Agenda de Consultas

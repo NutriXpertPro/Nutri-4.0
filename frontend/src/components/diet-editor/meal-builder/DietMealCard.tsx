@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect } from 'react'
 import { Food, foodService } from '@/services/food-service'
-import { WorkspaceMeal, useDietEditorStore } from '@/stores/diet-editor-store'
+import { WorkspaceMeal, useDietEditorStore, MealPreset, WorkspaceMealFood } from '@/stores/diet-editor-store'
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils"
 import { getFoodIcon } from './DietTopBar'
 import { ExpressSelectorModal } from './ExpressSelectorModal'
 import { SubstitutionModal } from './SubstitutionModal'
+import { SmartQuantitySelector } from './SmartQuantitySelector'
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -26,7 +27,7 @@ import { IconWrapper } from "@/components/ui/IconWrapper"
 // Diet Types Options
 const DIET_TYPES = [
     'Normocalórica', 'Low Carb', 'High Carb', 'Cetogênica',
-    'Vegetariana', 'Vegana', 'Hipercalórica'
+    'Vegetariana', 'Vegana', 'Hiperproteica'
 ]
 
 interface DietMealCardProps {
@@ -75,6 +76,102 @@ export function DietMealCard({
         console.log("Preview PDF acionado para a refeição:", meal.type);
     }
 
+    // Função para determinar o tipo de refeição com base no título
+    const getMealTypeFromTitle = (title: string): string => {
+        const lowerTitle = title.toLowerCase();
+        if (lowerTitle.includes('café') || lowerTitle.includes('manhã')) return 'cafe_da_manha';
+        if (lowerTitle.includes('almoço') || lowerTitle.includes('almoco')) return 'almoco';
+        if (lowerTitle.includes('jantar')) return 'jantar';
+        if (lowerTitle.includes('lanche') && lowerTitle.includes('manhã')) return 'lanche_manha';
+        if (lowerTitle.includes('lanche') && lowerTitle.includes('tarde')) return 'lanche_tarde';
+        if (lowerTitle.includes('lanche')) return 'lanche_tarde'; // padrão para lanche da tarde
+        if (lowerTitle.includes('ceia')) return 'ceia';
+        if (lowerTitle.includes('suplemento')) return 'suplemento';
+        return 'cafe_da_manha'; // padrão
+    };
+
+    // Função para obter o tipo de dieta do contexto real
+    const getDietTypeFromContext = (): string => {
+        return useDietEditorStore.getState().dietType;
+    };
+
+    // Função para aplicar um preset de refeição
+    const handleApplyPreset = (preset: MealPreset) => {
+        // Substitui os alimentos existentes com os do preset
+        const updatedFoods: WorkspaceMealFood[] = preset.foods.map((food) => ({
+            id: Date.now() + Math.random() + food.id,
+            name: food.food_name,
+            qty: food.quantity,
+            unit: food.unit,
+            measure: food.unit,
+            ptn: food.protein,
+            cho: food.carbs,
+            fat: food.fats,
+            fib: food.fiber || 0,
+            source: 'CUSTOM',
+            originalId: undefined,
+            unidade_caseira: food.unit,
+            peso_unidade_caseira_g: undefined,
+            medidas: [],
+            prep: '',
+            preferred: false
+        }));
+
+        // Atualiza a refeição com os alimentos do preset
+        onUpdate({
+            type: preset.meal_type === 'cafe_da_manha' ? 'Café da Manhã' :
+                preset.meal_type === 'almoco' ? 'Almoço' :
+                    preset.meal_type === 'jantar' ? 'Jantar' :
+                        preset.meal_type === 'lanche_manha' ? 'Lanche da Manhã' :
+                            preset.meal_type === 'lanche_tarde' ? 'Lanche da Tarde' :
+                                preset.meal_type === 'ceia' ? 'Ceia' : preset.name,
+            foods: updatedFoods
+        });
+
+        // Fecha o modal
+        setIsTemplateModalOpen(false);
+    };
+
+    // Função para buscar e aplicar o preset padrão (CONEXÃO SOLICITADA)
+    const handleQuickPreset = (mealLabel: string, dietLabel: string) => {
+        // Mapeamento de Meal Label -> ID (Sincronizado com DefaultPresetsManager)
+        const mealMap: Record<string, string> = {
+            'Café da Manhã': 'cafe_da_manha',
+            'Almoço': 'almoco',
+            'Lanche': 'lanche_tarde',
+            'Jantar': 'jantar',
+            'Ceia': 'ceia'
+        };
+
+        // Mapeamento de Diet Label -> ID (Sincronizado com DefaultPresetsManager)
+        const dietMap: Record<string, string> = {
+            'Normocalórica': 'normocalorica',
+            'Low Carb': 'low_carb',
+            'High Carb': 'high_carb',
+            'Cetogênica': 'cetogenica',
+            'Vegetariana': 'vegetariana',
+            'Vegana': 'vegana',
+            'Hipercalórica': 'hiperproteica'
+        };
+
+        const mealTypeId = mealMap[mealLabel];
+        const dietTypeId = dietMap[dietLabel];
+
+        if (mealTypeId && dietTypeId) {
+            const defaultPreset = useDietEditorStore.getState().getDefaultPreset(mealTypeId, dietTypeId);
+            if (defaultPreset) {
+                const preset = useDietEditorStore.getState().mealPresets.find(p => p.id === defaultPreset.preset);
+                if (preset) {
+                    handleApplyPreset(preset);
+                } else {
+                    console.warn('Preset ID não encontrado no banco');
+                }
+            } else {
+                alert(`Nenhum preset padrão configurado para: ${mealLabel} - ${dietLabel}. Defina um padrão na aba "Presets Padrão" primeiro.`);
+            }
+        }
+    };
+
     const searchInputRef = useRef<HTMLInputElement>(null)
     const containerRef = useRef<HTMLDivElement>(null)
 
@@ -108,14 +205,15 @@ export function DietMealCard({
     }
 
     // Map para armazenar refs
-    const quantityInputRefs = useRef<Map<number, React.RefObject<HTMLInputElement | null>>>(new Map())
+    const quantityInputRefs = useRef<Map<number, React.RefObject<HTMLInputElement>>>(new Map())
 
     // Garante que todo alimento tenha seu ref criado
     useEffect(() => {
         const map = quantityInputRefs.current
         meal.foods.forEach(food => {
             if (!map.has(food.id)) {
-                map.set(food.id, React.createRef<HTMLInputElement | null>())
+                // @ts-ignore - React refs are nullable by design but we strictly type them as InputElement for the prop
+                map.set(food.id, React.createRef<HTMLInputElement>())
             }
         })
     }, [meal.foods])
@@ -123,7 +221,8 @@ export function DietMealCard({
     // CORRIGIDO: Função helper para obter ou criar ref
     const getOrCreateRef = (foodId: number) => {
         if (!quantityInputRefs.current.has(foodId)) {
-            quantityInputRefs.current.set(foodId, React.createRef<HTMLInputElement | null>())
+            // @ts-ignore
+            quantityInputRefs.current.set(foodId, React.createRef<HTMLInputElement>())
         }
         return quantityInputRefs.current.get(foodId)!
     }
@@ -258,6 +357,14 @@ export function DietMealCard({
                         <div className="flex flex-col gap-4 mb-4">
                             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                                 <div className="flex items-center gap-2">
+                                    <button
+                                        onClick={() => setSourceFilter(null)}
+                                        className={cn("text-[10px] px-3 py-1 rounded-lg border transition-all uppercase tracking-widest",
+                                            !sourceFilter ? "bg-yellow-500 text-white border-yellow-600 shadow-sm shadow-yellow-500/20" :
+                                                "text-yellow-600/70 border-yellow-500/20 hover:bg-yellow-500/5 hover:text-yellow-600")}
+                                    >
+                                        Todas
+                                    </button>
                                     {['TACO', 'TBCA', 'USDA', 'IBGE'].map(src => {
                                         const isActive = sourceFilter === src
                                         let activeClass = "bg-primary text-primary-foreground border-primary"
@@ -267,7 +374,7 @@ export function DietMealCard({
                                             case 'TACO': activeClass = "bg-emerald-500 text-white border-emerald-600 shadow-sm shadow-emerald-500/20"; inactiveClass = "text-emerald-600/70 border-emerald-500/20 hover:bg-emerald-500/5 hover:text-emerald-600"; break;
                                             case 'TBCA': activeClass = "bg-orange-500 text-white border-orange-600 shadow-sm shadow-orange-500/20"; inactiveClass = "text-orange-600/70 border-orange-500/20 hover:bg-orange-500/5 hover:text-orange-600"; break;
                                             case 'USDA': activeClass = "bg-blue-500 text-white border-blue-600 shadow-sm shadow-blue-500/20"; inactiveClass = "text-blue-600/70 border-blue-500/20 hover:bg-blue-500/5 hover:text-blue-600"; break;
-                                            case 'IBGE': activeClass = "bg-violet-500 text-white border-violet-600 shadow-sm shadow-violet-500/20"; inactiveClass = "text-violet-600/70 border-violet-500/20 hover:bg-violet-500/5 hover:text-violet-600"; break;
+                                            case 'IBGE': activeClass = "bg-violet-500 text-white border-violet-600 shadow-sm shadow-violet-500/20"; inactiveClass = "text-violet-600/70 border-violet-500/5 hover:text-violet-600"; break;
                                         }
 
                                         return (
@@ -306,7 +413,11 @@ export function DietMealCard({
                                                 <DropdownMenuContent align="end" className="w-52 p-1">
                                                     <div className="px-3 py-2 text-[10px] text-muted-foreground uppercase tracking-widest bg-muted/30 rounded-t-lg mb-1">Padrão Dietético</div>
                                                     {DIET_TYPES.map(type => (
-                                                        <DropdownMenuItem key={type} className="text-xs py-2 px-3 cursor-pointer focus:bg-primary/10 focus:text-primary rounded-lg">
+                                                        <DropdownMenuItem
+                                                            key={type}
+                                                            className="text-xs py-2 px-3 cursor-pointer focus:bg-primary/10 focus:text-primary rounded-lg"
+                                                            onClick={() => handleQuickPreset(label, type)}
+                                                        >
                                                             {type}
                                                         </DropdownMenuItem>
                                                     ))}
@@ -422,16 +533,14 @@ export function DietMealCard({
                         </div>
                     </div>
 
-                    {/* TABELA 100% CORRIGIDA */}
+                    {/* TABELA OTIMIZADA - OPÇÃO 1 */}
                     <div className="flex-1 overflow-auto min-h-[250px] relative">
                         <table className="w-full border-collapse">
                             <thead className="bg-muted/20 sticky top-0 z-20 shadow-sm">
                                 <tr className="text-[10px] font-normal text-muted-foreground uppercase tracking-widest border-b border-border/10">
                                     <th className="p-3 w-10 text-center font-normal"><GripVertical className="w-4 h-4 mx-auto opacity-20" /></th>
-                                    <th className="p-3 text-left font-normal">Alimento</th>
-                                    <th className="p-3 text-center w-20 font-normal">Qtd</th>
-                                    <th className="p-3 text-center w-14 font-normal">Unid</th>
-                                    <th className="p-3 text-center w-28 font-normal">Medida Caseira</th>
+                                    <th className="p-3 text-left font-normal w-[45%]">Alimento</th>
+                                    <th className="p-3 text-center w-[180px] font-normal">Quantidade</th>
                                     <th className="p-3 text-center w-14 text-emerald-600/70 font-normal">PTN</th>
                                     <th className="p-3 text-center w-14 text-blue-600/70 font-normal">CHO</th>
                                     <th className="p-3 text-center w-14 text-amber-600/70 font-normal">FAT</th>
@@ -463,64 +572,33 @@ export function DietMealCard({
                                                     </div>
                                                 </div>
                                             </td>
+
+                                            {/* UNIFIED QUANTITY SELECTOR COLUMN */}
                                             <td className="p-3">
-                                                <div className="relative">
-                                                    <Input
-                                                        type="number"
-                                                        value={food.qty}
-                                                        onChange={(e) => {
-                                                            const val = e.target.value;
+                                                <div className="w-full max-w-[200px] mx-auto">
+                                                    <SmartQuantitySelector
+                                                        food={food}
+                                                        onChange={(grams, measure) => {
                                                             onUpdate({
                                                                 foods: meal.foods.map(f =>
-                                                                    f.id === food.id ? { ...f, qty: val === '' ? '' : Number(val) } : f
+                                                                    f.id === food.id ? { ...f, qty: grams, measure: measure } : f
                                                                 )
                                                             });
                                                         }}
-                                                        onKeyDown={(e) => e.key === 'Enter' && searchInputRef.current?.focus()}
-                                                        ref={inputRef}
-                                                        className="h-8 w-full text-center text-sm bg-muted/20 border-border/10 focus:bg-background focus:border-primary/40 rounded-lg transition-all"
-                                                        placeholder="0"
+                                                        inputRef={inputRef}
+                                                        onEnter={() => {
+                                                            searchInputRef.current?.focus()
+                                                        }}
                                                     />
+                                                    {/* Optional: Show calculated grams subtly below if using a measure */}
+                                                    {food.measure && food.measure !== 'g' && typeof food.qty === 'number' && (
+                                                        <div className="text-[9px] text-muted-foreground/40 text-center mt-1 font-mono tracking-tight">
+                                                            ≈ {Math.round(food.qty)}g calculados
+                                                        </div>
+                                                    )}
                                                 </div>
                                             </td>
-                                            <td className="p-3 text-center">
-                                                <span className="text-[10px] text-muted-foreground uppercase">{food.unit}</span>
-                                            </td>
-                                            <td className="p-3">
-                                                <div className="flex flex-col gap-1.5">
-                                                    <select
-                                                        value={food.measure || 'default'}
-                                                        onChange={(e) => onUpdate({ foods: meal.foods.map(f => f.id === food.id ? { ...f, measure: e.target.value } : f) })}
-                                                        className="h-6 w-full text-[10px] bg-muted/20 border border-border/10 rounded-lg text-center focus:border-primary/40 focus:bg-background transition-all outline-none"
-                                                    >
-                                                        <option value="default">Auto ({food.unidade_caseira || 'N/A'})</option>
-                                                        <option value="col_sopa">Col. Sopa</option>
-                                                        <option value="col_cha">Col. Chá</option>
-                                                        <option value="col_sobremesa">Col. Sobremesa</option>
-                                                        <option value="xicara">Xícara</option>
-                                                        <option value="copo">Copo</option>
-                                                        <option value="unidade">Unidade</option>
-                                                    </select>
-                                                    <div className="text-[9px] text-primary/60 w-full text-center uppercase tracking-tighter">
-                                                        {(() => {
-                                                            if (!food.measure || food.measure === 'default' || food.measure === 'g') {
-                                                                if (food.unidade_caseira && food.peso_unidade_caseira_g && food.peso_unidade_caseira_g > 0) {
-                                                                    return `${(Number(food.qty) / food.peso_unidade_caseira_g).toFixed(1)} ${food.unidade_caseira} `
-                                                                }
-                                                                return '--'
-                                                            }
-                                                            const conv = { col_sopa: 10, col_cha: 5, col_sobremesa: 15, xicara: 240, copo: 200 }
-                                                            if (conv[food.measure as keyof typeof conv]) {
-                                                                return `${(Number(food.qty) / conv[food.measure as keyof typeof conv]).toFixed(1)} ${food.measure.replace('_', ' ')} `
-                                                            }
-                                                            if (food.measure === 'unidade' && food.peso_unidade_caseira_g) {
-                                                                return `${(Number(food.qty) / food.peso_unidade_caseira_g).toFixed(1)} und.`
-                                                            }
-                                                            return '--'
-                                                        })()}
-                                                    </div>
-                                                </div>
-                                            </td>
+
                                             <td className="p-3 text-center text-foreground">{((food.ptn || 0) * ratio).toFixed(1)}</td>
                                             <td className="p-3 text-center text-foreground">{((food.cho || 0) * ratio).toFixed(1)}</td>
                                             <td className="p-3 text-center text-foreground">{((food.fat || 0) * ratio).toFixed(1)}</td>
@@ -554,21 +632,21 @@ export function DietMealCard({
                                                                     energia_kcal: (food.ptn * 4 + food.cho * 4 + food.fat * 9),
                                                                     unidade_caseira: food.unidade_caseira,
                                                                     peso_unidade_caseira_g: food.peso_unidade_caseira_g,
+                                                                    medidas: food.medidas,
                                                                     is_favorite: false
                                                                 };
                                                                 await addFavorite(foodToFav);
                                                             } else {
-                                                                // Legacy Item Workaround: Try to find identity by name
                                                                 try {
                                                                     const searchRes = await foodService.search(food.name, undefined);
                                                                     const firstMatch = searchRes.results.find((f: any) => f.nome === food.name);
                                                                     if (firstMatch) {
                                                                         addFavorite(firstMatch);
                                                                     } else {
-                                                                        alert("Não foi possível localizar a identidade original deste alimento automaticamente. Tente removê-lo e adicioná-lo novamente.");
+                                                                        alert("Food ID not found.");
                                                                     }
                                                                 } catch (err) {
-                                                                    console.error("Failed to recover food identity", err);
+                                                                    console.error(err);
                                                                 }
                                                             }
                                                         }}
@@ -585,7 +663,7 @@ export function DietMealCard({
                                 })}
                                 {meal.foods.length === 0 && (
                                     <tr>
-                                        <td colSpan={11} className="p-12 text-center">
+                                        <td colSpan={9} className="p-12 text-center">
                                             <div className="flex flex-col items-center gap-2 opacity-30 group">
                                                 <Utensils className="w-10 h-10 mb-2 group-hover:scale-110 transition-transform" />
                                                 <span className="text-xs uppercase tracking-widest italic">Nenhum alimento na lista</span>
@@ -598,7 +676,7 @@ export function DietMealCard({
                             <tfoot className="bg-muted/20 border-t border-border/10 sticky bottom-0 z-20 shadow-[0_-5px_15px_-5px_rgba(0,0,0,0.1)]">
                                 <tr>
                                     <td className="p-3"></td>
-                                    <td className="p-3" colSpan={4}>
+                                    <td className="p-3" colSpan={2}>
                                         <div className="flex items-center gap-3">
                                             <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center">
                                                 <PieChart className="w-4 h-4 text-primary" />
@@ -646,7 +724,16 @@ export function DietMealCard({
                     </div>
                 </div>
             </Card>
-            <ExpressSelectorModal isOpen={isTemplateModalOpen} onClose={() => setIsTemplateModalOpen(false)} mealTitle={meal.type} onApplyTemplate={() => setIsTemplateModalOpen(false)} />
+            <ExpressSelectorModal
+                isOpen={isTemplateModalOpen}
+                onClose={() => setIsTemplateModalOpen(false)}
+                mealTitle={meal.type}
+                mealType={getMealTypeFromTitle(meal.type)}
+                dietType={getDietTypeFromContext()}
+                onApplyTemplate={() => setIsTemplateModalOpen(false)}
+                onApplyPreset={handleApplyPreset}
+                mealId={meal.id.toString()}
+            />
             <SubstitutionModal isOpen={isSubstitutionModalOpen} onClose={() => setIsSubstitutionModalOpen(false)} originalFoodName={selectedFoodForSub} onSubstitute={() => setIsSubstitutionModalOpen(false)} />
         </>
     )
