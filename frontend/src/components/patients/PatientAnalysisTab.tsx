@@ -83,7 +83,7 @@ export function PatientAnalysisTab({ patientId }: PatientAnalysisTabProps) {
         return sorted.map(ev => ({
             date: format(new Date(ev.date), 'dd/MM'),
             fullDate: format(new Date(ev.date), "dd 'de' MMMM"),
-            peso: ev.weight
+            peso: ev.weight || 0
         }))
     }, [evaluations])
 
@@ -296,8 +296,8 @@ export function PatientAnalysisTab({ patientId }: PatientAnalysisTabProps) {
                                                         {ev.method?.toLowerCase()?.replace('_', ' ') || '-'}
                                                     </Badge>
                                                 </TableCell>
-                                                <TableCell className="px-4 text-center font-bold text-foreground tabular-nums">{ev.weight} kg</TableCell>
-                                                <TableCell className="px-4 text-center font-bold text-muted-foreground/60 tabular-nums">{ev.height} m</TableCell>
+                                                <TableCell className="px-4 text-center font-bold text-foreground tabular-nums">{ev.weight || '-'} kg</TableCell>
+                                                <TableCell className="px-4 text-center font-bold text-muted-foreground/60 tabular-nums">{ev.height || '-'} m</TableCell>
                                                 <TableCell className="px-4 text-center">
                                                     <span className="font-black text-amber-600 tabular-nums">{ev.body_fat ? `${ev.body_fat}%` : '-'}</span>
                                                 </TableCell>

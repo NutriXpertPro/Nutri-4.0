@@ -184,7 +184,7 @@ export function PacienteEmFoco({ patient, className }: PacienteEmFocoProps) {
                                     ) : (
                                         <TrendingUp className="h-3 w-3" />
                                     )}
-                                    {metric.trend > 0 ? "+" : ""}{metric.trend}
+                                    {metric.trend !== null && metric.trend > 0 ? "+" : ""}{metric.trend}
                                 </div>
                             )}
                         </div>
