@@ -35,9 +35,9 @@ export function PatientContextPanel() {
             {/* Patient Header */}
             <div className="rounded-xl bg-gradient-to-br from-indigo-500/20 to-purple-500/20 border border-white/10 p-4">
                 <div className="flex items-center gap-3">
-                    {patient.photo ? (
+                    {patient.avatar ? (
                         <img
-                            src={patient.photo}
+                            src={patient.avatar}
                             alt={patient.name}
                             className="h-12 w-12 rounded-full object-cover border-2 border-white/20"
                         />
