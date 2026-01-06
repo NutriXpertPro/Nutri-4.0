@@ -59,5 +59,4 @@ backend/env_fix_v2.txt
 *.tmp
 .gemini/
 *.diff
-*.txt
 build.log

@@ -4,8 +4,9 @@ services:
     env: python
     region: oregon
     plan: free
-    buildCommand: cd backend && pip install --upgrade pip && pip install -r requirements.txt
-    startCommand: cd backend && python manage.py migrate && gunicorn setup.wsgi:application --bind 0.0.0.0:$PORT --workers 3 --timeout 120
+    rootDirectory: backend
+    buildCommand: pip install --upgrade pip && pip install -r requirements.txt && python manage.py collectstatic --noinput
+    startCommand: python manage.py migrate && gunicorn setup.wsgi:application --bind 0.0.0.0:$PORT --workers 3 --timeout 120
     envVars:
-      - key: PYTHON_PATH
-        value: /opt/render/project/src/backend
+      - key: PYTHON_VERSION
+        value: 3.12.2
