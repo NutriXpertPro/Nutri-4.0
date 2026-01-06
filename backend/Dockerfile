@@ -31,4 +31,4 @@ RUN python manage.py collectstatic --noinput || true
 EXPOSE 8000
 
 # Run migrations and start Gunicorn
-CMD python manage.py migrate && gunicorn config.wsgi:application --bind 0.0.0.0:${PORT:-8000} --workers 3 --timeout 120
+CMD python manage.py migrate && gunicorn setup.wsgi:application --bind 0.0.0.0:${PORT:-8000} --workers 3 --timeout 120
