@@ -3,7 +3,7 @@ import { evolutionAPI } from '@/services/api'
 
 interface EvolutionData {
     date: string
-    value: number
+    value: number | null
 }
 
 export function useEvolution(metric: 'weight' | 'fat' | 'muscle' = 'weight') {

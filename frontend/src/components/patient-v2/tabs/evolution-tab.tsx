@@ -37,8 +37,8 @@ export function EvolutionTab() {
     }
 
     // Calculate current weight and total loss from API data
-    const currentWeight = weightData.length > 0 ? weightData[weightData.length - 1].value : 0
-    const initialWeight = weightData.length > 0 ? weightData[0].value : 0
+    const currentWeight = weightData.length > 0 ? (weightData[weightData.length - 1].value || 0) : 0
+    const initialWeight = weightData.length > 0 ? (weightData[0].value || 0) : 0
     const totalLoss = initialWeight - currentWeight
     const percentLoss = initialWeight > 0 ? ((totalLoss / initialWeight) * 100).toFixed(0) : 0
 

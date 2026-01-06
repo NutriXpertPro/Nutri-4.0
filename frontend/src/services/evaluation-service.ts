@@ -10,13 +10,13 @@ export interface Evaluation {
     id: number
     patient: Patient
     date: string
-    weight: number
-    height: number
-    body_fat: number
-    muscle_mass: number
-    waist_circumference: number
-    hip_circumference: number
-    arm_circumference: number
+    weight: number | null
+    height: number | null
+    body_fat: number | null
+    muscle_mass: number | null
+    waist_circumference: number | null
+    hip_circumference: number | null
+    arm_circumference: number | null
     method?: 'ADIPOMETRO' | 'BIOIMPEDANCIA' | 'FITA_METRICA'
     body_measurements?: Record<string, number | null>
     photos: EvaluationPhoto[]

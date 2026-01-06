@@ -22,14 +22,14 @@ export interface DashboardFeaturedPatient {
     name: string;
     goal: string;
     metrics: {
-        weight: number;
-        body_fat: number;
-        bmi: number;
-        muscle_mass: number;
-        weight_trend: number; // diff from last measurement
-        body_fat_trend: number;
-        bmi_trend: number;
-        muscle_mass_trend: number;
+        weight: number | null;
+        body_fat: number | null;
+        bmi: number | null;
+        muscle_mass: number | null;
+        weight_trend: number | null;
+        body_fat_trend: number | null;
+        bmi_trend: number | null;
+        muscle_mass_trend: number | null;
     };
     avatar: string | null;
 }

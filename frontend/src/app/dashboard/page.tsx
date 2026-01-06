@@ -65,10 +65,10 @@ export default function DashboardPage() {
                     avatar: featuredData.avatar || undefined, // Convert null to undefined
                     goal: featuredData.goal,
                     metrics: [
-                        { label: "Peso", value: `${featuredData.metrics.weight}kg`, trend: featuredData.metrics.weight_trend, isPositive: featuredData.metrics.weight_trend < 0 },
-                        { label: "Gordura", value: `${featuredData.metrics.body_fat}%`, trend: featuredData.metrics.body_fat_trend, isPositive: featuredData.metrics.body_fat_trend < 0 },
-                        { label: "IMC", value: featuredData.metrics.bmi, trend: featuredData.metrics.bmi_trend, isPositive: featuredData.metrics.bmi_trend < 0 },
-                        { label: "Músculo", value: `${featuredData.metrics.muscle_mass}kg`, trend: featuredData.metrics.muscle_mass_trend, isPositive: featuredData.metrics.muscle_mass_trend > 0 },
+                        { label: "Peso", value: `${featuredData.metrics.weight || '--'}kg`, trend: featuredData.metrics.weight_trend || 0, isPositive: (featuredData.metrics.weight_trend || 0) < 0 },
+                        { label: "Gordura", value: `${featuredData.metrics.body_fat || '--'}%`, trend: featuredData.metrics.body_fat_trend || 0, isPositive: (featuredData.metrics.body_fat_trend || 0) < 0 },
+                        { label: "IMC", value: featuredData.metrics.bmi || '--', trend: featuredData.metrics.bmi_trend || 0, isPositive: (featuredData.metrics.bmi_trend || 0) < 0 },
+                        { label: "Músculo", value: `${featuredData.metrics.muscle_mass || '--'}kg`, trend: featuredData.metrics.muscle_mass_trend || 0, isPositive: (featuredData.metrics.muscle_mass_trend || 0) > 0 },
                     ]
                 }
                 setFeaturedPatient(mappedFeatured)

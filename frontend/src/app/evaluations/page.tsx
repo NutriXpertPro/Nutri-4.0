@@ -138,7 +138,7 @@ export default function EvaluationsPage() {
 
           <StatCard
             title="Média Peso"
-            value={`${evaluations.length ? (evaluations.reduce((sum, e) => sum + e.weight, 0) / evaluations.length).toFixed(1) : '0'} kg`}
+            value={`${evaluations.length ? (evaluations.reduce((sum, e) => sum + (e.weight || 0), 0) / evaluations.length).toFixed(1) : '0'} kg`}
             icon={Weight}
             variant="green"
             subtitle="±0.5 Kg"
@@ -146,7 +146,7 @@ export default function EvaluationsPage() {
 
           <StatCard
             title="Média Gordura"
-            value={`${evaluations.length ? (evaluations.reduce((sum, e) => sum + e.body_fat, 0) / evaluations.length).toFixed(1) : '0'} %`}
+            value={`${evaluations.length ? (evaluations.reduce((sum, e) => sum + (e.body_fat || 0), 0) / evaluations.length).toFixed(1) : '0'} %`}
             icon={PieChart}
             variant="amber"
             subtitle="-1.2% Médio"
@@ -154,7 +154,7 @@ export default function EvaluationsPage() {
 
           <StatCard
             title="Média Músculo"
-            value={`${evaluations.length ? (evaluations.reduce((sum, e) => sum + e.muscle_mass, 0) / evaluations.length).toFixed(1) : '0'} kg`}
+            value={`${evaluations.length ? (evaluations.reduce((sum, e) => sum + (e.muscle_mass || 0), 0) / evaluations.length).toFixed(1) : '0'} kg`}
             icon={Dumbbell}
             variant="blue"
             subtitle="+0.8 Kg Médio"

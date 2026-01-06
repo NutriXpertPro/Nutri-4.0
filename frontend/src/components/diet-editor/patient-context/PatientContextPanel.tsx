@@ -60,13 +60,13 @@ export function PatientContextPanel() {
                 <StatCard
                     icon={<Scale className="h-4 w-4" />}
                     label="Peso"
-                    value={`${patient.weight} kg`}
+                    value={patient.weight ? `${patient.weight} kg` : '--'}
                     color="blue"
                 />
                 <StatCard
                     icon={<Activity className="h-4 w-4" />}
                     label="Altura"
-                    value={`${(patient.height * 100).toFixed(0)} cm`}
+                    value={patient.height ? `${(patient.height * 100).toFixed(0)} cm` : '--'}
                     color="green"
                 />
                 {patient.bodyFat && (
