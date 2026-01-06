@@ -25,7 +25,10 @@ import {
     MessageSquare,
     Calendar,
     UtensilsCrossed,
+    Palette,
+    Check
 } from "lucide-react"
+import { motion, AnimatePresence } from "framer-motion"
 import { useTheme } from "next-themes"
 import { useColor } from "@/components/color-provider"
 import { useAuth } from "@/contexts/auth-context"
@@ -44,6 +47,14 @@ export function Header({ className, sidebarCollapsed }: HeaderProps) {
     const { user, logout } = useAuth()
     const [mounted, setMounted] = React.useState(false)
     const [searchFocused, setSearchFocused] = React.useState(false)
+    const [animateTrigger, setAnimateTrigger] = React.useState(0)
+
+    // Trigger animation when color changes
+    React.useEffect(() => {
+        if (mounted) {
+            setAnimateTrigger(prev => prev + 1)
+        }
+    }, [color])
     const [notifications, setNotifications] = React.useState<any[]>([]);
     const [unreadCount, setUnreadCount] = React.useState(0);
 
@@ -114,7 +125,15 @@ export function Header({ className, sidebarCollapsed }: HeaderProps) {
                         "relative flex-1 max-w-md hidden sm:block",
                         searchFocused && "max-w-lg"
                     )}>
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <motion.div
+                            key={`search-icon-${animateTrigger}`}
+                            initial={{ scale: 1 }}
+                            animate={{ scale: [1, 1.2, 1] }}
+                            transition={{ duration: 0.4 }}
+                            className="absolute left-3 top-1/2 -translate-y-1/2"
+                        >
+                            <Search className="h-4 w-4 text-muted-foreground" />
+                        </motion.div>
                         <input
                             type="text"
                             placeholder="Buscar pacientes, dietas... (Ctrl+K)"
@@ -144,34 +163,80 @@ export function Header({ className, sidebarCollapsed }: HeaderProps) {
                             onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
                             className="rounded-full"
                         >
-                            {theme === "dark" ? (
-                                <Sun className="h-4 w-4" />
-                            ) : (
-                                <Moon className="h-4 w-4" />
-                            )}
+                            <motion.div
+                                key={`theme-icon-${animateTrigger}`}
+                                initial={{ scale: 1 }}
+                                animate={{ scale: [1, 1.2, 1] }}
+                                transition={{ duration: 0.4 }}
+                            >
+                                {theme === "dark" ? (
+                                    <Sun className="h-4 w-4" />
+                                ) : (
+                                    <Moon className="h-4 w-4" />
+                                )}
+                            </motion.div>
                         </Button>
                     )}
 
-                    {/* Color Selector */}
-                    <div className="hidden md:flex gap-3 px-4">
-                        {(["monochrome", "teal", "blue", "violet", "pink"] as const).map((c) => (
-                            <button
-                                key={c}
-                                onClick={() => setColor(c)}
-                                className={cn(
-                                    "w-4 h-4 rounded-full border-2 transition-all",
-                                    c === "monochrome" && "bg-zinc-500",
-                                    c === "teal" && "bg-teal-400",
-                                    c === "blue" && "bg-blue-400",
-                                    c === "violet" && "bg-violet-400",
-                                    c === "pink" && "bg-pink-400",
-                                    color === c
-                                        ? "ring-2 ring-offset-1 ring-offset-background border-foreground"
-                                        : "border-transparent"
-                                )}
-                            />
-                        ))}
-                    </div>
+                    {/* Experiment 1: Premium Color Selector */}
+                    {mounted && (
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="rounded-full hover:bg-primary/10 hover:text-primary transition-all duration-300"
+                                    title="Personalizar Cores"
+                                >
+                                    <motion.div
+                                        key={`palette-icon-${animateTrigger}`}
+                                        initial={{ scale: 1 }}
+                                        animate={{ scale: [1, 1.2, 1] }}
+                                        transition={{ duration: 0.4 }}
+                                    >
+                                        <Palette className="h-4 w-4" />
+                                    </motion.div>
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent
+                                align="end"
+                                className="w-64 p-2 bg-background/80 backdrop-blur-xl border-border/40 shadow-2xl rounded-2xl overflow-hidden"
+                            >
+                                <DropdownMenuLabel className="px-3 py-2 text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground opacity-70">
+                                    Temas Profissionais
+                                </DropdownMenuLabel>
+                                <DropdownMenuSeparator className="bg-border/10" />
+                                <div className="grid grid-cols-1 gap-1 pt-1">
+                                    {([
+                                        { id: "monochrome", label: "Studio Minimal", color: "bg-zinc-500", desc: "Foco total no conteúdo" },
+                                        { id: "teal", label: "Oceanic Zen", color: "bg-teal-400", desc: "Calma e equilíbrio" },
+                                        { id: "blue", label: "Executive Blue", color: "bg-blue-400", desc: "Confiança e autoridade" },
+                                        { id: "violet", label: "Royal Focus", color: "bg-violet-400", desc: "Criatividade e prestígio" },
+                                        { id: "pink", label: "Vital Energy", color: "bg-pink-400", desc: "Vigor e proximidade" },
+                                        { id: "amber", label: "Sunset Gold", color: "bg-amber-400", desc: "Calor e otimismo" },
+                                        { id: "emerald", label: "Forest Zen", color: "bg-emerald-400", desc: "Saúde e vitalidade" }
+                                    ] as const).map((c) => (
+                                        <DropdownMenuItem
+                                            key={c.id}
+                                            onClick={() => setColor(c.id)}
+                                            className={cn(
+                                                "flex items-center gap-3 p-2.5 cursor-pointer rounded-xl transition-all duration-200",
+                                                color === c.id ? "bg-primary/10 text-primary" : "hover:bg-muted/50"
+                                            )}
+                                        >
+                                            <div className={cn("w-6 h-6 rounded-full border-2 border-white/20 shadow-sm flex items-center justify-center transition-transform", c.color, color === c.id && "scale-110")}>
+                                                {color === c.id && <Check className="w-3 h-3 text-white" />}
+                                            </div>
+                                            <div className="flex flex-col min-w-0">
+                                                <span className="text-xs font-semibold truncate">{c.label}</span>
+                                                <span className="text-[10px] text-muted-foreground truncate opacity-70">{c.desc}</span>
+                                            </div>
+                                        </DropdownMenuItem>
+                                    ))}
+                                </div>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    )}
 
                     {/* Notifications - Desativado temporariamente devido a erro no backend */}
                     {/* {mounted && (
@@ -246,12 +311,20 @@ export function Header({ className, sidebarCollapsed }: HeaderProps) {
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                                 <Button variant="ghost" className="flex items-center gap-2 px-2">
-                                    <Avatar className="h-8 w-8 overflow-hidden">
-                                        <AvatarImage src={user?.avatar} className="h-full w-full object-cover" />
-                                        <AvatarFallback className="bg-primary text-primary-foreground text-sm">
-                                            {user?.name?.substring(0, 2).toUpperCase() || "NP"}
-                                        </AvatarFallback>
-                                    </Avatar>
+                                    <motion.div
+                                        key={`avatar-${animateTrigger}`}
+                                        initial={{ scale: 1 }}
+                                        animate={{ scale: [1, 1.1, 1] }}
+                                        transition={{ duration: 0.4 }}
+                                        className="h-8 w-8 rounded-full"
+                                    >
+                                        <Avatar className="h-8 w-8 overflow-hidden">
+                                            <AvatarImage src={user?.avatar} className="h-full w-full object-cover" />
+                                            <AvatarFallback className="bg-primary text-primary-foreground text-sm">
+                                                {user?.name?.substring(0, 2).toUpperCase() || "NP"}
+                                            </AvatarFallback>
+                                        </Avatar>
+                                    </motion.div>
                                     <span className="hidden md:block text-sm font-medium max-w-[120px] truncate">
                                         {user?.name || "Nutricionista"}
                                     </span>

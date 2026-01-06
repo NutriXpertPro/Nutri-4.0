@@ -81,11 +81,23 @@ def _perform_login(request, required_user_type, unauthorized_error_msg):
             status=status.HTTP_400_BAD_REQUEST
         )
 
+    file_log(f"LOGIN ATTEMPT: {email}")
     # O Django vai usar os backends configurados automaticamente
     user = authenticate(request=request, username=email, password=password)
 
     # Padronizar mensagem para evitar enumeração de contas
-    if user is None or user.user_type != required_user_type:
+    if user is None:
+        file_log(f"LOGIN FAIL: Authentication failed for {email}")
+        time.sleep(0.5)
+        return Response(
+            {"error": unauthorized_error_msg},
+            status=status.HTTP_401_UNAUTHORIZED
+        )
+    
+    file_log(f"LOGIN SUCCESS AUTH: User {user.email} found. Type: {user.user_type}, Required: {required_user_type}")
+    
+    if user.user_type != required_user_type:
+        file_log(f"LOGIN FAIL: User type mismatch. Got {user.user_type}, expected {required_user_type}")
         # Adicionando tempo de espera constante para prevenir ataques de timing
         time.sleep(0.5)  # Atraso constante para todos os logins falhos
         return Response(
@@ -93,6 +105,7 @@ def _perform_login(request, required_user_type, unauthorized_error_msg):
             status=status.HTTP_401_UNAUTHORIZED
         )
     else:
+
         # Adicionando tempo de espera também para logins bem-sucedidos para manter consistência de tempo
         time.sleep(0.5)  # Atraso constante para todos os requests
 
@@ -235,7 +248,7 @@ class PasswordResetView(APIView):
                 token = default_token_generator.make_token(user)
                 uid = urlsafe_base64_encode(force_bytes(user.pk))
                 frontend_url = os.environ.get('FRONTEND_URL', 'http://localhost:3000')
-                reset_link = f"{frontend_url}/auth/reset-password/{uid}/{token}/"
+                reset_link = f"{frontend_url}/auth/reset-password?uid={uid}&token={token}"
                 
                 # Enviar email (simulado no console em dev)
                 try:
@@ -253,24 +266,70 @@ class PasswordResetView(APIView):
             return Response({"message": "Se o email existir, as instruções foram enviadas."}, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
+def file_log(msg):
+    try:
+        with open('reset_debug.log', 'a', encoding='utf-8') as f:
+            from datetime import datetime
+            f.write(f"[{datetime.now()}] {msg}\n")
+    except:
+        pass
+
 class PasswordResetConfirmView(APIView):
     permission_classes = (AllowAny,)
 
-    def post(self, request, uidb64, token):
+    def post(self, request, uidb64=None, token=None):
+        file_log(f"--- RESET REQUEST RECEIVED ---")
+        # Se uidb64 e token não forem fornecidos como parâmetros de URL, tentar obter de parâmetros de query
+        if not uidb64 or not token:
+            uidb64 = request.query_params.get('uid')
+            token = request.query_params.get('token')
+
+        # Se ainda não tivermos uidb64 e token, tentar obter do corpo da requisição
+        if not uidb64 or not token:
+            uidb64 = request.data.get('uid')
+            token = request.data.get('token')
+
+        file_log(f"UID: {uidb64}, Token: {token}")
+
         serializer = PasswordResetConfirmSerializer(data=request.data)
         if serializer.is_valid():
+            user = None
+            # O uid recebido pode ser o UID codificado em base64 ou o UID decodificado
+            # Primeiro, tentar como string direta (pode ser o UID decodificado)
             try:
-                uid = force_str(urlsafe_base64_decode(uidb64))
-                user = User.objects.get(pk=uid)
+                user = User.objects.get(pk=uidb64)
+                file_log(f"User found by direct PK: {user.email}")
             except (TypeError, ValueError, OverflowError, User.DoesNotExist):
-                user = None
+                try:
+                    # Se falhar, tentar decodificar como base64 (o UID codificado originalmente)
+                    decoded_uid = force_str(urlsafe_base64_decode(uidb64))
+                    user = User.objects.get(pk=decoded_uid)
+                    file_log(f"User found by Base64 decode: {user.email}")
+                except (TypeError, ValueError, OverflowError, User.DoesNotExist) as e:
+                    file_log(f"User lookup failed: {e}")
+                    user = None
 
-            if user is not None and default_token_generator.check_token(user, token):
-                user.set_password(serializer.validated_data['password'])
-                user.save()
-                return Response({"message": "Senha redefinida com sucesso."}, status=status.HTTP_200_OK)
+            if user is not None:
+                token_valid = default_token_generator.check_token(user, token)
+                file_log(f"Token Valid? {token_valid}")
+                
+                if not token_valid:
+                     current_token = default_token_generator.make_token(user)
+                     file_log(f"Expected token (current): {current_token}")
+                     file_log(f"User State - Password hash: {user.password[:20]}..., Last Login: {user.last_login}")
+                
+                if token_valid:
+                    user.set_password(serializer.validated_data['password'])
+                    user.save()
+                    file_log("Password reset success!")
+                    return Response({"message": "Senha redefinida com sucesso."}, status=status.HTTP_200_OK)
+                else:
+                    return Response({"error": "Link inválido ou expirado."}, status=status.HTTP_400_BAD_REQUEST)
             else:
-                return Response({"error": "Link inválido ou expirado."}, status=status.HTTP_400_BAD_REQUEST)
+                 return Response({"error": "Link inválido usuário não encontrado."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        file_log(f"Serializer Errors: {serializer.errors}")
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['POST'])
@@ -394,9 +453,11 @@ def dashboard_stats_view(request):
     ).count()
 
     # Próxima consulta (otimizada com select_related)
+    # Próxima consulta (otimizada com select_related)
     next_appointment = Appointment.objects.filter(
         user=user,
-        date__gte=now
+        date__gte=now,
+        patient__is_active=True
     ).select_related('patient', 'patient__user').order_by('date').first()
 
     next_appointment_time = next_appointment.date.strftime('%H:%M') if next_appointment else None
@@ -438,7 +499,8 @@ def appointments_today_view(request):
     # Otimizado com select_related para evitar N+1 queries
     appointments = Appointment.objects.filter(
         user=user,
-        date__date=today
+        date__date=today,
+        patient__is_active=True
     ).select_related('patient', 'patient__user').order_by('date')
 
     # Usando list comprehension para maior eficiência

@@ -1,3 +1,4 @@
+from django.db import transaction
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from notifications.models import Notification
@@ -26,9 +27,12 @@ def create_patient_notification(sender, instance, created, **kwargs):
                 notification_type="system",  # Notificação do sistema/app
             )
 
-            # Enviar email de boas-vindas
+            # Enviar email de boas-vindas Apenas APÓS o commit da transação
+            # Isso garante que o usuário já tenha a senha definida pelo serializer
             from .tasks import send_welcome_email_task
-            send_welcome_email_task.delay(instance.user.id, instance.nutritionist.name)
+            transaction.on_commit(
+                lambda: send_welcome_email_task.delay(instance.user.id, instance.nutritionist.name)
+            )
         except Exception:
             # Em caso de erro, cria uma notificação genérica
             Notification.objects.create(

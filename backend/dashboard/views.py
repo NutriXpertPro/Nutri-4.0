@@ -23,7 +23,8 @@ class DashboardStatsView(APIView):
         today = timezone.now().date()
         appointments_today_count = Appointment.objects.filter(
             user=nutritionist,
-            date__date=today
+            date__date=today,
+            patient__is_active=True
         ).count()
 
         # Dietas Ativas
@@ -104,7 +105,8 @@ class DashboardAppointmentsView(APIView):
         
         appointments = Appointment.objects.filter(
             user=nutritionist,
-            date__date=today
+            date__date=today,
+            patient__is_active=True
         ).order_by('date')
 
         data = []
@@ -138,7 +140,8 @@ class DashboardFeaturedPatientView(APIView):
         # Prioridade 1: Paciente com a próxima consulta
         next_appointment = Appointment.objects.filter(
             user=nutritionist, 
-            date__gte=now
+            date__gte=now,
+            patient__is_active=True
         ).order_by('date').first()
 
         patient = None
@@ -146,7 +149,7 @@ class DashboardFeaturedPatientView(APIView):
             patient = next_appointment.patient
         else:
             # Fallback: Paciente criado mais recentemente
-            patient = PatientProfile.objects.filter(nutritionist=nutritionist).order_by('-created_at').first()
+            patient = PatientProfile.objects.filter(nutritionist=nutritionist, is_active=True).order_by('-created_at').first()
         
         if not patient:
             # Retorna uma resposta vazia se nenhum paciente for encontrado

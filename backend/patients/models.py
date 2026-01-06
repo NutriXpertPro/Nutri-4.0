@@ -118,3 +118,10 @@ class PatientProfile(models.Model):
 # Importar modelos de diário, social e adesão (após PatientProfile para evitar problemas de referência circular)
 from .models_diary import PatientDiaryEntry, SocialLike, SocialComment
 from .models_adherence import AdherenceRecord
+from .models_patient_data import (
+    PatientMetric,
+    MealCheckIn,
+    ProgressPhoto,
+    BodyMeasurement,
+    AppointmentConfirmation
+)

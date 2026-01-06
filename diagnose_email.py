@@ -4,7 +4,8 @@ import sys
 import socket
 
 # Adiciona o diretório backend ao path para conseguir importar o settings
-sys.path.append('backend')
+sys.path.append('.')
+os.chdir('backend')  # Muda para o diretório backend
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'setup.settings')
 
 # Tenta carregar o Django para pegar as configs processadas pelo decouple/settings
@@ -14,7 +15,7 @@ from decouple import config
 
 def diagnose():
     print("--- Diagnóstico de Configuração de E-mail ---")
-    
+
     # É necessário chamar setup() para carregar settings
     try:
         django.setup()
@@ -40,6 +41,10 @@ def diagnose():
     if not user or not password:
         print("\n[ERRO] Usuário ou senha de e-mail não estão configurados!")
         print("Verifique seu arquivo .env em backend/.env")
+        print("\nExemplo de configuração no .env:")
+        print("EMAIL_HOST_USER=seu-email@gmail.com")
+        print("EMAIL_HOST_PASSWORD=sua-senha-de-app")
+        print("DEFAULT_FROM_EMAIL=Nome <seu-email@gmail.com>")
         return
 
     print("\nTestando conexão com servidor SMTP...")
@@ -50,6 +55,11 @@ def diagnose():
     except Exception as e:
         print(f"[FALHA] Não foi possível conectar ao servidor SMTP: {e}")
         print("Verifique se o host/porta estão corretos ou se há firewall bloqueando.")
+
+    print(f"\n[INFO] Backend de email configurado: {email_backend}")
+    if 'console' in email_backend.lower():
+        print("[AVISO] O backend de email está configurado para usar o console, o que é adequado apenas para desenvolvimento.")
+        print("Em produção, configure EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend")
 
 if __name__ == '__main__':
     diagnose()

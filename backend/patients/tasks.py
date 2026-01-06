@@ -9,26 +9,36 @@ from notifications.models import Notification
 
 User = get_user_model()
 
+def file_log(msg):
+    try:
+        with open('email_debug.log', 'a', encoding='utf-8') as f:
+            from datetime import datetime
+            f.write(f"[{datetime.now()}] {msg}\n")
+    except:
+        pass
+
 @shared_task(bind=True, max_retries=3)
 def send_welcome_email_task(self, user_id, nutritionist_name):
     """
     Envia e-mail de boas-vindas para o paciente com link de definição de senha.
     """
     try:
+        file_log(f"[TASK] Iniciando para user_id: {user_id}")
         user = User.objects.get(pk=user_id)
-        
+        file_log(f"[TASK] Usuario: {user.email}")
+
         # Gerar tokens para redefinição de senha
         token = default_token_generator.make_token(user)
         uid = urlsafe_base64_encode(force_bytes(user.pk))
-        
-        # Construir link (assumindo que o frontend tem essa rota)
-        # TODO: Confirmar a rota exata no frontend. Geralmente é /auth/reset-password?uid=...&token=...
+
+        # Construir link no formato correto para o frontend (com parâmetros de query)
         reset_link = f"{settings.FRONTEND_URL}/auth/reset-password?uid={uid}&token={token}"
-        
+        print(f"[DEBUG EMAIL] Link gerado: {reset_link}")
+
         subject = f"Bem-vindx à sua jornada de transformação, {user.name}!"
-        
+
         message = f"""
-1 Olá {user.name},
+Olá {user.name},
 
 Parabéns por dar o primeiro passo rumo à sua transformação e bem-estar! Estamos verdadeiramente felizes em tê-lo conosco nesta jornada.
 
@@ -48,21 +58,30 @@ Com confiança no seu sucesso,
 ---
 Esta é uma mensagem automática. Por favor, não responda diretamente a este e-mail.
 """
-        
+
         # Enviar e-mail
+        from_email = settings.DEFAULT_FROM_EMAIL if hasattr(settings, 'DEFAULT_FROM_EMAIL') else 'noreply@nutrixpertpro.com'
+        file_log(f"[TASK] Preparando envio. From: {from_email}, To: {user.email}")
+        file_log(f"[TASK] Link: {reset_link}")
+        
         send_mail(
             subject=subject,
             message=message,
-            from_email=settings.DEFAULT_FROM_EMAIL if hasattr(settings, 'DEFAULT_FROM_EMAIL') else 'noreply@nutrixpertpro.com',
+            from_email=from_email,
             recipient_list=[user.email],
             fail_silently=False,
         )
-        
+
+        file_log(f"[TASK] SUCESSO e-mail enviado para {user.email}")
         return f"Email enviado para {user.email}"
-        
+
     except User.DoesNotExist:
-        return f"Usuário {user_id} não encontrado."
+        error_msg = f"Usuário {user_id} não encontrado."
+        print(error_msg)
+        return error_msg
     except Exception as e:
+        error_msg = f"[TASK] ERRO para {user_id}: {type(e).__name__}: {str(e)}"
+        file_log(error_msg)
         # Reagendar tarefa em caso de erro (ex: falha na conexão SMTP)
-        # exponential backoff: 30s, 60s, 120s setados no retry
-        raise self.retry(exc=e, countdown=60)
+        # exponential backoff: 60s, 120s, 240s
+        raise self.retry(exc=e, countdown=60 * (2 ** self.request.retries))

@@ -42,6 +42,9 @@ DEBUG = config('DEBUG', default=False, cast=bool)
 print(f"DEBUG mode is: {DEBUG}")
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='*', cast=Csv())
 
+# Validade do token de reset de senha: 24 horas (em segundos)
+PASSWORD_RESET_TIMEOUT = 86400
+
 # Permissive CORS for development
 CORS_ALLOW_ALL_ORIGINS = False
 CORS_ALLOW_CREDENTIALS = True
@@ -236,19 +239,45 @@ SIMPLE_JWT = {
 }
 
 # Configurações de E-mail
-EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='')
-EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
+# Tentar ler com decouple primeiro
+try:
+    EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='')
+    EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
 
-# Se DEBUG=True e não houver credenciais SMTP, usa o console para facilitar o desenvolvimento
-if DEBUG and not EMAIL_HOST_USER:
-    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-    print("DEBUG: Using CONSOLE email backend because EMAIL_HOST_USER is empty.")
-else:
+    # Se os valores estiverem vazios, tentar ler diretamente das variáveis de ambiente
+    if not EMAIL_HOST_USER:
+        EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
+    if not EMAIL_HOST_PASSWORD:
+        EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
+
+    # Debug: imprimir valores lidos (apenas se não estiver em produção)
+    if DEBUG and not EMAIL_HOST_USER:
+        print("DEBUG: EMAIL_HOST_USER está vazio após tentativa de leitura")
+    if DEBUG and not EMAIL_HOST_PASSWORD:
+        print("DEBUG: EMAIL_HOST_PASSWORD está vazio após tentativa de leitura")
+
+except Exception as e:
+    print(f"DEBUG: Erro ao ler configurações de email com decouple: {e}")
+    # Fallback para leitura direta do ambiente
+    EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
+    EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
+
+# Determinar backend de email com base nas configurações
+if EMAIL_HOST_USER and EMAIL_HOST_PASSWORD:
+    # Se as credenciais estiverem configuradas, usar SMTP
     EMAIL_BACKEND = config('EMAIL_BACKEND', default='django.core.mail.backends.smtp.EmailBackend')
+    if DEBUG:
+        print("DEBUG: Usando backend SMTP porque credenciais estão definidas")
+else:
+    # Caso contrário, usar console backend (útil para desenvolvimento sem credenciais)
+    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+    if DEBUG:
+        print("DEBUG: Using CONSOLE email backend because EMAIL_HOST_USER or EMAIL_HOST_PASSWORD is empty.")
 
 EMAIL_HOST = config('EMAIL_HOST', default='smtp.gmail.com')
 EMAIL_PORT = config('EMAIL_PORT', default=587, cast=int)
 EMAIL_USE_TLS = config('EMAIL_USE_TLS', default=True, cast=bool)
+EMAIL_USE_SSL = config('EMAIL_USE_SSL', default=False, cast=bool)
 DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='Nutri Xpert <noreply@nutrixpertpro.com>')
 
 # Configurações do Celery

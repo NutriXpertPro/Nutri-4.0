@@ -2,6 +2,15 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from . import views
 from .views_diary import PatientDiaryEntryViewSet, SocialCommentViewSet, CommunityFeedViewSet
+from .views_patient_data import (
+    PatientMetricsViewSet,
+    PatientMealsViewSet,
+    PatientEvolutionViewSet,
+    PatientMeasurementsViewSet,
+    ProgressPhotoViewSet,
+    PatientExamsViewSet,
+    PatientAppointmentsViewSet
+)
 
 app_name = "patients"
 
@@ -10,6 +19,16 @@ diary_router = DefaultRouter()
 diary_router.register(r'diary-entries', PatientDiaryEntryViewSet, basename='patient-diary-entry')
 diary_router.register(r'comments', SocialCommentViewSet, basename='social-comment')
 diary_router.register(r'community', CommunityFeedViewSet, basename='community-feed')
+
+# Router para dados do paciente (metrics, meals, etc.)
+patient_data_router = DefaultRouter()
+patient_data_router.register(r'metrics', PatientMetricsViewSet, basename='patient-metrics')
+patient_data_router.register(r'meals', PatientMealsViewSet, basename='patient-meals')
+patient_data_router.register(r'evolution', PatientEvolutionViewSet, basename='patient-evolution')
+patient_data_router.register(r'measurements', PatientMeasurementsViewSet, basename='patient-measurements')
+patient_data_router.register(r'photos', ProgressPhotoViewSet, basename='progress-photos')
+patient_data_router.register(r'exams', PatientExamsViewSet, basename='patient-exams')
+patient_data_router.register(r'appointments', PatientAppointmentsViewSet, basename='patient-appointments')
 
 urlpatterns = [
     # URLs tradicionais de pacientes
@@ -20,4 +39,7 @@ urlpatterns = [
 
     # URLs do diário e comunidade
     path('diary/', include(diary_router.urls)),
+    
+    # URLs de dados do paciente (/patients/me/*)
+    path('me/', include(patient_data_router.urls)),
 ]

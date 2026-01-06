@@ -29,6 +29,7 @@ export interface CreatePatientDTO {
     goal: string
     service_type: 'ONLINE' | 'PRESENCIAL'
     start_date: string
+    profile_picture?: File | null
 }
 
 const patientService = {
@@ -43,6 +44,25 @@ const patientService = {
     },
 
     create: async (data: CreatePatientDTO) => {
+        // Se houver foto, usar FormData
+        if (data.profile_picture instanceof File) {
+            const formData = new FormData()
+            formData.append('name', data.name)
+            formData.append('email', data.email)
+            formData.append('gender', data.gender || 'F')
+            formData.append('phone', data.phone)
+            formData.append('goal', data.goal)
+            formData.append('service_type', data.service_type)
+            formData.append('start_date', data.start_date)
+            formData.append('birth_date', data.birth_date)
+            formData.append('profile_picture', data.profile_picture)
+
+            const response = await api.post<Patient>('/patients/', formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            })
+            return response.data
+        }
+
         const payload = {
             name: data.name,
             email: data.email,

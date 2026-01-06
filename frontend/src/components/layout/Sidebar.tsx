@@ -23,6 +23,8 @@ import {
     ChevronLeft,
     ChevronRight,
 } from "lucide-react"
+import { motion } from "framer-motion"
+import { useColor } from "@/components/color-provider"
 
 interface SidebarItem {
     icon: React.ReactNode
@@ -56,6 +58,13 @@ export function Sidebar({ className, collapsed, onToggle }: SidebarProps) {
 
     // Usa prop se definida, senão usa estado interno
     const isCollapsed = collapsed !== undefined ? collapsed : internalCollapsed
+    const { color } = useColor()
+    const [animateTrigger, setAnimateTrigger] = React.useState(0)
+
+    // Trigger animation when color changes
+    React.useEffect(() => {
+        setAnimateTrigger(prev => prev + 1)
+    }, [color])
 
     // Efeito para buscar o número de notificações não lidas
     React.useEffect(() => {
@@ -252,13 +261,19 @@ export function Sidebar({ className, collapsed, onToggle }: SidebarProps) {
                                         )}
                                         title={isCollapsed && typeof item.label === 'string' ? item.label : undefined}
                                     >
-                                        <span className={cn(
-                                            "flex-shrink-0",
-                                            isActive(item.href) && "text-primary",
-                                            item.badgeVariant === "destructive" && item.badge && "animate-pulse text-destructive"
-                                        )}>
+                                        <motion.span
+                                            key={`${item.href}-${animateTrigger}`}
+                                            initial={{ scale: 1 }}
+                                            animate={{ scale: [1, 1.3, 1] }}
+                                            transition={{ duration: 0.4, ease: "easeOut" }}
+                                            className={cn(
+                                                "flex-shrink-0",
+                                                isActive(item.href) && "text-primary",
+                                                item.badgeVariant === "destructive" && item.badge && "animate-pulse text-destructive"
+                                            )}
+                                        >
                                             {item.icon}
-                                        </span>
+                                        </motion.span>
                                         {!isCollapsed && (
                                             <>
                                                 <span className="flex-1 truncate">{item.label}</span>

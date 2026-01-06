@@ -145,15 +145,44 @@
 
 
 .dark .theme-pink {
-
   --primary: oklch(0.90 0.10 350.4);
-
   /* Pink Pastel (Dark) */
-
   --primary-foreground: oklch(0.145 0 0);
-
   --ring: oklch(0.90 0.10 350.4);
+}
 
+/* =========================================
+   THEME: AMBER (Ouro Pôr do Sol)
+   ========================================= */
+.theme-amber {
+  --primary: oklch(0.85 0.12 65.4);
+  /* Amber Pastel */
+  --primary-foreground: oklch(0.20 0.05 65.4);
+  --ring: oklch(0.85 0.12 65.4);
+}
+
+.dark .theme-amber {
+  --primary: oklch(0.90 0.10 65.4);
+  /* Amber Pastel (Dark) */
+  --primary-foreground: oklch(0.145 0 0);
+  --ring: oklch(0.90 0.10 65.4);
+}
+
+/* =========================================
+   THEME: EMERALD (Verde Floresta)
+   ========================================= */
+.theme-emerald {
+  --primary: oklch(0.85 0.12 145.4);
+  /* Emerald Pastel */
+  --primary-foreground: oklch(0.20 0.05 145.4);
+  --ring: oklch(0.85 0.12 145.4);
+}
+
+.dark .theme-emerald {
+  --primary: oklch(0.90 0.10 145.4);
+  /* Emerald Pastel (Dark) */
+  --primary-foreground: oklch(0.145 0 0);
+  --ring: oklch(0.90 0.10 145.4);
 }
 
 

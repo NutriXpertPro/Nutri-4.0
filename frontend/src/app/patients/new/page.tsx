@@ -24,6 +24,7 @@ export default function NewPatientPage() {
     const router = useRouter()
     const { createPatient } = usePatients()
     const [previewUrl, setPreviewUrl] = React.useState<string | null>(null)
+    const [photoFile, setPhotoFile] = React.useState<File | null>(null)
 
     const [formData, setFormData] = React.useState<CreatePatientDTO>({
         name: "",
@@ -73,7 +74,7 @@ export default function NewPatientPage() {
         e.preventDefault()
         setError(null)
         try {
-            await createPatient.mutateAsync(formData)
+            await createPatient.mutateAsync({ ...formData, profile_picture: photoFile })
             router.push("/patients")
         } catch (err: any) {
             console.error("Failed to create patient:", err)
@@ -107,6 +108,7 @@ export default function NewPatientPage() {
         if (file) {
             const url = URL.createObjectURL(file)
             setPreviewUrl(url)
+            setPhotoFile(file)
         }
     }
 

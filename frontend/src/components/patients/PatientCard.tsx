@@ -30,8 +30,19 @@ import {
     Heart,
     Activity,
     Zap,
+    Loader2,
 } from "lucide-react"
 import api from "@/services/api"
+import { usePatients } from "@/hooks/usePatients"
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog"
+import { toast } from "@/components/ui/use-toast"
 
 interface Patient {
     id: string
@@ -76,6 +87,30 @@ function getGoalIcon(goal: string) {
 
 export function PatientCard({ patient, className }: PatientCardProps) {
     const router = useRouter();
+    const { deletePatient } = usePatients();
+    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
+    const [isDeleting, setIsDeleting] = React.useState(false);
+
+    const handleDelete = async () => {
+        setIsDeleting(true);
+        try {
+            await deletePatient.mutateAsync({ id: parseInt(patient.id) });
+            toast({
+                title: "Paciente excluído",
+                description: "O paciente foi removido com sucesso.",
+            });
+            setIsDeleteDialogOpen(false);
+        } catch (error) {
+            console.error('Erro ao excluir paciente:', error);
+            toast({
+                title: "Erro ao excluir",
+                description: "Não foi possível excluir o paciente. Tente novamente.",
+                variant: "destructive",
+            });
+        } finally {
+            setIsDeleting(false);
+        }
+    };
 
     const handleOpenMessage = async () => {
         try {
@@ -123,11 +158,36 @@ export function PatientCard({ patient, className }: PatientCardProps) {
                     </div>
 
                     <div className="flex-1 min-w-0 pt-1">
-                        <div className="flex items-center gap-2 mb-1">
-                            <User className="h-5 w-5 text-muted-foreground" />
-                            <h3 className="text-lg tracking-tight truncate group-hover:text-primary transition-colors font-normal">
-                                {patient.name.startsWith('Paciente ') ? patient.name.substring(9) : patient.name}
-                            </h3>
+                        <div className="flex items-center justify-between gap-2 mb-1">
+                            <div className="flex items-center gap-2 min-w-0">
+                                <User className="h-5 w-5 text-muted-foreground shrink-0" />
+                                <h3 className="text-lg tracking-tight truncate group-hover:text-primary transition-colors font-normal">
+                                    {patient.name.startsWith('Paciente ') ? patient.name.substring(9) : patient.name}
+                                </h3>
+                            </div>
+
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <MoreVertical className="h-4 w-4 text-muted-foreground" />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="rounded-2xl border-border/10 shadow-2xl">
+                                    <DropdownMenuItem asChild className="rounded-xl cursor-pointer">
+                                        <Link href={`/patients/${patient.id}`} className="flex items-center">
+                                            <Eye className="h-4 w-4 mr-2" />
+                                            Ver Perfil
+                                        </Link>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                        className="rounded-xl text-destructive focus:text-destructive cursor-pointer"
+                                        onClick={() => setIsDeleteDialogOpen(true)}
+                                    >
+                                        <Trash2 className="h-4 w-4 mr-2" />
+                                        Excluir Paciente
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
                         </div>
                         {patient.goal ? (
                             <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -198,6 +258,47 @@ export function PatientCard({ patient, className }: PatientCardProps) {
                     </Button>
                 </div>
             </CardContent>
+
+            {/* Delete Confirmation Dialog */}
+            <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+                <DialogContent className="rounded-3xl border-border/10 shadow-2xl bg-background/95 backdrop-blur-xl">
+                    <DialogHeader>
+                        <DialogTitle className="text-xl font-normal">Confirmar Exclusão</DialogTitle>
+                        <DialogDescription className="text-muted-foreground">
+                            Você tem certeza que deseja excluir o paciente <span className="font-medium text-foreground">{patient.name}</span>?
+                            Esta ação arquivará os dados do paciente.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter className="gap-2 sm:gap-0">
+                        <Button
+                            variant="ghost"
+                            onClick={() => setIsDeleteDialogOpen(false)}
+                            disabled={isDeleting}
+                            className="rounded-xl"
+                        >
+                            Cancelar
+                        </Button>
+                        <Button
+                            variant="destructive"
+                            onClick={handleDelete}
+                            disabled={isDeleting}
+                            className="rounded-xl gap-2 shadow-lg shadow-destructive/20"
+                        >
+                            {isDeleting ? (
+                                <>
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                    Excluindo...
+                                </>
+                            ) : (
+                                <>
+                                    <Trash2 className="h-4 w-4" />
+                                    Confirmar Exclusão
+                                </>
+                            )}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </Card>
     )
 }

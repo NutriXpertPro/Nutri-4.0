@@ -5,6 +5,8 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { ColorProvider } from "@/components/color-provider";
 
 import { AuthProvider } from "@/contexts/auth-context"
+import { PatientProvider } from "@/contexts/patient-context";
+import { ColorThemeProvider } from "@/contexts/color-theme-context";
 import QueryProvider from "@/components/query-provider"
 
 const geistSans = Geist({
@@ -52,11 +54,15 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <ColorProvider>
-            <AuthProvider>
-              <QueryProvider>
-                {children}
-              </QueryProvider>
-            </AuthProvider>
+            <ColorThemeProvider>
+              <AuthProvider>
+                <PatientProvider>
+                  <QueryProvider>
+                    {children}
+                  </QueryProvider>
+                </PatientProvider>
+              </AuthProvider>
+            </ColorThemeProvider>
           </ColorProvider>
         </ThemeProvider>
       </body>

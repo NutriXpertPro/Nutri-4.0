@@ -7,8 +7,17 @@ from .models import PatientProfile
 
 from django.db import transaction
 from django.contrib.auth import get_user_model
+from users.models import UserProfile
 
 User = get_user_model()
+
+def file_log(msg):
+    try:
+        with open('email_debug.log', 'a', encoding='utf-8') as f:
+            from datetime import datetime
+            f.write(f"[{datetime.now()}] {msg}\n")
+    except:
+        pass
 
 class PatientProfileSerializer(serializers.ModelSerializer):
     name = serializers.CharField(source='user.name')
@@ -52,32 +61,54 @@ class PatientProfileSerializer(serializers.ModelSerializer):
         nutritionist = request.user
         
         # Remover nutritionist do validated_data para evitar erro de múltiplos valores
-        # pois a view passa nutritionist no save(), mas já o pegamos do request
         validated_data.pop('nutritionist', None)
+
+        # Variáveis para controlar o envio de email DEPOIS da transação
+        should_send_email = False
+        email_user_id = None
+        email_nutritionist_name = None
+        patient_profile = None
 
         with transaction.atomic():
             email = user_data.get('email')
-            # Padronizar nome para Title Case (ex: "joao silva" -> "Joao Silva")
+            file_log(f"[SERIALIZER] Iniciando create para {email}")
             name = user_data.get('name', '').title()
             
-            # Check if user already exists
             user = User.objects.filter(email=email).first()
             
             if user:
-                # User exists. Check if they already have a profile.
                 if hasattr(user, 'patient_profile'):
-                    raise serializers.ValidationError(
-                        {'email': 'Já existe um paciente cadastrado com este e-mail.'}
-                    )
-                
-                # Update existing user data if needed (optional)
-                user.name = name if name else user.name
-                user.gender = user_data.get('gender', user.gender)
-                user.save()
+                    profile = user.patient_profile
+                    if not profile.is_active:
+                        profile.is_active = True
+                        profile.nutritionist = nutritionist
+                        for attr, value in validated_data.items():
+                            setattr(profile, attr, value)
+                        profile.save()
+                        
+                        profile_data = user_data.get('profile', {})
+                        if 'profile_picture' in profile_data:
+                            from users.models import UserProfile
+                            user_profile, _ = UserProfile.objects.get_or_create(user=user)
+                            user_profile.profile_picture = profile_data['profile_picture']
+                            user_profile.save()
+                        
+                        # Marcar para enviar email APÓS a transação
+                        should_send_email = True
+                        email_user_id = user.id
+                        email_nutritionist_name = nutritionist.name
+                        patient_profile = profile
+                        file_log(f"[SERIALIZER] Reativação salva para {email}, email será enviado após commit")
+                        # NÃO retornamos aqui, deixamos sair do bloco atomic primeiro
+                    else:
+                        raise serializers.ValidationError(
+                            {'email': 'Já existe um paciente cadastrado com este e-mail.'}
+                        )
+                else:
+                    user.name = name if name else user.name
+                    user.gender = user_data.get('gender', user.gender)
+                    user.save()
             else:
-                # Create new user
-
-                # Generate a secure random password
                 alphabet = string.ascii_letters + string.digits + string.punctuation
                 random_password = ''.join(secrets.choice(alphabet) for i in range(16))
                 
@@ -91,30 +122,34 @@ class PatientProfileSerializer(serializers.ModelSerializer):
                 user.set_password(random_password)
                 user.save()
                 
-                # Enviar e-mail de boas-vindas assincronamente
-                try:
-                    from .tasks import send_welcome_email_task
-                    send_welcome_email_task.delay(user.id, nutritionist.name)
-                except Exception as e:
-                    # Não bloquear a criação se falhar o envio da task
-                    print(f"Erro ao agendar envio de email: {e}")
-                pass
+                file_log(f"[SERIALIZER] Novo usuário salvo para {email}, email será enviado via Signal")
             
-            # Create profile
-            patient_profile = PatientProfile.objects.create(
-                user=user,
-                nutritionist=nutritionist,
-                **validated_data
-            )
+            if patient_profile is None:
+                patient_profile = PatientProfile.objects.create(
+                    user=user,
+                    nutritionist=nutritionist,
+                    **validated_data
+                )
 
-            # Lidar com o upload da foto se houver
-            profile_data = user_data.get('profile', {})
-            if 'profile_picture' in profile_data:
-                user_profile, _ = UserProfile.objects.get_or_create(user=user)
-                user_profile.profile_picture = profile_data['profile_picture']
-                user_profile.save()
+                profile_data = user_data.get('profile', {})
+                if 'profile_picture' in profile_data:
+                    from users.models import UserProfile
+                    user_profile, _ = UserProfile.objects.get_or_create(user=user)
+                    user_profile.profile_picture = profile_data['profile_picture']
+                    user_profile.save()
+        
+        # *** ENVIAR EMAIL FORA DA TRANSAÇÃO ***
+        if should_send_email and email_user_id:
+            try:
+                from .tasks import send_welcome_email_task
+                file_log(f"[SERIALIZER] Disparando task de email para user_id={email_user_id}")
+                send_welcome_email_task.delay(email_user_id, email_nutritionist_name)
+                file_log(f"[SERIALIZER] Task de email disparada com sucesso!")
+            except Exception as e:
+                file_log(f"[SERIALIZER] Erro ao disparar task: {e}")
             
         return patient_profile
+
 
     def update(self, instance, validated_data):
         user_data = validated_data.pop('user', {})

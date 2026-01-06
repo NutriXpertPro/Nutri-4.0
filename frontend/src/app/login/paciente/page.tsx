@@ -32,7 +32,7 @@ export default function PatientLoginPage() {
 
         try {
             // Chamada para a API de autenticação JWT do Django - login específico para pacientes
-            const response = await fetch("http://localhost:8000/api/v1/users/login/paciente/", {
+            const response = await fetch("http://localhost:8000/api/v1/auth/login/paciente/", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -52,7 +52,7 @@ export default function PatientLoginPage() {
             // Usar o contexto para login (salva cookies e redireciona)
             // Pacientes vão para o dashboard/paciente
             login(data, false)
-            router.push("/dashboard/paciente")
+            router.push("/patient-dashboard-v2")
 
         } catch (err) {
             setError("Email ou senha incorretos. Tente novamente.")
