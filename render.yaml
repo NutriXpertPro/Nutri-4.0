@@ -1,24 +1,20 @@
 services:
   - type: web
-    name: nutri-4-0-backend
-    env: python
-    region: oregon
-    plan: free
+    name: nutri-backend
+    runtime: python
     rootDirectory: backend
-    buildCommand: pip install --upgrade pip && pip install -r requirements.txt && python manage.py collectstatic --noinput
-    startCommand: python manage.py migrate && gunicorn setup.wsgi:application --bind 0.0.0.0:$PORT --workers 3 --timeout 120
+    buildCommand: "pip install --upgrade pip && pip install -r requirements.txt && python manage.py collectstatic --noinput"
+    startCommand: "python manage.py migrate && gunicorn setup.wsgi:application --bind 0.0.0.0:$PORT --workers 3 --timeout 120"
     envVars:
       - key: PYTHON_VERSION
         value: 3.12.2
 
   - type: web
-    name: nutri-4-0-frontend
-    env: node
-    region: oregon
-    plan: free
+    name: nutri-frontend
+    runtime: node
     rootDirectory: frontend
-    buildCommand: npm install && npm run build
-    startCommand: npm start
+    buildCommand: "npm install && npm run build"
+    startCommand: "npm start"
     envVars:
       - key: NEXT_PUBLIC_API_BASE_URL
         value: https://nutri-4-0-9t8a.onrender.com/api/v1
