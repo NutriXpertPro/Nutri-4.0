@@ -8,9 +8,10 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 
 interface MenuTabProps {
     onNavigate: (tab: string) => void
+    onBack?: () => void
 }
 
-export function MenuTab({ onNavigate }: MenuTabProps) {
+export function MenuTab({ onNavigate, onBack }: MenuTabProps) {
     const [isHelpOpen, setIsHelpOpen] = useState(false)
 
     const menuItems = [
@@ -114,6 +115,15 @@ export function MenuTab({ onNavigate }: MenuTabProps) {
                 <LogOut className="w-4 h-4" />
                 Sair do App
             </button>
+
+            {onBack && (
+                <button
+                    onClick={onBack}
+                    className="w-full mt-2 p-4 text-muted-foreground hover:text-foreground hover:bg-muted/10 rounded-2xl transition-colors flex items-center justify-center gap-2 text-sm font-medium"
+                >
+                    <ChevronRight className="w-4 h-4 rotate-180" /> Voltar para o Início
+                </button>
+            )}
 
             <p className="text-center text-xs text-muted-foreground mt-8 opacity-60">Versão 4.0.1 (Pro)</p>
         </div>
