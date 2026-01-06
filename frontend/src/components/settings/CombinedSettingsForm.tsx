@@ -15,14 +15,14 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { 
-  Upload, 
-  Palette, 
-  Image as ImageIcon, 
-  User, 
-  Phone, 
-  MapPin, 
-  Mail, 
+import {
+  Upload,
+  Palette,
+  Image as ImageIcon,
+  User,
+  Phone,
+  MapPin,
+  Mail,
   PenLine,
   Settings,
   Save
@@ -78,7 +78,7 @@ const CombinedSettingsForm = () => {
     settings_language: 'pt-BR',
     settings_notifications_email: false,
     settings_notifications_push: false,
-    
+
     // Dados de branding
     logo: null,
     logo_url: null,
@@ -96,11 +96,11 @@ const CombinedSettingsForm = () => {
     document_footer: '',
     is_active: true
   });
-  
+
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
-  
+
   const profilePictureInputRef = useRef<HTMLInputElement>(null);
   const logoInputRef = useRef<HTMLInputElement>(null);
   const signatureInputRef = useRef<HTMLInputElement>(null);
@@ -129,9 +129,9 @@ const CombinedSettingsForm = () => {
 
             // Dados de branding
             logo: null, // Não carregamos o arquivo, apenas a URL
-            logo_url: data.branding.logo || null,
+            logo_url: (data.branding.logo as string) || null,
             signature_image: null, // Não carregamos o arquivo, apenas a URL
-            signature_image_url: data.branding.signature_image || null,
+            signature_image_url: (data.branding.signature_image as string) || null,
             primary_color: data.branding.primary_color || '#22c55e',
             secondary_color: data.branding.secondary_color || '#059669',
             business_name: data.branding.business_name || '',

@@ -6,7 +6,7 @@ import { Message, Conversation, UserType } from '@/types/chat';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Send, Phone, Video, MoreVertical, Search, User, Check, CheckCheck, Paperclip, Microphone } from 'lucide-react';
+import { Send, Phone, Video, MoreVertical, Search, User, Check, CheckCheck, Paperclip, Mic } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface ChatProps {

@@ -18,7 +18,7 @@ export interface Evaluation {
     hip_circumference: number
     arm_circumference: number
     method?: 'ADIPOMETRO' | 'BIOIMPEDANCIA' | 'FITA_METRICA'
-    body_measurements?: Record<string, number>
+    body_measurements?: Record<string, number | null>
     photos: EvaluationPhoto[]
     notes?: string
     created_at?: string
@@ -39,7 +39,7 @@ export interface CreateEvaluationDTO {
     weight?: number
     body_fat?: number
     muscle_mass?: number
-    body_measurements?: Record<string, number>
+    body_measurements?: Record<string, number | null>
 }
 
 export const evaluationService = {

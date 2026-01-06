@@ -18,7 +18,7 @@ import { usePatient } from "@/hooks/usePatients"
 import { useAuth } from "@/contexts/auth-context"
 import { useDietEditorStore } from "@/stores/diet-editor-store"
 
-export default function PatientDetailsPage() {
+function PatientDetailsContent() {
     // Usar useParams hook - mais confiável para client components
     const params = useParams()
 
@@ -52,10 +52,6 @@ export default function PatientDetailsPage() {
     // Loading combinado: auth + patient + validação do ID
     const isLoading = isAuthLoading || isPatientLoading || patientId === 0
 
-
-
-
-
     // Calcular idade a partir da data de nascimento
     const calculateAge = (birthDate?: string): number => {
         if (!birthDate) return 0
@@ -83,97 +79,107 @@ export default function PatientDetailsPage() {
 
     if (isLoading) {
         return (
-            <DashboardLayout>
-                <div className="flex items-center justify-center min-h-[60vh]">
-                    <div className="flex flex-col items-center gap-4">
-                        <Loader2 className="h-10 w-10 animate-spin text-primary" />
-                        <p className="text-muted-foreground">Carregando dados do paciente...</p>
-                    </div>
+            <div className="flex items-center justify-center min-h-[60vh]">
+                <div className="flex flex-col items-center gap-4">
+                    <Loader2 className="h-10 w-10 animate-spin text-primary" />
+                    <p className="text-muted-foreground">Carregando dados do paciente...</p>
                 </div>
-            </DashboardLayout>
+            </div>
         )
     }
 
     // Erro real: apenas quando autenticado, não está loading, e houve erro ou não encontrou
     if (!isLoading && isAuthenticated && (error || !patient)) {
         return (
-            <DashboardLayout>
-                <div className="flex items-center justify-center min-h-[60vh]">
-                    <Card className="p-8 text-center">
-                        <CardContent>
-                            <p className="text-destructive font-medium">Erro ao carregar paciente</p>
-                            <p className="text-sm text-muted-foreground mt-2">
-                                Não foi possível encontrar o paciente com ID {params.id}
-                            </p>
-                        </CardContent>
-                    </Card>
-                </div>
-            </DashboardLayout>
+            <div className="flex items-center justify-center min-h-[60vh]">
+                <Card className="p-8 text-center">
+                    <CardContent>
+                        <p className="text-destructive font-medium">Erro ao carregar paciente</p>
+                        <p className="text-sm text-muted-foreground mt-2">
+                            Não foi possível encontrar o paciente com ID {params.id}
+                        </p>
+                    </CardContent>
+                </Card>
+            </div>
         )
     }
 
     return (
-        <DashboardLayout>
-            <div className="w-full max-w-full space-y-6">
-                <PatientHeader patient={patientData} fullData={patient} />
+        <div className="w-full max-w-full space-y-6">
+            <PatientHeader patient={patientData} fullData={patient} />
 
-                <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-10">
-                    <TabsList className="flex items-center gap-1 bg-muted/20 p-1.5 rounded-[1.5rem] border border-border/5 w-fit mb-8">
-                        {[
-                            { value: 'overview', label: 'Visão Geral', icon: LayoutDashboard },
-                            { value: 'context', label: 'Contexto', icon: ClipboardList },
-                            { value: 'analysis', label: 'Análise', icon: BarChart3 },
-                            { value: 'diet', label: 'Dieta', icon: Utensils },
-                            { value: 'anamnesis', label: 'Anamnese', icon: Stethoscope },
-                            { value: 'timeline', label: 'Timeline', icon: Calendar }
-                        ].map((tab) => {
-                            const Icon = tab.icon;
-                            return (
-                                <TabsTrigger
-                                    key={tab.value}
-                                    value={tab.value}
-                                    className={cn(
-                                        "px-6 h-10 rounded-2xl text-[11px] font-normal uppercase tracking-widest transition-all duration-500 flex items-center gap-2",
-                                        "data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-lg data-[state=active]:shadow-primary/10",
-                                        "text-muted-foreground hover:text-foreground hover:bg-background/20"
-                                    )}
-                                >
-                                    <Icon className="h-4 w-4" />
-                                    {tab.label}
-                                </TabsTrigger>
-                            )
-                        })}
-                    </TabsList>
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-10">
+                <TabsList className="flex items-center gap-1 bg-muted/20 p-1.5 rounded-[1.5rem] border border-border/5 w-fit mb-8">
+                    {[
+                        { value: 'overview', label: 'Visão Geral', icon: LayoutDashboard },
+                        { value: 'context', label: 'Contexto', icon: ClipboardList },
+                        { value: 'analysis', label: 'Análise', icon: BarChart3 },
+                        { value: 'diet', label: 'Dieta', icon: Utensils },
+                        { value: 'anamnesis', label: 'Anamnese', icon: Stethoscope },
+                        { value: 'timeline', label: 'Timeline', icon: Calendar }
+                    ].map((tab) => {
+                        const Icon = tab.icon;
+                        return (
+                            <TabsTrigger
+                                key={tab.value}
+                                value={tab.value}
+                                className={cn(
+                                    "px-6 h-10 rounded-2xl text-[11px] font-normal uppercase tracking-widest transition-all duration-500 flex items-center gap-2",
+                                    "data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-lg data-[state=active]:shadow-primary/10",
+                                    "text-muted-foreground hover:text-foreground hover:bg-background/20"
+                                )}
+                            >
+                                <Icon className="h-4 w-4" />
+                                {tab.label}
+                            </TabsTrigger>
+                        )
+                    })}
+                </TabsList>
 
-                    <div className="mt-6 space-y-6">
-                        <TabsContent value="overview">
-                            <PatientOverviewTab />
-                        </TabsContent>
+                <div className="mt-6 space-y-6">
+                    <TabsContent value="overview">
+                        <PatientOverviewTab />
+                    </TabsContent>
 
-                        <TabsContent value="context">
-                            <PatientContextTab />
-                        </TabsContent>
+                    <TabsContent value="context">
+                        <PatientContextTab />
+                    </TabsContent>
 
-                        <TabsContent value="analysis">
-                            <PatientAnalysisTab patientId={patientId} />
-                        </TabsContent>
+                    <TabsContent value="analysis">
+                        <PatientAnalysisTab patientId={patientId} />
+                    </TabsContent>
 
-                        <TabsContent value="diet">
-                            <PatientDietTab />
-                        </TabsContent>
+                    <TabsContent value="diet">
+                        <PatientDietTab />
+                    </TabsContent>
 
-                        <TabsContent value="anamnesis">
-                            <PatientAnamnesisTab patientId={patientId} patient={patient} />
-                        </TabsContent>
+                    <TabsContent value="anamnesis">
+                        <PatientAnamnesisTab patientId={patientId} patient={patient} />
+                    </TabsContent>
 
-                        <TabsContent value="timeline">
-                            <PatientTimelineTab patientId={patientId} />
-                        </TabsContent>
-                    </div>
+                    <TabsContent value="timeline">
+                        <PatientTimelineTab patientId={patientId} />
+                    </TabsContent>
+                </div>
 
-                </Tabs>
-            </div>
-        </DashboardLayout>
+            </Tabs>
+        </div>
     )
 }
 
+export default function PatientDetailsPage() {
+    return (
+        <DashboardLayout>
+            <React.Suspense fallback={
+                <div className="flex items-center justify-center min-h-[60vh]">
+                    <div className="flex flex-col items-center gap-4">
+                        <Loader2 className="h-10 w-10 animate-spin text-primary" />
+                        <p className="text-muted-foreground">Carregando...</p>
+                    </div>
+                </div>
+            }>
+                <PatientDetailsContent />
+            </React.Suspense>
+        </DashboardLayout>
+    )
+}

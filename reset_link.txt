@@ -1,0 +1,1 @@
+http://localhost:3000/auth/reset-password?uid=MzM&token=d1us6g-871af5968c594f5b9141e487e0285b7f

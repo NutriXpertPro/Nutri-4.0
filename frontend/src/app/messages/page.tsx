@@ -1,14 +1,14 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/auth-context';
 import WhatsAppStyleMessages from '@/components/organisms/WhatsAppStyleMessages';
 import { initializeNotificationService } from '@/services/notification-service';
-import { MessageSquare } from 'lucide-react';
+import { MessageSquare, Loader2 } from 'lucide-react';
 import { IconWrapper } from '@/components/ui/IconWrapper';
 
-const XpertMessengerPage: React.FC = () => {
+const XpertMessengerContent: React.FC = () => {
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
   const searchParams = useSearchParams();
   const { user } = useAuth();
@@ -104,4 +104,14 @@ const XpertMessengerPage: React.FC = () => {
   );
 };
 
-export default XpertMessengerPage;
+export default function XpertMessengerPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <Loader2 className="h-10 w-10 animate-spin text-primary" />
+      </div>
+    }>
+      <XpertMessengerContent />
+    </Suspense>
+  );
+}

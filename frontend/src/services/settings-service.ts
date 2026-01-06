@@ -3,8 +3,8 @@ import { UserProfile, UpdateUserProfile } from './user-service';
 
 export interface BrandingSettings {
   id?: string;
-  logo?: string;
-  signature_image?: string;
+  logo?: string | File | null;
+  signature_image?: string | File | null;
   primary_color: string;
   secondary_color: string;
   business_name: string;
