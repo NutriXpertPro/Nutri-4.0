@@ -52,15 +52,15 @@ const formSchema = z.object({
     ),
 })
 
-export function EvaluationFormDialog({ open, onOpenChange, patientId, evaluationId }: EvaluationFormDialogProps) {
+export function EvaluationFormDialog({ open, onOpenChange, patientId, evaluationId, onUseForm }: EvaluationFormDialogProps) {
     const [formData, setFormData] = React.useState({
         name: "",
         description: "",
         fields: [
-            { id: Date.now().toString(), name: "", label: "", type: "number", required: false, unit: "", options: [] }
+            { id: Date.now().toString(), name: "", label: "", type: "number", required: false, unit: "", options: [], order: 0 }
         ] as EvaluationFormField[]
     })
-    
+
     const [selectedForm, setSelectedForm] = React.useState<EvaluationForm | null>(null)
     const [availableForms, setAvailableForms] = React.useState<EvaluationForm[]>([])
     const [isLoading, setIsLoading] = React.useState(false)
@@ -92,14 +92,15 @@ export function EvaluationFormDialog({ open, onOpenChange, patientId, evaluation
             ...prev,
             fields: [
                 ...prev.fields,
-                { 
-                    id: Date.now().toString(), 
-                    name: "", 
-                    label: "", 
-                    type: "number", 
-                    required: false, 
-                    unit: "", 
-                    options: [] 
+                {
+                    id: Date.now().toString(),
+                    name: "",
+                    label: "",
+                    type: "number",
+                    required: false,
+                    unit: "",
+                    options: [],
+                    order: prev.fields.length
                 }
             ]
         }))
@@ -117,7 +118,7 @@ export function EvaluationFormDialog({ open, onOpenChange, patientId, evaluation
     const handleFieldChange = (id: string, field: keyof EvaluationFormField, value: any) => {
         setFormData(prev => ({
             ...prev,
-            fields: prev.fields.map(f => 
+            fields: prev.fields.map(f =>
                 f.id === id ? { ...f, [field]: value } : f
             )
         }))
@@ -177,7 +178,7 @@ export function EvaluationFormDialog({ open, onOpenChange, patientId, evaluation
             }
 
             await evaluationFormService.create(formToCreate)
-            
+
             toast({
                 title: "Formulário criado",
                 description: "Ficha personalizada criada com sucesso.",
@@ -185,14 +186,14 @@ export function EvaluationFormDialog({ open, onOpenChange, patientId, evaluation
 
             // Atualizar a lista
             loadAvailableForms()
-            
+
             // Resetar o formulário
             setFormData({
                 name: "",
                 description: "",
-                fields: [{ id: Date.now().toString(), name: "", label: "", type: "number", required: false, unit: "", options: [] }]
+                fields: [{ id: Date.now().toString(), name: "", label: "", type: "number", required: false, unit: "", options: [], order: 0 }]
             })
-            
+
         } catch (error) {
             console.error("Erro ao criar formulário:", error)
             toast({
@@ -216,7 +217,7 @@ export function EvaluationFormDialog({ open, onOpenChange, patientId, evaluation
         setFormData({
             name: "",
             description: "",
-            fields: [{ id: Date.now().toString(), name: "", label: "", type: "number", required: false, unit: "", options: [] }]
+            fields: [{ id: Date.now().toString(), name: "", label: "", type: "number", required: false, unit: "", options: [], order: 0 }]
         })
     }
 
@@ -265,7 +266,7 @@ export function EvaluationFormDialog({ open, onOpenChange, patientId, evaluation
                                         <Input
                                             id="name"
                                             value={formData.name}
-                                            onChange={(e) => setFormData({...formData, name: e.target.value})}
+                                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                                             required
                                         />
                                     </div>
@@ -274,7 +275,7 @@ export function EvaluationFormDialog({ open, onOpenChange, patientId, evaluation
                                         <Input
                                             id="description"
                                             value={formData.description}
-                                            onChange={(e) => setFormData({...formData, description: e.target.value})}
+                                            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                                         />
                                     </div>
                                 </div>
@@ -295,10 +296,10 @@ export function EvaluationFormDialog({ open, onOpenChange, patientId, evaluation
                                         <CardHeader className="pb-3">
                                             <div className="flex items-center justify-between">
                                                 <CardTitle className="text-sm">Campo {index + 1}</CardTitle>
-                                                <Button 
-                                                    type="button" 
-                                                    variant="ghost" 
-                                                    size="sm" 
+                                                <Button
+                                                    type="button"
+                                                    variant="ghost"
+                                                    size="sm"
                                                     onClick={() => handleRemoveField(field.id)}
                                                     disabled={formData.fields.length <= 1}
                                                 >
@@ -327,7 +328,7 @@ export function EvaluationFormDialog({ open, onOpenChange, patientId, evaluation
                                                     />
                                                 </div>
                                             </div>
-                                            
+
                                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                                 <div className="space-y-2">
                                                     <Label htmlFor={`field-type-${field.id}`}>Tipo</Label>
@@ -347,7 +348,7 @@ export function EvaluationFormDialog({ open, onOpenChange, patientId, evaluation
                                                         </SelectContent>
                                                     </Select>
                                                 </div>
-                                                
+
                                                 <div className="space-y-2">
                                                     <Label htmlFor={`field-unit-${field.id}`}>Unidade</Label>
                                                     <Input
@@ -357,7 +358,7 @@ export function EvaluationFormDialog({ open, onOpenChange, patientId, evaluation
                                                         placeholder="Ex: mm, kg, cm"
                                                     />
                                                 </div>
-                                                
+
                                                 <div className="space-y-2">
                                                     <Label>Requerido</Label>
                                                     <div className="flex items-center space-x-2">
