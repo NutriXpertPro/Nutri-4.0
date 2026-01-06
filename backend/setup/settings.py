@@ -301,12 +301,10 @@ MEDIA_ROOT = BASE_DIR / 'media'
 
 # Storage para arquivos de mídia (fotos de avaliações, etc.)
 # Configuração para ambiente de desenvolvimento (arquivos locais)
-DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
-
 # Para produção, pode-se configurar django-storages com S3 ou CloudFlare R2:
-# DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+# STORAGES["default"]["BACKEND"] = 'storages.backends.s3boto3.S3Boto3Storage'
 # ou
-# DEFAULT_FILE_STORAGE = 'storages.backends.cloudflare_r2.CloudFlareR2Storage'  # se disponível
+# STORAGES["default"]["BACKEND"] = 'storages.backends.cloudflare_r2.CloudFlareR2Storage'  # se disponível
 
 # Configurações específicas para django-storages (quando utilizado)
 AWS_ACCESS_KEY_ID = config('AWS_ACCESS_KEY_ID', default='')
