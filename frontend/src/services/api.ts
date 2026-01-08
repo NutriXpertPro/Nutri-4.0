@@ -1,15 +1,24 @@
 import axios, { AxiosInstance, AxiosError, InternalAxiosRequestConfig } from 'axios'
 
 export const getBaseURL = () => {
+    // Prioritize ENVIRONMENT VARIABLE (Next.js handles prefixing for browser automatically if defined)
+    const envUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+
+    if (envUrl) {
+        return envUrl.endsWith('/') ? envUrl : `${envUrl}/`;
+    }
+
+    // Fallback for local development
     if (typeof window !== 'undefined') {
         const hostname = window.location.hostname;
         if (hostname === 'localhost' || hostname === '127.0.0.1') {
             return 'http://localhost:8000/api/v1/';
         }
+        // If no env var and not localhost, we return a fallback based on hostname
         return `http://${hostname}:8000/api/v1/`;
     }
-    const url = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000/api/v1'
-    return url.endsWith('/') ? url : `${url}/`
+
+    return 'http://localhost:8000/api/v1/';
 }
 
 const api: AxiosInstance = axios.create({
@@ -95,13 +104,13 @@ api.interceptors.response.use(
 // --- Auth ---
 export const authAPI = {
     login: (email: string, password: string) =>
-        api.post('/auth/login/', { email, password }),
+        api.post('auth/login/', { email, password }),
 
     logout: () =>
-        api.post('/auth/logout/'),
+        api.post('auth/logout/'),
 
     refreshToken: (refresh: string) =>
-        api.post('/auth/refresh/', { refresh }),
+        api.post('auth/refresh/', { refresh }),
 }
 
 // --- Patient Profile ---

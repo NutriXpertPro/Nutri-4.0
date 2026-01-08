@@ -92,7 +92,7 @@ export default function AuthPage() {
 
         try {
             console.log("Sending data:", registerFormData)
-            const response = await fetch(`${getBaseURL()}users/register/nutricionista/`, {
+            const response = await fetch(`${getBaseURL()}auth/register/nutricionista/`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",

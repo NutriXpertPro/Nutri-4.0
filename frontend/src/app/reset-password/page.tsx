@@ -63,7 +63,7 @@ function ResetPasswordForm() {
                 timeout: 10000,
             });
 
-            await axiosWithoutAuth.post(`/auth/password-reset/confirm/`, {
+            await axiosWithoutAuth.post(`auth/password-reset/confirm/`, {
                 password: password,
                 confirm_password: confirmPassword,
                 uid: uid,

@@ -33,7 +33,7 @@ export default function ForgotPasswordPage() {
             });
 
             // Backend API call for password reset
-            await axiosWithoutAuth.post('/auth/password-reset/', { email })
+            await axiosWithoutAuth.post('auth/password-reset/', { email })
 
             setIsSubmitted(true)
         } catch (err) {
