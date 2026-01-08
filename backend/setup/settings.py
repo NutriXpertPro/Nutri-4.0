@@ -100,16 +100,28 @@ MIDDLEWARE = [
 ]
 
 # CORS Configuration
-origins = config('CORS_ALLOWED_ORIGINS', 
-                default="http://localhost:3000,http://127.0.0.1:3000", 
-                cast=Csv())
+origins_env = config('CORS_ALLOWED_ORIGINS', default="", cast=Csv())
 
-# Adiciona FRONTEND_URL se estiver definido e não estiver na lista
-if FRONTEND_URL and FRONTEND_URL not in origins:
-    origins.append(FRONTEND_URL)
+# Inicializa as origens permitidas
+origins = ["http://localhost:3000", "http://127.0.0.1:3000", "http://localhost:8000"]
 
-CORS_ALLOWED_ORIGINS = origins
+# Adiciona origens da variável de ambiente, removendo barras finais
+for o in origins_env:
+    if o.strip():
+        origins.append(o.strip().rstrip('/'))
+
+# Garante que a FRONTEND_URL principal esteja incluída e formatada corretamente
+if FRONTEND_URL:
+    clean_frontend_url = FRONTEND_URL.strip().rstrip('/')
+    if clean_frontend_url and clean_frontend_url not in origins:
+        origins.append(clean_frontend_url)
+
+# Remove duplicatas e valores vazios
+CORS_ALLOWED_ORIGINS = list(set([o for o in origins if o]))
+CSRF_TRUSTED_ORIGINS = CORS_ALLOWED_ORIGINS
 CORS_ALLOW_CREDENTIALS = True
+
+print(f"DEBUG: CORS_ALLOWED_ORIGINS configurado como: {CORS_ALLOWED_ORIGINS}")
 CORS_ALLOW_HEADERS = [
     'accept',
     'accept-encoding',
@@ -122,7 +134,10 @@ CORS_ALLOW_HEADERS = [
     'x-requested-with',
 ]
 
-CSRF_TRUSTED_ORIGINS = origins
+if DEBUG:
+    CORS_ALLOW_ALL_ORIGINS = True
+else:
+    CORS_ALLOW_ALL_ORIGINS = False
 
 ROOT_URLCONF = 'setup.urls'
 
