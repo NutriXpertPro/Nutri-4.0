@@ -100,9 +100,15 @@ MIDDLEWARE = [
 ]
 
 # CORS Configuration
-CORS_ALLOWED_ORIGINS = config('CORS_ALLOWED_ORIGINS', 
-                             default="http://localhost:3000,http://127.0.0.1:3000", 
-                             cast=Csv())
+origins = config('CORS_ALLOWED_ORIGINS', 
+                default="http://localhost:3000,http://127.0.0.1:3000", 
+                cast=Csv())
+
+# Adiciona FRONTEND_URL se estiver definido e não estiver na lista
+if FRONTEND_URL and FRONTEND_URL not in origins:
+    origins.append(FRONTEND_URL)
+
+CORS_ALLOWED_ORIGINS = origins
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_HEADERS = [
     'accept',
@@ -116,9 +122,7 @@ CORS_ALLOW_HEADERS = [
     'x-requested-with',
 ]
 
-CSRF_TRUSTED_ORIGINS = config('CSRF_TRUSTED_ORIGINS', 
-                             default="http://localhost:3000,http://127.0.0.1:3000", 
-                             cast=Csv())
+CSRF_TRUSTED_ORIGINS = origins
 
 ROOT_URLCONF = 'setup.urls'
 
