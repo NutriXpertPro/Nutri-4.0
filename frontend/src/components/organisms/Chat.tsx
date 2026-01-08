@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Send, Phone, Video, MoreVertical, Search, User, Check, CheckCheck, Paperclip, Mic } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { getBaseURL } from '@/services/api';
 
 interface ChatProps {
   conversationId: string;
@@ -23,7 +24,7 @@ const Chat: React.FC<ChatProps> = ({ conversationId, currentUserId }) => {
   const { data: messages = [], isLoading } = useQuery<Message[]>({
     queryKey: ['messages', conversationId],
     queryFn: async () => {
-      const response = await fetch(`http://localhost:8000/api/v1/messages/conversations/${conversationId}/messages/`, {
+      const response = await fetch(`${getBaseURL()}messages/conversations/${conversationId}/messages/`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
         },
@@ -46,7 +47,7 @@ const Chat: React.FC<ChatProps> = ({ conversationId, currentUserId }) => {
   // Mutation to send a message
   const sendMessageMutation = useMutation({
     mutationFn: async (newMessage: string) => {
-      const response = await fetch(`http://localhost:8000/api/v1/messages/conversations/${conversationId}/messages/`, {
+      const response = await fetch(`${getBaseURL()}messages/conversations/${conversationId}/messages/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

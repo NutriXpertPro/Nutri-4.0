@@ -116,7 +116,16 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
         # O UID é passado via URL, então precisamos extrair do contexto
         request = self.context.get('request')
         if request:
-            uidb64 = request.resolver_match.kwargs.get('uidb64')
+            # Tenta obter o uidb64 de diferentes lugares
+            uidb64 = request.resolver_match.kwargs.get('uidb64') if hasattr(request, 'resolver_match') and request.resolver_match else None
+
+            # Se não estiver nos kwargs da URL, tentar obter de outros lugares
+            if not uidb64:
+                # Pode estar vindo de query params ou body
+                uidb64 = request.query_params.get('uid') if hasattr(request, 'query_params') else None
+                if not uidb64:
+                    uidb64 = request.data.get('uid') if hasattr(request, 'data') else None
+
             if uidb64:
                 from django.utils.encoding import force_str
                 from django.utils.http import urlsafe_base64_decode

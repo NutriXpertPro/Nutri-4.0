@@ -12,13 +12,14 @@ import { Moon, Sun, Eye, EyeOff, Loader2, Palette, Check } from "lucide-react"
 import { FcGoogle } from "react-icons/fc"
 import Link from "next/link"
 import { useAuth } from "@/contexts/auth-context"
+import { getBaseURL } from "@/services/api"
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { cn } from "@/lib/utils"
 
@@ -41,7 +42,7 @@ export default function PatientLoginPage() {
 
         try {
             // Chamada para a API de autenticação JWT do Django - login específico para pacientes
-            const response = await fetch("http://localhost:8000/api/v1/auth/login/paciente/", {
+            const response = await fetch(`${getBaseURL()}auth/login/paciente/`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -249,12 +250,12 @@ export default function PatientLoginPage() {
                             Entrar com Google
                         </Button>
 
-                        <button
-                            type="button"
+                        <Link
+                            href="/auth/forgot-password"
                             className="text-sm text-muted-foreground hover:text-primary transition-colors"
                         >
                             Esqueceu sua senha?
-                        </button>
+                        </Link>
 
                         <div className="text-sm text-center text-muted-foreground">
                             É nutricionista?{" "}

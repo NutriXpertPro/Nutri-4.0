@@ -28,7 +28,7 @@ try:
     uid = urlsafe_base64_encode(force_bytes(user.pk))
     
     frontend_url = getattr(settings, 'FRONTEND_URL', 'http://localhost:3000')
-    reset_link = f"{frontend_url}/auth/reset-password?uid={uid}&token={token}"
+    reset_link = f"{frontend_url}/auth/reset-password/{uid}/{token}/"
     
     # Write to file to be safe
     with open('reset_link_final.txt', 'w') as f:

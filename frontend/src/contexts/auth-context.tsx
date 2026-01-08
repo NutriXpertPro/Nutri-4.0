@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useEffect, useState } from "react"
 import Cookies from "js-cookie"
 import { useRouter } from "next/navigation"
+import { getBaseURL } from "@/services/api"
 
 interface User {
     id: number
@@ -37,11 +38,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [isAuthenticated, setIsAuthenticated] = useState(false)
     const [isLoading, setIsLoading] = useState(true)
     const router = useRouter()
-
     const fetchUserProfile = async (token: string): Promise<boolean> => {
         try {
-            // Use localhost and add /api/v1/ prefix
-            const response = await fetch("http://localhost:8000/api/v1/users/me/", {
+            // Use dynamic base URL
+            const response = await fetch(`${getBaseURL()}users/me/`, {
                 headers: {
                     "Authorization": `Bearer ${token}`
                 }

@@ -1,7 +1,14 @@
 import axios, { AxiosInstance, AxiosError, InternalAxiosRequestConfig } from 'axios'
 
-const getBaseURL = () => {
-    const url = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://127.0.0.1:8000/api/v1'
+export const getBaseURL = () => {
+    if (typeof window !== 'undefined') {
+        const hostname = window.location.hostname;
+        if (hostname === 'localhost' || hostname === '127.0.0.1') {
+            return 'http://localhost:8000/api/v1/';
+        }
+        return `http://${hostname}:8000/api/v1/`;
+    }
+    const url = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000/api/v1'
     return url.endsWith('/') ? url : `${url}/`
 }
 

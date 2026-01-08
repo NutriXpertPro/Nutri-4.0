@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/contexts/auth-context';
+import { getBaseURL } from '@/services/api';
 
 export default function PatientLoginPage() {
   const router = useRouter();
@@ -25,7 +26,7 @@ export default function PatientLoginPage() {
 
     try {
       // Fazer login do paciente
-      const response = await fetch('http://localhost:8000/api/v1/auth/token/', {
+      const response = await fetch(`${getBaseURL()}auth/token/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -133,7 +134,7 @@ export default function PatientLoginPage() {
                 <button
                   type="button"
                   className="text-sm text-emerald-600 hover:underline"
-                  onClick={() => router.push('/forgot-password')}
+                  onClick={() => router.push('/auth/forgot-password')}
                 >
                   Esqueceu?
                 </button>

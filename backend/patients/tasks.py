@@ -31,8 +31,8 @@ def send_welcome_email_task(self, user_id, nutritionist_name):
         token = default_token_generator.make_token(user)
         uid = urlsafe_base64_encode(force_bytes(user.pk))
 
-        # Construir link no formato correto para o frontend (com parâmetros de query)
-        reset_link = f"{settings.FRONTEND_URL}/auth/reset-password?uid={uid}&token={token}"
+        # Construir link no formato correto para o frontend (com parâmetros na URL)
+        reset_link = f"{settings.FRONTEND_URL}/reset-password?uid={uid}&token={token}"
         print(f"[DEBUG EMAIL] Link gerado: {reset_link}")
 
         subject = f"Bem-vindx à sua jornada de transformação, {user.name}!"

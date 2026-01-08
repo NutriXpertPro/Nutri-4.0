@@ -379,7 +379,7 @@ export function EcoHeader() {
                                 </DropdownMenuItem>
                             </Selector>
                         </div>
-                        <div className="flex gap-2 translate-y-[57px]">
+                        <div className="flex gap-2 translate-y-[44px]">
                             <Button
                                 variant="outline"
                                 size="sm"

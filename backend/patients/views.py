@@ -182,7 +182,7 @@ def resend_password_reset_link(request, pk):
 
         # Obter URL do frontend
         frontend_url = getattr(settings, 'FRONTEND_URL', 'http://localhost:3000')
-        reset_link = f"{frontend_url}/auth/reset-password?uid={uid}&token={token}"
+        reset_link = f"{frontend_url}/reset-password?uid={uid}&token={token}"
 
         # Enviar e-mail com o novo link
         subject = 'Redefinição de Senha - NutriXpertPro'

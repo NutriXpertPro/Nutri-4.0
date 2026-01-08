@@ -7,6 +7,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { User, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { getBaseURL } from '@/services/api';
 
 // Helper function to get initials from a name
 const getInitials = (name?: string) => {
@@ -30,7 +31,7 @@ const ConversationList: React.FC<ConversationListProps> = ({
   const { data: conversations = [], isLoading } = useQuery<Conversation[]>({
     queryKey: ['conversations'],
     queryFn: async () => {
-      const response = await fetch('http://localhost:8000/api/v1/messages/conversations/', {
+      const response = await fetch(`${getBaseURL()}messages/conversations/`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
         },

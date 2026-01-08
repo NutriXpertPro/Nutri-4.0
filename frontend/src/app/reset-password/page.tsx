@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, Suspense } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useSearchParams, useRouter, useParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -13,9 +13,20 @@ import axios from 'axios';
 function ResetPasswordForm() {
     const searchParams = useSearchParams();
     const router = useRouter();
+    const params = useParams();
 
-    const uid = searchParams.get('uid');
-    const token = searchParams.get('token');
+    // Tentar obter uid e token das query strings (novo formato)
+    let uid = searchParams.get('uid');
+    let token = searchParams.get('token');
+
+    // Se não encontrar, tentar obter dos path parameters (formato antigo via resetPath slug)
+    if (!uid || !token) {
+        const resetPath = params.resetPath as string[];
+        if (resetPath && resetPath.length >= 2) {
+            uid = resetPath[0];
+            token = resetPath[1];
+        }
+    }
 
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
@@ -44,7 +55,6 @@ function ResetPasswordForm() {
         setErrorMessage('');
 
         try {
-            // Criar uma nova instância do axios sem os interceptores de autenticação
             const axiosWithoutAuth = axios.create({
                 baseURL: getBaseURL(),
                 headers: {

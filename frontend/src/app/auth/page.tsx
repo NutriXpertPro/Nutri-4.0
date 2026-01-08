@@ -14,6 +14,7 @@ import { Moon, Sun, Eye, EyeOff, Loader2 } from "lucide-react"
 import { FcGoogle } from "react-icons/fc"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useAuth } from "@/contexts/auth-context"
+import { getBaseURL } from "@/services/api"
 
 export default function AuthPage() {
     const router = useRouter()
@@ -54,7 +55,7 @@ export default function AuthPage() {
         setLoginIsLoading(true)
 
         try {
-            const response = await fetch("http://localhost:8000/api/v1/auth/token/", {
+            const response = await fetch(`${getBaseURL()}auth/token/`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -91,7 +92,7 @@ export default function AuthPage() {
 
         try {
             console.log("Sending data:", registerFormData)
-            const response = await fetch("http://localhost:8000/api/v1/users/register/nutricionista/", {
+            const response = await fetch(`${getBaseURL()}users/register/nutricionista/`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -290,7 +291,7 @@ export default function AuthPage() {
                                             </label>
                                         </div>
                                         <Link
-                                            href="/login/forgot-password"
+                                            href="/auth/forgot-password"
                                             className="text-sm text-muted-foreground hover:text-primary transition-colors"
                                         >
                                             Esqueceu sua senha?
@@ -357,27 +358,27 @@ export default function AuthPage() {
                                     {/* Nome */}
                                     <div className="space-y-2">
                                         <label htmlFor="name" className="text-sm font-medium">Nome Completo</label>
-                                        <Input 
-                                            id="name" 
-                                            placeholder="Ex: Ana Silva" 
-                                            value={registerFormData.name} 
-                                            onChange={handleRegisterChange} 
-                                            required 
-                                            className="h-11" 
+                                        <Input
+                                            id="name"
+                                            placeholder="Ex: Ana Silva"
+                                            value={registerFormData.name}
+                                            onChange={handleRegisterChange}
+                                            required
+                                            className="h-11"
                                         />
                                     </div>
 
                                     {/* Email */}
                                     <div className="space-y-2">
                                         <label htmlFor="email" className="text-sm font-medium">Email</label>
-                                        <Input 
-                                            id="email" 
-                                            type="email" 
-                                            placeholder="seu@email.com" 
-                                            value={registerFormData.email} 
-                                            onChange={handleRegisterChange} 
-                                            required 
-                                            className="h-11" 
+                                        <Input
+                                            id="email"
+                                            type="email"
+                                            placeholder="seu@email.com"
+                                            value={registerFormData.email}
+                                            onChange={handleRegisterChange}
+                                            required
+                                            className="h-11"
                                         />
                                     </div>
 
@@ -385,9 +386,9 @@ export default function AuthPage() {
                                         {/* Titulo Profissional */}
                                         <div className="space-y-2">
                                             <label className="text-sm font-medium">Título Profissional</label>
-                                            <select 
-                                                value={registerFormData.professional_title} 
-                                                onChange={(e) => setRegisterFormData(prev => ({ ...prev, professional_title: e.target.value }))} 
+                                            <select
+                                                value={registerFormData.professional_title}
+                                                onChange={(e) => setRegisterFormData(prev => ({ ...prev, professional_title: e.target.value }))}
                                                 required
                                                 className="w-full h-11 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                                             >
@@ -404,9 +405,9 @@ export default function AuthPage() {
                                         {/* Genero */}
                                         <div className="space-y-2">
                                             <label className="text-sm font-medium">Gênero</label>
-                                            <select 
-                                                value={registerFormData.gender} 
-                                                onChange={(e) => setRegisterFormData(prev => ({ ...prev, gender: e.target.value }))} 
+                                            <select
+                                                value={registerFormData.gender}
+                                                onChange={(e) => setRegisterFormData(prev => ({ ...prev, gender: e.target.value }))}
                                                 required
                                                 className="w-full h-11 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                                             >

@@ -240,15 +240,17 @@ class PasswordResetView(APIView):
     permission_classes = (AllowAny,)
 
     def post(self, request):
+        file_log(f"Password reset request for email: {request.data.get('email', 'unknown')}")
         serializer = PasswordResetSerializer(data=request.data)
         if serializer.is_valid():
             email = serializer.validated_data['email']
             user = User.objects.filter(email=email).first()
+            file_log(f"User found for email {email}: {'Yes' if user else 'No'}")
             if user:
                 token = default_token_generator.make_token(user)
                 uid = urlsafe_base64_encode(force_bytes(user.pk))
-                frontend_url = os.environ.get('FRONTEND_URL', 'http://localhost:3000')
-                reset_link = f"{frontend_url}/auth/reset-password?uid={uid}&token={token}"
+                frontend_url = getattr(settings, 'FRONTEND_URL', 'http://localhost:3000')
+                reset_link = f"{frontend_url}/reset-password?uid={uid}&token={token}"
                 
                 # Enviar email (simulado no console em dev)
                 try:
@@ -259,10 +261,13 @@ class PasswordResetView(APIView):
                         [email],
                         fail_silently=False,
                     )
+                    file_log(f"Email sent successfully to {email}")
                 except Exception as e:
+                    file_log(f"Error sending email to {email}: {str(e)}")
                     return Response({"error": "Erro ao enviar email."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-            
+
             # Por segurança, sempre retornar 200 mesmo se o email não existir
+            file_log(f"Password reset response sent for email: {email}")
             return Response({"message": "Se o email existir, as instruções foram enviadas."}, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -280,55 +285,47 @@ class PasswordResetConfirmView(APIView):
 
     def post(self, request, uidb64=None, token=None):
         file_log(f"--- RESET REQUEST RECEIVED ---")
-        # Se uidb64 e token não forem fornecidos como parâmetros de URL, tentar obter de parâmetros de query
-        if not uidb64 or not token:
-            uidb64 = request.query_params.get('uid')
-            token = request.query_params.get('token')
+        
+        # Obter uidb64 e token de várias fontes (URL path, query params ou body)
+        uidb64 = uidb64 or request.query_params.get('uid') or request.data.get('uid')
+        token = token or request.query_params.get('token') or request.data.get('token')
 
-        # Se ainda não tivermos uidb64 e token, tentar obter do corpo da requisição
         if not uidb64 or not token:
-            uidb64 = request.data.get('uid')
-            token = request.data.get('token')
+            file_log("Missing UID or Token")
+            return Response({"error": "Parâmetros UID e token são obrigatórios."}, status=status.HTTP_400_BAD_REQUEST)
 
         file_log(f"UID: {uidb64}, Token: {token}")
 
-        serializer = PasswordResetConfirmSerializer(data=request.data)
+        serializer = PasswordResetConfirmSerializer(data=request.data, context={'request': request})
         if serializer.is_valid():
             user = None
-            # O uid recebido pode ser o UID codificado em base64 ou o UID decodificado
-            # Primeiro, tentar como string direta (pode ser o UID decodificado)
             try:
-                user = User.objects.get(pk=uidb64)
-                file_log(f"User found by direct PK: {user.email}")
-            except (TypeError, ValueError, OverflowError, User.DoesNotExist):
-                try:
-                    # Se falhar, tentar decodificar como base64 (o UID codificado originalmente)
-                    decoded_uid = force_str(urlsafe_base64_decode(uidb64))
-                    user = User.objects.get(pk=decoded_uid)
-                    file_log(f"User found by Base64 decode: {user.email}")
-                except (TypeError, ValueError, OverflowError, User.DoesNotExist) as e:
-                    file_log(f"User lookup failed: {e}")
-                    user = None
+                # Decodificar o UID do base64
+                uid = force_str(urlsafe_base64_decode(uidb64))
+                user = User.objects.get(pk=uid)
+                file_log(f"User found by Base64 decode: {user.email}")
+            except (TypeError, ValueError, OverflowError, User.DoesNotExist) as e:
+                file_log(f"User lookup failed: {e}")
+                return Response({"error": "Link inválido - usuário não encontrado."}, status=status.HTTP_400_BAD_REQUEST)
 
             if user is not None:
                 token_valid = default_token_generator.check_token(user, token)
                 file_log(f"Token Valid? {token_valid}")
-                
+
                 if not token_valid:
                      current_token = default_token_generator.make_token(user)
                      file_log(f"Expected token (current): {current_token}")
                      file_log(f"User State - Password hash: {user.password[:20]}..., Last Login: {user.last_login}")
-                
+                     return Response({"error": "Link inválido ou expirado."}, status=status.HTTP_400_BAD_REQUEST)
+
                 if token_valid:
                     user.set_password(serializer.validated_data['password'])
                     user.save()
                     file_log("Password reset success!")
                     return Response({"message": "Senha redefinida com sucesso."}, status=status.HTTP_200_OK)
-                else:
-                    return Response({"error": "Link inválido ou expirado."}, status=status.HTTP_400_BAD_REQUEST)
             else:
                  return Response({"error": "Link inválido usuário não encontrado."}, status=status.HTTP_400_BAD_REQUEST)
-        
+
         file_log(f"Serializer Errors: {serializer.errors}")
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 

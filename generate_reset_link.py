@@ -28,7 +28,7 @@ try:
     
     # Garantir que settings.FRONTEND_URL esteja definido
     frontend_url = getattr(settings, 'FRONTEND_URL', 'http://localhost:3000')
-    reset_link = f"{frontend_url}/auth/reset-password?uid={uid}&token={token}"
+    reset_link = f"{frontend_url}/auth/reset-password/{uid}/{token}/"
     
     print(f"--- RESULTADO ---", flush=True)
     print(f"EMAIL_ALVO: {email}", flush=True)
