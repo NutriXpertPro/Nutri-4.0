@@ -37,14 +37,14 @@ import { PresetFoodItem } from './PresetFoodItem';
 import { DefaultPresetsManager } from './DefaultPresetsManager';
 
 // Tipos de refeio
+// Tipos de refeio
 const MEAL_TYPES = [
   { id: 'cafe_da_manha', label: 'Café da Manhã', icon: Coffee },
-  { id: 'almoco', label: 'Almoço', icon: UtensilsCrossed },
-  { id: 'jantar', label: 'Jantar', icon: UtensilsCrossed },
   { id: 'lanche_manha', label: 'Lanche da Manhã', icon: Cookie },
+  { id: 'almoco', label: 'Almoço', icon: UtensilsCrossed },
   { id: 'lanche_tarde', label: 'Lanche da Tarde', icon: Cookie },
+  { id: 'jantar', label: 'Jantar', icon: UtensilsCrossed },
   { id: 'ceia', label: 'Ceia', icon: Moon },
-  { id: 'suplemento', label: 'Suplemento', icon: Pill },
 ];
 
 // Tipos de dieta - Sincronizado com diet-editor-store.ts
@@ -66,9 +66,11 @@ interface PresetManagerProps {
   onBack?: () => void;
   targetMealId?: string;
   onPresetApplied?: () => void;
+  initialMealType?: string;
+  initialDietType?: string;
 }
 
-export function PresetManager({ onApplyPreset, onBack, targetMealId, onPresetApplied }: PresetManagerProps) {
+export function PresetManager({ onApplyPreset, onBack, targetMealId, onPresetApplied, initialMealType, initialDietType }: PresetManagerProps) {
   const [activeTab, setActiveTab] = useState<'presets' | 'defaults'>('presets');
 
   return (
@@ -107,7 +109,11 @@ export function PresetManager({ onApplyPreset, onBack, targetMealId, onPresetApp
       {/* Conteúdo */}
       <div className="flex-1 overflow-y-auto min-h-0">
         {activeTab === 'presets' ? (
-          <MealPresetsManagerContent onApplyPreset={onApplyPreset} />
+          <MealPresetsManagerContent
+            onApplyPreset={onApplyPreset}
+            initialMealType={initialMealType}
+            initialDietType={initialDietType}
+          />
         ) : (
           <DefaultPresetsManager
             onBack={() => setActiveTab('presets')}
@@ -121,9 +127,17 @@ export function PresetManager({ onApplyPreset, onBack, targetMealId, onPresetApp
 }
 
 // Componente separado para os presets normais
-function MealPresetsManagerContent({ onApplyPreset }: { onApplyPreset?: (preset: MealPreset) => void }) {
-  const [selectedMealType, setSelectedMealType] = useState<string>('');
-  const [selectedDietType, setSelectedDietType] = useState<string>('');
+function MealPresetsManagerContent({
+  onApplyPreset,
+  initialMealType = '',
+  initialDietType = ''
+}: {
+  onApplyPreset?: (preset: MealPreset) => void,
+  initialMealType?: string,
+  initialDietType?: string
+}) {
+  const [selectedMealType, setSelectedMealType] = useState<string>(initialMealType);
+  const [selectedDietType, setSelectedDietType] = useState<string>(initialDietType);
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [isCreating, setIsCreating] = useState<boolean>(false);
   const [editingPreset, setEditingPreset] = useState<MealPreset | null>(null);
@@ -621,22 +635,13 @@ function MealPresetsManagerContent({ onApplyPreset }: { onApplyPreset?: (preset:
                           <div key={food.id} className="flex items-center justify-between p-3 bg-muted/20 rounded-lg border border-border/30">
                             <div className="flex items-center gap-3">
                               <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-sm">
-                                🥗
+                                {food.food_name.toLowerCase().includes('ovo') || food.food_name.toLowerCase().includes('carne') ? '🍗' : '🍽️'}
                               </div>
                               <div>
                                 <div className="text-sm font-medium text-foreground">{food.food_name}</div>
-                                <div className="text-xs text-muted-foreground flex items-center gap-3">
-                                  <span>{food.quantity}{food.unit}</span>
-                                  <span>•</span>
-                                  <span>{Math.round(food.calories)} kcal</span>
-                                </div>
                               </div>
                             </div>
                             <div className="flex items-center gap-2">
-                              <PresetQuantitySelector
-                                food={food}
-                                onChange={(quantity, unit) => updateFoodInCurrentPreset(food.id, { quantity, unit })}
-                              />
                               <Button
                                 type="button"
                                 variant="ghost"

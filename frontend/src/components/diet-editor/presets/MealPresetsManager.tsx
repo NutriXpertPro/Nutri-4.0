@@ -34,14 +34,14 @@ import { PresetQuantitySelector } from './PresetQuantitySelector';
 import { PresetFoodItem } from './PresetFoodItem';
 
 // Tipos de refeio
+// Tipos de refeio
 const MEAL_TYPES = [
   { id: 'cafe_da_manha', label: 'Café da Manhã', icon: Coffee },
-  { id: 'almoco', label: 'Almoço', icon: UtensilsCrossed },
-  { id: 'jantar', label: 'Jantar', icon: UtensilsCrossed },
   { id: 'lanche_manha', label: 'Lanche da Manhã', icon: Cookie },
+  { id: 'almoco', label: 'Almoço', icon: UtensilsCrossed },
   { id: 'lanche_tarde', label: 'Lanche da Tarde', icon: Cookie },
+  { id: 'jantar', label: 'Jantar', icon: UtensilsCrossed },
   { id: 'ceia', label: 'Ceia', icon: Moon },
-  { id: 'suplemento', label: 'Suplemento', icon: Pill },
 ];
 
 // Tipos de dieta - Sincronizado com diet-editor-store.ts

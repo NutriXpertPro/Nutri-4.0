@@ -65,15 +65,43 @@ export const anamnesisService = {
         return data.length > 0 ? data[0] : null
     },
 
+    listStandardAnamneses: async () => {
+        const { data } = await api.get<any[]>("/anamnesis/")
+        return data
+    },
+
     saveStandardAnamnesis: async (patientId: number, data: any) => {
-        // Check if exists first (simple logic for now, ideally backend handles update-or-create)
+        // Check if exists first
         const existing = await anamnesisService.getStandardAnamnesis(patientId)
 
+        const formData = new FormData()
+        Object.keys(data).forEach(key => {
+            if (data[key] !== null && data[key] !== undefined) {
+                // Skip base64 strings if we have files, or handle them specifically
+                // If it's a URL (already saved), we don't need to send it back as a file
+                if (typeof data[key] === 'string' && data[key].startsWith('http')) {
+                    // Don't append existing URLs to avoid issues, or append to keep it
+                    return;
+                }
+
+                if (data[key] instanceof File) {
+                    formData.append(key, data[key])
+                } else {
+                    formData.append(key, data[key].toString())
+                }
+            }
+        })
+        formData.append('patient', patientId.toString())
+
         if (existing) {
-            const response = await api.patch(`/anamnesis/standard/${existing.id}/`, { ...data, patient: patientId })
+            const response = await api.patch(`/anamnesis/standard/${existing.id}/`, formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            })
             return response.data
         } else {
-            const response = await api.post("/anamnesis/standard/", { ...data, patient: patientId })
+            const response = await api.post("/anamnesis/standard/", formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            })
             return response.data
         }
     }

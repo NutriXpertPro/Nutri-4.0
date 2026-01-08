@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Switch } from "@/components/ui/switch"
 import { Slider } from "@/components/ui/slider"
 import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
@@ -46,7 +45,45 @@ interface StandardAnamnesisFormProps {
     patientId: number
     onBack: () => void
     initialData?: Partial<StandardAnamnesisData>
+    isStandalone?: boolean
     onSave?: (data: StandardAnamnesisData) => Promise<void>
+}
+
+// Seletor Sim/Não mais intuitivo
+function YesNoSelector({ value, onChange, className }: { value: boolean, onChange: (v: boolean) => void, className?: string }) {
+    return (
+        <div className={cn("flex items-center p-1 bg-muted/30 rounded-lg border border-border/10 w-fit", className)}>
+            <Button
+                variant={value ? "default" : "ghost"}
+                size="sm"
+                onClick={() => onChange(true)}
+                className={cn(
+                    "h-8 px-4 rounded-md transition-all",
+                    value ? "bg-emerald-500 hover:bg-emerald-600 text-white shadow-sm" : "text-muted-foreground"
+                )}
+            >
+                Sim
+            </Button>
+            <Button
+                variant={!value ? "default" : "ghost"}
+                size="sm"
+                onClick={() => onChange(false)}
+                className={cn(
+                    "h-8 px-4 rounded-md transition-all",
+                    !value ? "bg-zinc-200 hover:bg-zinc-300 text-zinc-900 border border-zinc-300 dark:bg-zinc-800 dark:text-zinc-100 dark:border-zinc-700 shadow-sm" : "text-muted-foreground"
+                )}
+            >
+                Não
+            </Button>
+        </div>
+    )
+}
+
+// Helper para formatar input de hora (HH:mm)
+function formatTimeInput(value: string) {
+    const digits = value.replace(/\D/g, "").slice(0, 4);
+    if (digits.length <= 2) return digits;
+    return `${digits.slice(0, 2)}:${digits.slice(2, 4)}`;
 }
 
 // Helper para obter ícone e cor baseado no objetivo
@@ -79,7 +116,8 @@ export interface StandardAnamnesisData {
     // 2. Rotina
     hora_acorda: string
     hora_dorme: string
-    dificuldade_dormir: string
+    dificuldade_dormir: boolean
+    acorda_noite: boolean
     horario_treino: string
     tempo_disponivel_treino: string
     dias_treino_semana: number | null
@@ -92,7 +130,7 @@ export interface StandardAnamnesisData {
     ja_fez_dieta: boolean
     resultado_dieta: string
     intestino: string
-    dias_sem_banheiro: number | null
+    dias_sem_banheiro: string | null
     vezes_banheiro_dia: number | null
     litros_agua_dia: number | null
     vontade_doce: number
@@ -107,6 +145,7 @@ export interface StandardAnamnesisData {
     problema_articular: string
     uso_medicamentos: boolean
     medicamentos_detalhes: string
+    alergia_medicamento: string
     uso_cigarros: boolean
     intolerancia: boolean
     intolerancia_detalhes: string
@@ -117,8 +156,6 @@ export interface StandardAnamnesisData {
     ja_usou_anabolizante: boolean
     anabolizante_problemas: string
     pretende_usar_anabolizante: boolean
-
-    // 5. Objetivos
     objetivo: string
     compromisso_relatorios: boolean
 
@@ -128,9 +165,9 @@ export interface StandardAnamnesisData {
     quadril: number | null
 
     // 7. Fotos (URLs)
-    foto_frente: string | null
-    foto_lado: string | null
-    foto_costas: string | null
+    foto_frente: string | File | null
+    foto_lado: string | File | null
+    foto_costas: string | File | null
 }
 
 const defaultData: StandardAnamnesisData = {
@@ -143,7 +180,8 @@ const defaultData: StandardAnamnesisData = {
     telefone: "",
     hora_acorda: "",
     hora_dorme: "",
-    dificuldade_dormir: "",
+    dificuldade_dormir: false,
+    acorda_noite: false,
     horario_treino: "",
     tempo_disponivel_treino: "",
     dias_treino_semana: null,
@@ -167,6 +205,7 @@ const defaultData: StandardAnamnesisData = {
     problema_articular: "",
     uso_medicamentos: false,
     medicamentos_detalhes: "",
+    alergia_medicamento: "",
     uso_cigarros: false,
     intolerancia: false,
     intolerancia_detalhes: "",
@@ -212,6 +251,30 @@ export function StandardAnamnesisForm({ patientId, onBack, initialData, onSave }
     const [expandedSections, setExpandedSections] = React.useState<string[]>(["identificacao"])
     const [isSaving, setIsSaving] = React.useState(false)
     const [savedSections, setSavedSections] = React.useState<string[]>([])
+    const [previews, setPreviews] = React.useState<Record<string, string>>({})
+
+    // Refs para os inputs de foto
+    const fileInputRefs = {
+        foto_frente: React.useRef<HTMLInputElement>(null),
+        foto_lado: React.useRef<HTMLInputElement>(null),
+        foto_costas: React.useRef<HTMLInputElement>(null),
+    }
+
+    const handlePhotoClick = (key: "foto_frente" | "foto_lado" | "foto_costas") => {
+        fileInputRefs[key].current?.click()
+    }
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, key: "foto_frente" | "foto_lado" | "foto_costas") => {
+        const file = e.target.files?.[0]
+        if (!file) return
+
+        // Guardar o File para envio no estado do form
+        updateField(key, file)
+
+        // Criar preview local (Blob URL é mais leve que Base64)
+        const previewUrl = URL.createObjectURL(file)
+        setPreviews(prev => ({ ...prev, [key]: previewUrl }))
+    }
 
     const toggleSection = (id: string) => {
         setExpandedSections(prev =>
@@ -411,20 +474,31 @@ export function StandardAnamnesisForm({ patientId, onBack, initialData, onSave }
                                         onChange={(e) => updateField("hora_dorme", e.target.value)}
                                     />
                                 </div>
-                                <div className="space-y-2 md:col-span-2">
-                                    <Label>Possui dificuldade para dormir?</Label>
-                                    <Textarea
-                                        value={formData.dificuldade_dormir}
-                                        onChange={(e) => updateField("dificuldade_dormir", e.target.value)}
-                                        placeholder="Descreva se tem insônia, acorda durante a noite, etc."
-                                    />
+                                <div className="space-y-4 md:col-span-2">
+                                    <div className="flex items-center justify-between">
+                                        <Label>Possui dificuldade para dormir?</Label>
+                                        <YesNoSelector
+                                            value={formData.dificuldade_dormir}
+                                            onChange={(v) => updateField("dificuldade_dormir", v)}
+                                        />
+                                    </div>
+                                    {formData.dificuldade_dormir && (
+                                        <div className="flex items-center justify-between animate-in slide-in-from-top-2 p-3 rounded-lg bg-indigo-50/50 border border-indigo-100 dark:bg-indigo-900/10 dark:border-indigo-900/20">
+                                            <Label className="text-indigo-600 dark:text-indigo-400">Acorda durante a noite?</Label>
+                                            <YesNoSelector
+                                                value={formData.acorda_noite}
+                                                onChange={(v) => updateField("acorda_noite", v)}
+                                            />
+                                        </div>
+                                    )}
                                 </div>
                                 <div className="space-y-2">
                                     <Label>Horário preferido para treino</Label>
                                     <Input
                                         value={formData.horario_treino}
-                                        onChange={(e) => updateField("horario_treino", e.target.value)}
-                                        placeholder="Ex: Manhã, 6h-7h"
+                                        onChange={(e) => updateField("horario_treino", formatTimeInput(e.target.value))}
+                                        placeholder="00:00"
+                                        maxLength={5}
                                     />
                                 </div>
                                 <div className="space-y-2">
@@ -517,9 +591,9 @@ export function StandardAnamnesisForm({ patientId, onBack, initialData, onSave }
                                 <div className="space-y-4 md:col-span-2 lg:col-span-3">
                                     <div className="flex items-center justify-between">
                                         <Label>Já fez dieta antes?</Label>
-                                        <Switch
-                                            checked={formData.ja_fez_dieta}
-                                            onCheckedChange={(v) => updateField("ja_fez_dieta", v)}
+                                        <YesNoSelector
+                                            value={formData.ja_fez_dieta}
+                                            onChange={(v) => updateField("ja_fez_dieta", v)}
                                         />
                                     </div>
                                     {formData.ja_fez_dieta && (
@@ -534,18 +608,40 @@ export function StandardAnamnesisForm({ patientId, onBack, initialData, onSave }
                                         </div>
                                     )}
                                 </div>
-                                <div className="space-y-2">
-                                    <Label>Funcionamento intestinal</Label>
-                                    <Select value={formData.intestino} onValueChange={(v) => updateField("intestino", v)}>
-                                        <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="Preso">Preso</SelectItem>
-                                            <SelectItem value="Regular">Regular</SelectItem>
-                                        </SelectContent>
-                                    </Select>
+                                <div className="space-y-4 md:col-span-2 lg:col-span-3">
+                                    <div className="space-y-2">
+                                        <Label>Funcionamento intestinal</Label>
+                                        <Select value={formData.intestino} onValueChange={(v) => updateField("intestino", v)}>
+                                            <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="Preso">Preso</SelectItem>
+                                                <SelectItem value="Regular">Regular</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+
+                                    {formData.intestino === "Preso" && (
+                                        <div className="space-y-2 animate-in slide-in-from-top-2 p-4 rounded-xl bg-amber-500/5 border border-amber-500/20">
+                                            <Label className="text-amber-600 dark:text-amber-400">Qual frequência vai ao banheiro?</Label>
+                                            <Select
+                                                value={formData.dias_sem_banheiro || ""}
+                                                onValueChange={(v) => updateField("dias_sem_banheiro", v)}
+                                            >
+                                                <SelectTrigger className="border-amber-500/30">
+                                                    <SelectValue placeholder="Selecione a frequência..." />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="a cada 2 dias">a cada 2 dias</SelectItem>
+                                                    <SelectItem value="a cada 3 dias">a cada 3 dias</SelectItem>
+                                                    <SelectItem value="a cada 4 dias">a cada 4 dias</SelectItem>
+                                                    <SelectItem value="a mais de 5 dias">a mais de 5 dias</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                    )}
                                 </div>
                                 <div className="space-y-2">
-                                    <Label>Litros de água por dia</Label>
+                                    <Label>Quanto de água bebe por dia *</Label>
                                     <Input
                                         type="number"
                                         step="0.5"
@@ -630,9 +726,9 @@ export function StandardAnamnesisForm({ patientId, onBack, initialData, onSave }
                                 <div className="space-y-4 md:col-span-2">
                                     <div className="flex items-center justify-between">
                                         <Label>Possui algum problema de saúde?</Label>
-                                        <Switch
-                                            checked={formData.problema_saude}
-                                            onCheckedChange={(v) => updateField("problema_saude", v)}
+                                        <YesNoSelector
+                                            value={formData.problema_saude}
+                                            onChange={(v) => updateField("problema_saude", v)}
                                         />
                                     </div>
                                     {formData.problema_saude && (
@@ -661,9 +757,9 @@ export function StandardAnamnesisForm({ patientId, onBack, initialData, onSave }
                                 <div className="space-y-4 md:col-span-2">
                                     <div className="flex items-center justify-between">
                                         <Label>Usa algum medicamento?</Label>
-                                        <Switch
-                                            checked={formData.uso_medicamentos}
-                                            onCheckedChange={(v) => updateField("uso_medicamentos", v)}
+                                        <YesNoSelector
+                                            value={formData.uso_medicamentos}
+                                            onChange={(v) => updateField("uso_medicamentos", v)}
                                         />
                                     </div>
                                     {formData.uso_medicamentos && (
@@ -679,11 +775,20 @@ export function StandardAnamnesisForm({ patientId, onBack, initialData, onSave }
                                     )}
                                 </div>
 
+                                <div className="space-y-2 md:col-span-2">
+                                    <Label>Intolerância ou alérgico a algum medicamento?</Label>
+                                    <Input
+                                        value={formData.alergia_medicamento}
+                                        onChange={(e) => updateField("alergia_medicamento", e.target.value)}
+                                        placeholder="Descreva aqui se houver alguma alergia medicamentosa..."
+                                    />
+                                </div>
+
                                 <div className="flex items-center justify-between">
                                     <Label>Fuma?</Label>
-                                    <Switch
-                                        checked={formData.uso_cigarros}
-                                        onCheckedChange={(v) => updateField("uso_cigarros", v)}
+                                    <YesNoSelector
+                                        value={formData.uso_cigarros}
+                                        onChange={(v) => updateField("uso_cigarros", v)}
                                     />
                                 </div>
 
@@ -691,9 +796,9 @@ export function StandardAnamnesisForm({ patientId, onBack, initialData, onSave }
                                 <div className="space-y-4">
                                     <div className="flex items-center justify-between">
                                         <Label>Possui intolerância alimentar?</Label>
-                                        <Switch
-                                            checked={formData.intolerancia}
-                                            onCheckedChange={(v) => updateField("intolerancia", v)}
+                                        <YesNoSelector
+                                            value={formData.intolerancia}
+                                            onChange={(v) => updateField("intolerancia", v)}
                                         />
                                     </div>
                                     {formData.intolerancia && (
@@ -710,9 +815,9 @@ export function StandardAnamnesisForm({ patientId, onBack, initialData, onSave }
                                 {formData.sexo === "Feminino" && (
                                     <div className="flex items-center justify-between animate-in slide-in-from-top-2">
                                         <Label>Usa anticoncepcional?</Label>
-                                        <Switch
-                                            checked={formData.uso_anticoncepcional}
-                                            onCheckedChange={(v) => updateField("uso_anticoncepcional", v)}
+                                        <YesNoSelector
+                                            value={formData.uso_anticoncepcional}
+                                            onChange={(v) => updateField("uso_anticoncepcional", v)}
                                         />
                                     </div>
                                 )}
@@ -730,9 +835,9 @@ export function StandardAnamnesisForm({ patientId, onBack, initialData, onSave }
                                 <div className="space-y-4">
                                     <div className="flex items-center justify-between">
                                         <Label>Consome álcool?</Label>
-                                        <Switch
-                                            checked={formData.uso_alcool}
-                                            onCheckedChange={(v) => updateField("uso_alcool", v)}
+                                        <YesNoSelector
+                                            value={formData.uso_alcool}
+                                            onChange={(v) => updateField("uso_alcool", v)}
                                         />
                                     </div>
                                     {formData.uso_alcool && (
@@ -749,9 +854,9 @@ export function StandardAnamnesisForm({ patientId, onBack, initialData, onSave }
                                 <div className="space-y-4 md:col-span-2">
                                     <div className="flex items-center justify-between">
                                         <Label>Já usou anabolizante?</Label>
-                                        <Switch
-                                            checked={formData.ja_usou_anabolizante}
-                                            onCheckedChange={(v) => updateField("ja_usou_anabolizante", v)}
+                                        <YesNoSelector
+                                            value={formData.ja_usou_anabolizante}
+                                            onChange={(v) => updateField("ja_usou_anabolizante", v)}
                                         />
                                     </div>
                                     {formData.ja_usou_anabolizante && (
@@ -769,9 +874,9 @@ export function StandardAnamnesisForm({ patientId, onBack, initialData, onSave }
 
                                 <div className="flex items-center justify-between">
                                     <Label>Pretende usar anabolizante?</Label>
-                                    <Switch
-                                        checked={formData.pretende_usar_anabolizante}
-                                        onCheckedChange={(v) => updateField("pretende_usar_anabolizante", v)}
+                                    <YesNoSelector
+                                        value={formData.pretende_usar_anabolizante}
+                                        onChange={(v) => updateField("pretende_usar_anabolizante", v)}
                                     />
                                 </div>
                             </CardContent>
@@ -809,24 +914,35 @@ export function StandardAnamnesisForm({ patientId, onBack, initialData, onSave }
                                     <Label>Objetivo Principal *</Label>
                                     <Select value={formData.objetivo} onValueChange={(v) => updateField("objetivo", v)}>
                                         <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="Emagrecimento">Emagrecimento</SelectItem>
-                                            <SelectItem value="Ganho de massa muscular">Ganho de massa muscular</SelectItem>
-                                            <SelectItem value="Ganho de peso">Ganho de peso</SelectItem>
-                                            <SelectItem value="Trincar o shape">Trincar o shape</SelectItem>
+                                        <SelectContent className="max-h-60">
+                                            <SelectItem value="PERDA_PESO">Perda de peso - Redução de peso com foco em saúde e sustentabilidade</SelectItem>
+                                            <SelectItem value="GANHO_MUSCULAR">Ganho de massa muscular - Hipertrofia e desenvolvimento muscular</SelectItem>
+                                            <SelectItem value="MANUTENCAO_PESO">Manutenção do peso - Equilíbrio e manutenção do peso atual</SelectItem>
+                                            <SelectItem value="PERFORMANCE_ESPORTIVA">Performance esportiva - Otimização do desempenho atlético e competitivo</SelectItem>
+                                            <SelectItem value="GESTACAO_LACTACAO">Gestação e lactação - Acompanhamento nutricional materno-infantil</SelectItem>
+                                            <SelectItem value="DOENCAS_CRONICAS">Manejo de doenças crônicas - Diabetes, hipertensão, dislipidemias, doenças cardiovasculares</SelectItem>
+                                            <SelectItem value="REABILITACAO_NUTRICIONAL">Reabilitação nutricional - Recuperação pós-cirúrgica ou pós-doença</SelectItem>
+                                            <SelectItem value="TRANSTORNOS_ALIMENTARES">Transtornos alimentares - Apoio no tratamento de anorexia, bulimia, compulsão alimentar</SelectItem>
+                                            <SelectItem value="ALERGIAS_INTOLERANCIAS">Alergias e intolerâncias alimentares - Manejo de restrições alimentares específicas</SelectItem>
+                                            <SelectItem value="DISTURBIOS_GASTROINTESTINAIS">Distúrbios gastrointestinais - Síndrome do intestino irritável, doença celíaca, refluxo</SelectItem>
+                                            <SelectItem value="CONDICOES_HORMONAIS">Condições hormonais - SOP (Síndrome dos Ovários Policísticos), hipotireoidismo, menopausa</SelectItem>
+                                            <SelectItem value="NUTRICAO_FUNCIONAL">Nutrição funcional e integrativa - Abordagem holística e preventiva</SelectItem>
+                                            <SelectItem value="SUPLEMENTACAO_ORIENTADA">Suplementação orientada - Otimização do uso de suplementos nutricionais</SelectItem>
+                                            <SelectItem value="SAUDE_IDOSO">Saúde do idoso - Nutrição voltada para longevidade e qualidade de vida</SelectItem>
+                                            <SelectItem value="PREVENCAO_DOENCAS">Prevenção de doenças - Promoção de saúde e hábitos preventivos</SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </div>
                                 <div className="flex items-center justify-between p-4 rounded-xl bg-primary/5 border border-primary/20">
                                     <div>
-                                        <Label className="text-base">Compromisso semanal</Label>
+                                        <Label className="text-base">Compromisso</Label>
                                         <p className="text-sm text-muted-foreground">
-                                            Você se compromete a enviar fotos e relatórios semanalmente?
+                                            Você se compromete a enviar fotos e relatórios conforme orientado pelo nutri?
                                         </p>
                                     </div>
-                                    <Switch
-                                        checked={formData.compromisso_relatorios}
-                                        onCheckedChange={(v) => updateField("compromisso_relatorios", v)}
+                                    <YesNoSelector
+                                        value={formData.compromisso_relatorios}
+                                        onChange={(v) => updateField("compromisso_relatorios", v)}
                                     />
                                 </div>
                             </CardContent>
@@ -864,6 +980,9 @@ export function StandardAnamnesisForm({ patientId, onBack, initialData, onSave }
                                         onChange={(e) => updateField("pescoco", e.target.value ? parseFloat(e.target.value) : null)}
                                         placeholder="Ex: 38.5"
                                     />
+                                    <p className="text-[10px] text-muted-foreground px-1 italic">
+                                        Contorne o pescoço com a fita logo abaixo do "pomo de adão".
+                                    </p>
                                 </div>
                                 <div className="space-y-2">
                                     <Label>Cintura (cm)</Label>
@@ -874,6 +993,9 @@ export function StandardAnamnesisForm({ patientId, onBack, initialData, onSave }
                                         onChange={(e) => updateField("cintura", e.target.value ? parseFloat(e.target.value) : null)}
                                         placeholder="Ex: 78"
                                     />
+                                    <p className="text-[10px] text-muted-foreground px-1 italic">
+                                        Meça na parte mais estreita do tronco (geralmente acima do umbigo).
+                                    </p>
                                 </div>
                                 {formData.sexo === "Feminino" && (
                                     <div className="space-y-2 animate-in slide-in-from-top-2">
@@ -888,6 +1010,9 @@ export function StandardAnamnesisForm({ patientId, onBack, initialData, onSave }
                                             onChange={(e) => updateField("quadril", e.target.value ? parseFloat(e.target.value) : null)}
                                             placeholder="Ex: 98"
                                         />
+                                        <p className="text-[10px] text-muted-foreground px-1 italic">
+                                            Contorne a parte com maior volume do bumbum.
+                                        </p>
                                     </div>
                                 )}
                             </CardContent>
@@ -923,23 +1048,41 @@ export function StandardAnamnesisForm({ patientId, onBack, initialData, onSave }
                                         { key: "foto_costas" as const, label: "Costas" },
                                     ].map(({ key, label }) => (
                                         <div key={key} className="flex flex-col items-center gap-4">
-                                            <div className="w-full aspect-[3/4] bg-muted/30 rounded-xl border-2 border-dashed flex flex-col items-center justify-center gap-2 hover:border-primary/50 transition-colors cursor-pointer">
-                                                {formData[key] ? (
+                                            <input
+                                                type="file"
+                                                accept="image/*"
+                                                className="hidden"
+                                                ref={fileInputRefs[key]}
+                                                onChange={(e) => handleFileChange(e, key)}
+                                            />
+                                            <div
+                                                onClick={() => handlePhotoClick(key)}
+                                                className="w-full aspect-[3/4] bg-muted/30 rounded-xl border-2 border-dashed flex flex-col items-center justify-center gap-2 hover:border-primary/50 transition-colors cursor-pointer overflow-hidden border-border/10"
+                                            >
+                                                {(previews[key] || (typeof formData[key] === 'string' ? formData[key] : null)) ? (
                                                     <img
-                                                        src={formData[key] as string}
+                                                        src={(previews[key] || formData[key]) as string}
                                                         alt={label}
-                                                        className="w-full h-full object-cover rounded-xl"
+                                                        className="w-full h-full object-cover"
                                                     />
                                                 ) : (
                                                     <>
-                                                        <Upload className="h-8 w-8 text-muted-foreground" />
-                                                        <span className="text-sm text-muted-foreground">{label}</span>
+                                                        <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center text-primary mb-2">
+                                                            <Upload className="h-6 w-6" />
+                                                        </div>
+                                                        <span className="text-sm font-medium">{label}</span>
+                                                        <span className="text-xs text-muted-foreground px-4 text-center">Tocar para selecionar</span>
                                                     </>
                                                 )}
                                             </div>
-                                            <Button variant="outline" size="sm" className="w-full">
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                className="w-full"
+                                                onClick={() => handlePhotoClick(key)}
+                                            >
                                                 <Upload className="h-4 w-4 mr-2" />
-                                                Upload
+                                                Selecionar Foto
                                             </Button>
                                         </div>
                                     ))}

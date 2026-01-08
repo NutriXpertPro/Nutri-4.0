@@ -36,10 +36,12 @@ urlpatterns = [
     path("search/", views.patient_search_view, name="patient-search"),
     path("<int:pk>/", views.PatientDetailView.as_view(), name="detail_update_delete"),
     path("<int:pk>/compare_photos/", views.compare_photos_view, name="compare_photos"),
+    path("<int:pk>/resend-password-link/", views.resend_password_reset_link, name="resend_password_link"),
 
     # URLs do diário e comunidade
     path('diary/', include(diary_router.urls)),
-    
+
     # URLs de dados do paciente (/patients/me/*)
+    path('me/profile/', views.PatientMeView.as_view(), name='patient-me'),
     path('me/', include(patient_data_router.urls)),
 ]

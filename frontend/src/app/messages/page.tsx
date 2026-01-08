@@ -65,6 +65,7 @@ const XpertMessengerContent: React.FC = () => {
           <WhatsAppStyleMessages
             selectedConversationId={selectedConversationId}
             onConversationSelect={handleSelectConversation}
+            currentUserId={user?.id?.toString() || null}
           />
         </div>
       </div>

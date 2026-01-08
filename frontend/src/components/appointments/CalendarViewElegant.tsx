@@ -242,7 +242,7 @@ export function CalendarViewElegant({
 
                                 // Tentar usar o estado primeiro, depois fallback para o dataTransfer
                                 let appointmentId;
-                                let newDate = new Date(cloneDay); // Copia a data do dia alvo (que vem zerada, ex: 00:00)
+                                const newDate = new Date(cloneDay); // Copia a data do dia alvo (que vem zerada, ex: 00:00)
 
                                 if (draggedAppointment) {
                                     appointmentId = draggedAppointment.id;

@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Message, Conversation, UserType } from '@/types/chat';
 import { Card, CardContent } from '@/components/ui/card';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Search, User, Phone, Video, MoreVertical, Check, CheckCheck, Paperclip, Smile, Mic, Send, Bell, BellOff } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -11,6 +11,15 @@ import { cn } from '@/lib/utils';
 import api from '@/services/api';
 import axios from 'axios';
 import { notificationService } from '@/services/notification-service';
+import { useAuth } from '@/contexts/auth-context';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from '@/components/ui/dropdown-menu';
+import { Trash2, Eraser } from 'lucide-react';
 
 // Helper function to get initials from a name
 const getInitials = (name?: string) => {
@@ -24,23 +33,140 @@ const getInitials = (name?: string) => {
 interface WhatsAppConversationsListProps {
   selectedConversationId: string | null;
   onConversationSelect: (conversationId: string) => void;
+  currentUserId?: string | null;
 }
 
 // Componente apenas para a lista de conversas
 const WhatsAppConversationsList: React.FC<WhatsAppConversationsListProps> = ({
   selectedConversationId,
-  onConversationSelect
+  onConversationSelect,
+  currentUserId: propCurrentUserId
 }) => {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  // Usar useAuth diretamente para obter o currentUserId
+  const { user: authUser, isLoading: authLoading } = useAuth();
+  // Priorizar prop, depois auth context
+  const currentUserId = propCurrentUserId ?? authUser?.id?.toString() ?? null;
   const [filter, setFilter] = useState<'all' | 'unread' | 'favorites' | 'groups'>('all');
+
+  // Search effect
+  useEffect(() => {
+    const searchPatients = async () => {
+      if (!searchQuery.trim()) {
+        setSearchResults([]);
+        return;
+      }
+
+      setIsSearching(true);
+      try {
+        const response = await api.get(`/patients/?search=${searchQuery}`);
+        setSearchResults(response.data.results || response.data);
+      } catch (error) {
+        console.error('Error searching patients:', error);
+      } finally {
+        setIsSearching(false);
+      }
+    };
+
+    const timeoutId = setTimeout(searchPatients, 500);
+    return () => clearTimeout(timeoutId);
+  }, [searchQuery]);
+
+  const handleSelectPatient = async (patient: any) => {
+    // Check if conversation already exists
+    // O patient.id aqui é o PatientProfile ID, mas na conversa os participants são Users
+    // O PatientProfileSerializer retorna o user_id real do usuário
+    const targetUserId = String(patient.user_id || patient.id);
+
+    const existingConversation = conversations.find(c =>
+      c.participants.some(p => String(p.id) === targetUserId)
+    );
+
+    if (existingConversation) {
+      onConversationSelect(existingConversation.id);
+      setSearchQuery('');
+    } else {
+      // Create new conversation using the correct endpoint
+      try {
+        const response = await api.post('/messages/conversations/find-or-create-by-patient/', {
+          patient_id: patient.id
+        });
+
+        const newConv = response.data;
+
+        // Garantir que os dados do paciente estejam completos na nova conversa
+        if (newConv.participants) {
+          newConv.participants = newConv.participants.map((p: any) => {
+            if (String(p.id) === targetUserId) {
+              return {
+                ...p,
+                name: p.name || patient.name,
+                avatar: p.avatar || patient.avatar || patient.photo
+              };
+            }
+            return p;
+          });
+        }
+
+        // Evitar duplicatas se o polling já tiver pegado
+        setConversations(prev => {
+          const exists = prev.some(c => c.id === newConv.id);
+          if (exists) return prev;
+          return [newConv, ...prev];
+        });
+
+        onConversationSelect(newConv.id);
+        setSearchQuery('');
+      } catch (error) {
+        console.error('Error creating conversation:', error);
+      }
+    }
+  };
+
+  const handleClearMessages = async (convId: string, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    if (!confirm('Tem certeza que deseja limpar todo o histórico desta conversa?')) return;
+
+    try {
+      await api.post(`/messages/conversations/${convId}/clear-messages/`);
+      // Se a conversa limpa for a selecionada, poderíamos recarregar as mensagens
+      // Mas o polling ou a ação do usuário no ChatArea deve cuidar disso
+      alert('Histórico limpo com sucesso!');
+      window.location.reload(); // Forma simples de atualizar tudo
+    } catch (error) {
+      console.error('Error clearing messages:', error);
+      alert('Erro ao limpar histórico.');
+    }
+  };
+
+  const handleDeleteConversation = async (convId: string, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    if (!confirm('Tem certeza que deseja excluir esta conversa? Todas as mensagens serão perdidas.')) return;
+
+    try {
+      await api.delete(`/messages/conversations/${convId}/`);
+      setConversations(prev => prev.filter(c => c.id !== convId));
+      if (selectedConversationId === convId) {
+        // Notificar o pai que nada está selecionado
+        onConversationSelect('');
+      }
+      alert('Conversa excluída com sucesso!');
+    } catch (error) {
+      console.error('Error deleting conversation:', error);
+      alert('Erro ao excluir conversa.');
+    }
+  };
 
   // Carregar conversas do backend
   useEffect(() => {
-    const fetchConversations = async () => {
+    const fetchConversations = async (silent = false) => {
       try {
-        setLoading(true);
+        if (!silent) setLoading(true);
         const response = await api.get('/messages/inbox/');
 
         // Verificar se há novas conversas ou mensagens não vistas
@@ -73,17 +199,8 @@ const WhatsAppConversationsList: React.FC<WhatsAppConversationsListProps> = ({
           // Fallback para o cálculo local se a API falhar
           notificationService.updateNotificationBadge(totalUnread);
         });
-
-        // Obter ID do usuário atual (isso pode vir do contexto de autenticação)
-        if (typeof window !== 'undefined') {
-          const storedUser = localStorage.getItem('user');
-          if (storedUser) {
-            const user = JSON.parse(storedUser);
-            setCurrentUserId(user.id?.toString() || null);
-          }
-        }
       } catch (error) {
-        console.error('Erro ao carregar conversas:', error);
+        if (!silent) console.error('Erro ao carregar conversas:', error);
         // Em caso de erro 404, tentar endpoint alternativo
         if (axios.isAxiosError(error) && error.response?.status === 404) {
           try {
@@ -97,7 +214,7 @@ const WhatsAppConversationsList: React.FC<WhatsAppConversationsListProps> = ({
             }));
             setConversations(conversationsData);
           } catch (fallbackError) {
-            console.error('Erro ao carregar conversas com endpoint alternativo:', fallbackError);
+            if (!silent) console.error('Erro ao carregar conversas com endpoint alternativo:', fallbackError);
           }
         } else {
           // Para outros tipos de erro, tentar novamente com fallback
@@ -111,23 +228,25 @@ const WhatsAppConversationsList: React.FC<WhatsAppConversationsListProps> = ({
             }));
             setConversations(conversationsData);
           } catch (fallbackError) {
-            console.error('Erro ao carregar conversas com endpoint alternativo:', fallbackError);
+            if (!silent) console.error('Erro ao carregar conversas com endpoint alternativo:', fallbackError);
           }
         }
       } finally {
-        setLoading(false);
+        if (!silent) setLoading(false);
       }
     };
 
     fetchConversations();
 
     // Configurar polling para atualizações (a cada 5 segundos)
-    const interval = setInterval(fetchConversations, 5000);
+    const interval = setInterval(() => fetchConversations(true), 5000);
 
     return () => clearInterval(interval);
   }, []);
 
-  if (loading) {
+
+  // Mostrar loading enquanto auth ou conversas estão carregando
+  if ((loading && !conversations.length) || authLoading) {
     return (
       <div className="h-full flex items-center justify-center p-4">
         <div className="text-center">
@@ -157,86 +276,149 @@ const WhatsAppConversationsList: React.FC<WhatsAppConversationsListProps> = ({
 
   return (
     <div className="h-full flex flex-col overflow-hidden">
-      {/* Filtros */}
-      <div className="flex gap-2 p-3">
-        {(['all', 'unread', 'favorites', 'groups'] as const).map((f) => (
-          <button
-            key={f}
-            className={`px-4 py-2 text-sm capitalize rounded-full transition-colors ${filter === f
-              ? 'bg-primary text-primary-foreground'
-              : 'bg-muted text-muted-foreground hover:bg-muted/80'
-              }`}
-            onClick={() => setFilter(f)}
-          >
-            {f === 'all' ? 'Tudo' :
-              f === 'unread' ? 'Não lidas' :
-                f === 'favorites' ? 'Favoritos' :
-                  'Grupos'}
-          </button>
-        ))}
+      {/* Search Bar */}
+      <div className="px-3 pt-3 pb-0">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Buscar paciente..."
+            className="pl-9 bg-muted/50 border-0 focus-visible:ring-1 focus-visible:ring-green-500"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
       </div>
 
-      {/* Conversations List */}
-      <div className="flex-1 overflow-y-auto overflow-x-hidden">
-        {filteredConversations.map((conversation) => {
-          const participant = conversation.participants.find(
-            p => p.id !== currentUserId
-          );
-
-          return (
-            <Card
-              key={conversation.id}
-              className={cn(
-                'border-0 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800',
-                selectedConversationId === conversation.id && 'bg-green-50 dark:bg-green-900/30'
-              )}
-              onClick={() => onConversationSelect(conversation.id)}
+      {/* Filtros - Only show if not searching */}
+      {!searchQuery && (
+        <div className="flex gap-2 p-3">
+          {(['all', 'unread', 'favorites', 'groups'] as const).map((f) => (
+            <button
+              key={f}
+              className={`px-4 py-2 text-sm capitalize rounded-full transition-colors ${filter === f
+                ? 'bg-primary text-primary-foreground'
+                : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                }`}
+              onClick={() => setFilter(f)}
             >
-              <CardContent className="p-3 flex items-center space-x-3">
-                <div className="relative">
-                  <Avatar className="h-16 w-16 border-4 border-background shadow-lg flex-shrink-0">
-                    <AvatarFallback className="bg-primary/10 text-primary font-semibold text-lg">
-                      {getInitials(participant?.name)}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white dark:border-gray-900"></div>
-                </div>
+              {f === 'all' ? 'Tudo' :
+                f === 'unread' ? 'Não lidas' :
+                  f === 'favorites' ? 'Favoritos' :
+                    'Grupos'}
+            </button>
+          ))}
+        </div>
+      )}
 
-                <div className="flex-1 min-w-0">
-                  <div className="flex justify-between items-center">
-                    <h3 className="font-semibold text-gray-900 dark:text-gray-100 truncate">
-                      {participant?.name || 'Paciente'}
-                    </h3>
-                    {conversation.last_message_time && (
-                      <span className="text-xs text-gray-500 dark:text-gray-400">
-                        {new Date(conversation.last_message_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      </span>
-                    )}
+      {/* Conversations List or Search Results */}
+      <div className="flex-1 overflow-y-auto overflow-x-hidden">
+        {searchQuery ? (
+          // Search Results
+          <div className="p-2 space-y-1">
+            {isSearching ? (
+              <div className="text-center p-4 text-muted-foreground text-sm">Buscando...</div>
+            ) : searchResults.length > 0 ? (
+              searchResults.map(patient => (
+                <Card
+                  key={patient.id}
+                  className="border-0 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800"
+                  onClick={() => handleSelectPatient(patient)}
+                >
+                  <CardContent className="p-3 flex items-center space-x-3">
+                    <Avatar className="h-12 w-12 border border-border">
+                      {patient.avatar && <AvatarImage src={patient.avatar} />}
+                      <AvatarFallback className="bg-primary/10 text-primary">{getInitials(patient.name)}</AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <h3 className="font-semibold text-foreground">{patient.name}</h3>
+                      <p className="text-xs text-muted-foreground">Clique para conversar</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            ) : (
+              <div className="text-center p-4 text-muted-foreground text-sm">Nenhum paciente encontrado.</div>
+            )}
+          </div>
+        ) : (
+          // Existing Conversation List
+          filteredConversations.map((conversation) => {
+            const participant = conversation.participants.find(
+              p => p.id?.toString() !== currentUserId?.toString()
+            );
+
+            return (
+              <Card
+                key={conversation.id}
+                className={cn(
+                  'border-0 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-all group',
+                  selectedConversationId === conversation.id && 'bg-primary/10 dark:bg-primary/20 border-l-4 !border-l-primary'
+                )}
+                onClick={() => onConversationSelect(conversation.id)}
+              >
+                <CardContent className="p-3 flex items-center space-x-3">
+                  <div className="relative">
+                    <Avatar className="h-16 w-16 border-4 border-background shadow-lg flex-shrink-0">
+                      {participant?.avatar && <AvatarImage src={participant.avatar} alt={participant.name} />}
+                      <AvatarFallback className="bg-primary/10 text-primary font-semibold text-lg">
+                        {getInitials(participant?.name)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white dark:border-gray-900"></div>
                   </div>
 
-                  <div className="flex justify-between items-center">
-                    {conversation.last_message ? (
-                      <p className="text-sm text-gray-600 dark:text-gray-400 truncate">
-                        {conversation.last_message}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex justify-between items-start">
+                      <h3 className="font-semibold text-foreground truncate">
+                        {participant?.name || 'Paciente'}
+                      </h3>
+                      <div className="flex items-center space-x-1">
+                        {conversation.unread_count > 0 && (
+                          <span className="bg-primary text-primary-foreground text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                            {conversation.unread_count}
+                          </span>
+                        )}
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm" className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100">
+                              <MoreVertical className="h-3 w-3" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={(e) => handleClearMessages(conversation.id, e)}>
+                              <Eraser className="mr-2 h-4 w-4" />
+                              Limpar mensagens
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              className="text-destructive focus:text-destructive"
+                              onClick={(e) => handleDeleteConversation(conversation.id, e)}
+                            >
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              Excluir conversa
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <p className="text-xs text-muted-foreground truncate">
+                        {conversation.last_message || 'Nenhuma mensagem'}
                       </p>
-                    ) : (
-                      <p className="text-sm text-gray-400 dark:text-gray-500 italic">
-                        Nenhuma mensagem ainda
-                      </p>
-                    )}
-                    {conversation.unread_count > 0 && (
-                      <span className="bg-green-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                        {conversation.unread_count}
-                      </span>
-                    )}
+                      {conversation.last_message_time && (
+                        <span className="text-[10px] text-muted-foreground shrink-0 ml-1">
+                          {new Date(conversation.last_message_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      )}
+                    </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
+                </CardContent>
+              </Card>
+            );
+          })
+        )}
       </div>
-    </div>
+    </div >
   );
 };
 
@@ -257,9 +439,9 @@ const WhatsAppChatArea: React.FC<WhatsAppChatAreaProps> = ({ conversationId, cur
   useEffect(() => {
     if (!conversationId) return;
 
-    const fetchMessages = async () => {
+    const fetchMessages = async (silent = false) => {
       try {
-        setLoading(true);
+        if (!silent) setLoading(true);
         // Primeiro tentar obter detalhes da conversa
         let conversationDetails = null;
         try {
@@ -291,7 +473,7 @@ const WhatsAppChatArea: React.FC<WhatsAppChatAreaProps> = ({ conversationId, cur
 
         setConversation(conversationDetails);
       } catch (error) {
-        console.error('Erro ao carregar mensagens:', error);
+        if (!silent) console.error('Erro ao carregar mensagens:', error);
         // Em caso de erro, tentar endpoints alternativos
         if (axios.isAxiosError(error) && error.response?.status === 404) {
           try {
@@ -312,18 +494,18 @@ const WhatsAppChatArea: React.FC<WhatsAppChatAreaProps> = ({ conversationId, cur
               unread_count: 0
             });
           } catch (fallbackError) {
-            console.error('Erro ao carregar mensagens com endpoint alternativo:', fallbackError);
+            if (!silent) console.error('Erro ao carregar mensagens com endpoint alternativo:', fallbackError);
           }
         }
       } finally {
-        setLoading(false);
+        if (!silent) setLoading(false);
       }
     };
 
     fetchMessages();
 
     // Configurar polling para atualizações (a cada 5 segundos)
-    const interval = setInterval(fetchMessages, 5000);
+    const interval = setInterval(() => fetchMessages(true), 5000);
 
     return () => clearInterval(interval);
   }, [conversationId]);
@@ -360,7 +542,7 @@ const WhatsAppChatArea: React.FC<WhatsAppChatAreaProps> = ({ conversationId, cur
     }
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
+  const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSendMessage();
@@ -378,6 +560,9 @@ const WhatsAppChatArea: React.FC<WhatsAppChatAreaProps> = ({ conversationId, cur
     );
   }
 
+  // Identificar o outro participante (paciente)
+  const patientParticipant = conversation?.participants.find(p => String(p.id) !== String(currentUserId));
+
   return (
     <div className="flex flex-col h-full" style={{ overflow: 'hidden', maxHeight: '100%' }}>
       {/* Chat Header - only shows when conversation is selected */}
@@ -385,15 +570,21 @@ const WhatsAppChatArea: React.FC<WhatsAppChatAreaProps> = ({ conversationId, cur
         <div className="flex items-center space-x-3">
           <div className="relative">
             <Avatar className="h-16 w-16 border-4 border-background shadow-lg flex-shrink-0">
+              {patientParticipant?.avatar && (
+                <AvatarImage
+                  src={patientParticipant.avatar}
+                  alt={patientParticipant.name || ''}
+                />
+              )}
               <AvatarFallback className="bg-primary/10 text-primary font-semibold text-lg">
-                {getInitials(conversation?.participants.find(p => p.id !== currentUserId)?.name)}
+                {getInitials(patientParticipant?.name)}
               </AvatarFallback>
             </Avatar>
             <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-background"></div>
           </div>
           <div>
             <h2 className="font-semibold text-foreground">
-              {conversation?.participants.find(p => p.id !== currentUserId)?.name || 'Paciente'}
+              {patientParticipant?.name || 'Paciente'}
             </h2>
             <p className="text-xs text-muted-foreground">Online</p>
           </div>
@@ -411,9 +602,27 @@ const WhatsAppChatArea: React.FC<WhatsAppChatAreaProps> = ({ conversationId, cur
               <BellOff className="w-5 h-5" />
             }
           </Button>
-          <Button size="sm" variant="ghost" className="text-foreground hover:bg-accent">
-            <MoreVertical className="w-5 h-5" />
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button size="sm" variant="ghost" className="text-foreground hover:bg-accent">
+                <MoreVertical className="w-5 h-5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => handleClearMessages(conversation.id)}>
+                <Eraser className="mr-2 h-4 w-4" />
+                Limpar histórico
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                className="text-destructive focus:text-destructive"
+                onClick={() => handleDeleteConversation(conversation.id)}
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                Excluir conversa
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
@@ -476,7 +685,7 @@ const WhatsAppChatArea: React.FC<WhatsAppChatAreaProps> = ({ conversationId, cur
           <Input
             value={message}
             onChange={(e) => setMessage(e.target.value)}
-            onKeyPress={handleKeyPress}
+            onKeyDown={handleKeyDown}
             placeholder="Digite uma mensagem..."
             className="border-0 focus:ring-0 focus:outline-none bg-transparent"
           />

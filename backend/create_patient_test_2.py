@@ -25,7 +25,7 @@ def create_patient_test_2():
         'email': 'paciente.teste2@example.com',  # Usando um email diferente
         'gender': 'F',
         'birth_date': '1990-01-01',
-        'goal': 'PERDA_GORDURA',
+        'goal': 'PERDA_PESO',
         'service_type': 'ONLINE'
     }
 

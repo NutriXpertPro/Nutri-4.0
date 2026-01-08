@@ -29,7 +29,7 @@ try:
         'phone': '11999999999',
         'birth_date': '1990-01-01',
         'gender': 'M',
-        'goal': 'PERDA_GORDURA',
+        'goal': 'PERDA_PESO',
         'service_type': 'ONLINE',
         'start_date': '2025-01-01'
     }

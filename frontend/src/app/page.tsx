@@ -5,6 +5,7 @@ import Methodology from "@/components/landing-v2/Methodology";
 import TestimonialsSection from "@/components/landing-v2/TestimonialsSection";
 import PricingSection from "@/components/landing-v2/PricingSection";
 import Logo from "@/components/landing-v2/Logo";
+import MobileMenu from "@/components/landing-v2/MobileMenu";
 import Link from "next/link";
 import { Instagram, Linkedin, Twitter, MapPin } from "lucide-react";
 import {
@@ -25,8 +26,8 @@ export default function LandingPage() {
 
       {/* Header Fixo Premium */}
       <header className="fixed top-0 w-full z-50 bg-[#050505]/80 backdrop-blur-xl border-b border-white/5 transition-all duration-300">
-        <div className="container mx-auto px-6 h-20 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-0 group">
+        <div className="container mx-auto px-6 h-20 flex items-center">
+          <Link href="/" className="flex items-center gap-0 group translate-x-[-2px]">
             <Logo />
             <div className="text-xl font-bold tracking-tighter text-white ml-[-15px] flex items-center">
               <span className="mr-1" style={{ textShadow: '1px 1px 2px rgba(255,255,255,0.1)' }}>
@@ -40,31 +41,24 @@ export default function LandingPage() {
               </span>
             </div>
           </Link>
-
-          <nav className="hidden md:flex gap-8 text-sm font-medium text-neutral-400">
-            <Link href="#features" className="hover:text-emerald-400 transition-colors">Funcionalidades</Link>
-            <Link href="#methodology" className="hover:text-emerald-400 transition-colors">Metodologia</Link>
-            <Link href="#testimonials" className="hover:text-emerald-400 transition-colors">Depoimentos</Link>
-            <Link href="#pricing" className="hover:text-emerald-400 transition-colors">Planos</Link>
-          </nav>
-
-          <div className="flex items-center gap-4">
-            <Link href="/login/paciente" className="text-sm font-medium text-blue-400 hover:text-blue-300 transition-colors hidden sm:block">
+          <div className="flex-1 flex justify-end items-center gap-2 sm:gap-4">
+            <Link href="/login/paciente" className="text-xs sm:text-sm font-medium text-blue-400 hover:text-blue-300 transition-colors hidden md:block">
               Sou Paciente
             </Link>
-            <div className="h-4 w-px bg-white/10 hidden sm:block"></div>
+            <div className="h-4 w-px bg-white/10 hidden md:block"></div>
             <Link
               href="/auth"
-              className="px-6 py-2.5 text-sm font-bold bg-white text-black rounded-full hover:bg-emerald-400 hover:text-black hover:scale-105 transition-all shadow-lg shadow-white/10"
+              className="px-3 py-2 text-xs sm:text-sm font-bold bg-white text-black rounded-full hover:bg-emerald-400 hover:text-black hover:scale-105 transition-all shadow-lg shadow-white/10 hidden md:block"
             >
               Entrar
             </Link>
             <Link
               href="/auth?tab=register"
-              className="px-6 py-2.5 text-sm font-medium text-neutral-300 hover:text-white transition-colors"
+              className="px-3 py-2 text-xs sm:text-sm font-medium text-neutral-300 hover:text-white transition-colors hidden md:block"
             >
               Começar Agora
             </Link>
+            <MobileMenu />
           </div>
         </div>
       </header>
@@ -123,8 +117,8 @@ export default function LandingPage() {
       {/* Footer Profissional */}
       <footer className="pt-20 pb-10 bg-black border-t border-white/10">
         <div className="container px-6 mx-auto">
-          <div className="grid md:grid-cols-4 gap-12 mb-16">
-            <div className="col-span-1 md:col-span-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 md:gap-12 mb-16">
+            <div className="col-span-2 md:col-span-2">
               <div className="flex items-center gap-0 mb-6">
                 <Logo />
                 <div className="text-2xl font-bold tracking-tighter text-white ml-[-15px] flex items-center">

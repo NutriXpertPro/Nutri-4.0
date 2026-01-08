@@ -7,7 +7,10 @@ import { TemplateList } from "@/components/anamnesis/TemplateList"
 import { TemplateBuilder } from "@/components/anamnesis/TemplateBuilder"
 import { StandardAnamnesisForm, StandardAnamnesisData } from "@/components/anamnesis/StandardAnamnesisForm"
 import { Loader2 } from "lucide-react"
+import { AnamnesisShareDialog } from "@/components/patients/AnamnesisShareDialog"
 import { Patient } from "@/services/patient-service"
+import { Send } from "lucide-react"
+import { Button } from "@/components/ui/button"
 
 interface PatientAnamnesisTabProps {
     patientId: number
@@ -31,6 +34,7 @@ export function PatientAnamnesisTab({ patientId, patient }: PatientAnamnesisTabP
     }
     const [view, setView] = useState<ViewState>('LIST')
     const [selectedTemplate, setSelectedTemplate] = useState<AnamnesisTemplate | null>(null)
+    const [isShareOpen, setIsShareOpen] = useState(false)
     const queryClient = useQueryClient()
 
     // Fetch Templates
@@ -113,7 +117,7 @@ export function PatientAnamnesisTab({ patientId, patient }: PatientAnamnesisTabP
     return (
         <div className="min-h-[600px] relative">
             {/* Exibir informações do paciente */}
-            <div className="mb-6 p-4 bg-background/40 rounded-xl border border-border/10">
+            <div className="mb-6 p-4 bg-background/40 rounded-xl border border-border/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="flex items-center gap-4">
                     <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 border-2 border-background shadow-lg overflow-hidden flex items-center justify-center">
                         {patient?.avatar ? (
@@ -141,7 +145,21 @@ export function PatientAnamnesisTab({ patientId, patient }: PatientAnamnesisTabP
                         </div>
                     </div>
                 </div>
+
+                <Button onClick={() => setIsShareOpen(true)} className="gap-2 shadow-lg shadow-primary/20">
+                    <Send className="h-4 w-4" />
+                    Enviar Link
+                </Button>
             </div>
+
+            <AnamnesisShareDialog
+                open={isShareOpen}
+                onOpenChange={setIsShareOpen}
+                patientId={patientId}
+                patientName={patient?.name || "Paciente"}
+                patientEmail={patient?.email}
+                templates={templates || []}
+            />
 
             {view === 'LIST' && (
                 <TemplateList

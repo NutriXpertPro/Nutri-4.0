@@ -27,6 +27,7 @@ import { usePatients } from "@/hooks/usePatients"
 import { toast } from "@/components/ui/use-toast"
 import { useRouter } from "next/navigation"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { cn } from "@/lib/utils"
 
 const formSchema = z.object({
     name: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
@@ -61,6 +62,17 @@ export function EditPatientDialog({ open, onOpenChange, patient }: EditPatientDi
     const router = useRouter()
     const [isLoading, setIsLoading] = React.useState(false)
 
+    const validateName = (name: string) => {
+        const nameRegex = /^[A-Za-zÀ-ÖØ-öø-ÿ\s]+$/
+        if (name && !nameRegex.test(name)) {
+            return "Nome não pode conter símbolos especiais. Use apenas letras e espaços."
+        }
+        return null
+    }
+
+    const [nameError, setNameError] = React.useState<string | null>(null)
+
+
     // Manual form state handling to keep it simple without full hook-form complexity for now
     // or use hook-form which is cleaner. Let's use controlled inputs for simplicity with existing code style
     const [formData, setFormData] = React.useState({
@@ -71,7 +83,7 @@ export function EditPatientDialog({ open, onOpenChange, patient }: EditPatientDi
         gender: patient.gender || "F",
         goal: patient.goal || "",
         service_type: patient.service_type || "ONLINE",
-        profile_picture: null as File | null,
+        profile_picture: undefined as File | null | undefined,
     })
     const fileInputRef = React.useRef<HTMLInputElement>(null)
     const [previewUrl, setPreviewUrl] = React.useState<string | null>(patient.avatar || null)
@@ -87,15 +99,23 @@ export function EditPatientDialog({ open, onOpenChange, patient }: EditPatientDi
                 gender: patient.gender || "F",
                 goal: patient.goal || "",
                 service_type: patient.service_type || "ONLINE",
-                profile_picture: null,
+                profile_picture: undefined,
             })
             setPreviewUrl(patient.avatar || null)
         }
     }, [open, patient])
 
     const handleChange = (field: string, value: any) => {
+        if (field === "name") {
+            const error = validateName(value)
+            setNameError(error)
+            if (error) {
+                window.alert(error)
+            }
+        }
         setFormData(prev => ({ ...prev, [field]: value }))
     }
+
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0]
@@ -145,7 +165,7 @@ export function EditPatientDialog({ open, onOpenChange, patient }: EditPatientDi
                         Faça alterações no perfil do paciente aqui. Clique em salvar quando terminar.
                     </DialogDescription>
                 </DialogHeader>
-                <form onSubmit={handleSubmit} className="flex flex-col overflow-hidden">
+                <form onSubmit={handleSubmit} className="flex flex-col overflow-hidden" autoComplete="off">
                     <div className="flex-1 overflow-y-auto px-6 py-4">
                         <div className="grid gap-6">
                             {/* Foto do Paciente */}
@@ -194,14 +214,25 @@ export function EditPatientDialog({ open, onOpenChange, patient }: EditPatientDi
                             <div className="grid gap-4">
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="space-y-2 col-span-2">
-                                        <Label htmlFor="name">Nome Completo</Label>
+                                        <div className="flex justify-between items-center">
+                                            <Label htmlFor="name">Nome Completo</Label>
+                                            {nameError && (
+                                                <span className="text-[10px] text-destructive font-medium">
+                                                    {nameError}
+                                                </span>
+                                            )}
+                                        </div>
                                         <Input
                                             id="name"
                                             value={formData.name}
                                             onChange={(e) => handleChange("name", e.target.value)}
                                             required
+                                            className={cn(
+                                                nameError && "border-destructive focus-visible:ring-destructive"
+                                            )}
                                         />
                                     </div>
+
                                     <div className="space-y-2">
                                         <Label htmlFor="email">Email</Label>
                                         <Input
@@ -255,11 +286,22 @@ export function EditPatientDialog({ open, onOpenChange, patient }: EditPatientDi
                                             <SelectTrigger>
                                                 <SelectValue placeholder="Selecione o objetivo" />
                                             </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="PERDA_GORDURA">Emagrecimento</SelectItem>
-                                                <SelectItem value="GANHO_MASSA">Hipertrofia</SelectItem>
-                                                <SelectItem value="QUALIDADE_VIDA">Qualidade de Vida</SelectItem>
-                                                <SelectItem value="OUTRO">Outro</SelectItem>
+                                            <SelectContent className="max-h-60">
+                                                <SelectItem value="PERDA_PESO">Perda de peso - Redução de peso com foco em saúde e sustentabilidade</SelectItem>
+                                                <SelectItem value="GANHO_MUSCULAR">Ganho de massa muscular - Hipertrofia e desenvolvimento muscular</SelectItem>
+                                                <SelectItem value="MANUTENCAO_PESO">Manutenção do peso - Equilíbrio e manutenção do peso atual</SelectItem>
+                                                <SelectItem value="PERFORMANCE_ESPORTIVA">Performance esportiva - Otimização do desempenho atlético e competitivo</SelectItem>
+                                                <SelectItem value="GESTACAO_LACTACAO">Gestação e lactação - Acompanhamento nutricional materno-infantil</SelectItem>
+                                                <SelectItem value="DOENCAS_CRONICAS">Manejo de doenças crônicas - Diabetes, hipertensão, dislipidemias, doenças cardiovasculares</SelectItem>
+                                                <SelectItem value="REABILITACAO_NUTRICIONAL">Reabilitação nutricional - Recuperação pós-cirúrgica ou pós-doença</SelectItem>
+                                                <SelectItem value="TRANSTORNOS_ALIMENTARES">Transtornos alimentares - Apoio no tratamento de anorexia, bulimia, compulsão alimentar</SelectItem>
+                                                <SelectItem value="ALERGIAS_INTOLERANCIAS">Alergias e intolerâncias alimentares - Manejo de restrições alimentares específicas</SelectItem>
+                                                <SelectItem value="DISTURBIOS_GASTROINTESTINAIS">Distúrbios gastrointestinais - Síndrome do intestino irritável, doença celíaca, refluxo</SelectItem>
+                                                <SelectItem value="CONDICOES_HORMONAIS">Condições hormonais - SOP (Síndrome dos Ovários Policísticos), hipotireoidismo, menopausa</SelectItem>
+                                                <SelectItem value="NUTRICAO_FUNCIONAL">Nutrição funcional e integrativa - Abordagem holística e preventiva</SelectItem>
+                                                <SelectItem value="SUPLEMENTACAO_ORIENTADA">Suplementação orientada - Otimização do uso de suplementos nutricionais</SelectItem>
+                                                <SelectItem value="SAUDE_IDOSO">Saúde do idoso - Nutrição voltada para longevidade e qualidade de vida</SelectItem>
+                                                <SelectItem value="PREVENCAO_DOENCAS">Prevenção de doenças - Promoção de saúde e hábitos preventivos</SelectItem>
                                             </SelectContent>
                                         </Select>
                                     </div>
@@ -271,10 +313,11 @@ export function EditPatientDialog({ open, onOpenChange, patient }: EditPatientDi
                             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                                 Cancelar
                             </Button>
-                            <Button type="submit" disabled={isLoading}>
+                            <Button type="submit" disabled={isLoading || !!nameError}>
                                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                 Salvar Alterações
                             </Button>
+
                         </DialogFooter>
 
                         <div className="border-t pt-4 mt-4">

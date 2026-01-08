@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { MessageSquare, Calendar, Edit, Phone, Mail } from "lucide-react"
+import { MessageSquare, Calendar, Edit, Phone, Mail, Loader2 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import api from "@/services/api"
 import { useAuth } from "@/contexts/auth-context"
@@ -39,6 +39,7 @@ const defaultPatient = {
 
 export function PatientHeader({ patient = defaultPatient, fullData, className }: PatientHeaderProps) {
     const [isEditOpen, setIsEditOpen] = React.useState(false)
+    const [isSendingLink, setIsSendingLink] = React.useState(false);
     const router = useRouter();
     const { user } = useAuth();
 
@@ -110,6 +111,21 @@ export function PatientHeader({ patient = defaultPatient, fullData, className }:
     const handleScheduleAppointment = () => {
         // Redirecionar para a página de calendário em vez de uma rota inexistente
         router.push('/calendar');
+    };
+
+    const handleResendPasswordLink = async () => {
+        if (!fullData?.id) return;
+
+        setIsSendingLink(true);
+        try {
+            const response = await api.post(`/patients/${fullData.id}/resend-password-link/`);
+            alert(response.data.message || 'Link de redefinição de senha enviado com sucesso!');
+        } catch (error: any) {
+            console.error('Erro ao reenviar link de redefinição de senha:', error);
+            alert(error.response?.data?.error || 'Erro ao reenviar link de redefinição de senha.');
+        } finally {
+            setIsSendingLink(false);
+        }
     };
 
     return (
@@ -184,6 +200,25 @@ export function PatientHeader({ patient = defaultPatient, fullData, className }:
                     >
                         <Calendar className="h-4 w-4 text-amber-300" />
                         Agendar
+                    </Button>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-9 gap-2 flex-1 md:flex-none glass-card-hover border-blue-500/20 text-blue-600 hover:bg-blue-500/5 hover:border-blue-500/40"
+                        onClick={handleResendPasswordLink}
+                        disabled={!fullData || isSendingLink}
+                    >
+                        {isSendingLink ? (
+                            <>
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                                Enviando...
+                            </>
+                        ) : (
+                            <>
+                                <Mail className="h-4 w-4" />
+                                Reenviar Link
+                            </>
+                        )}
                     </Button>
                     <Button
                         variant="ghost"

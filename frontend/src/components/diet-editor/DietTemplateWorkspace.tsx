@@ -62,7 +62,7 @@ export function DietTemplateWorkspace() {
             <DietTopBar />
 
             {/* 2. MEAL GRID AREA */}
-            <div className="flex-1 p-8 overflow-y-auto">
+            <div className="flex-1 p-4 md:p-8 overflow-y-auto">
                 <div className="max-w-[1600px] mx-auto min-h-full">
 
                     {/* Empty State - Only shows when no meals */}

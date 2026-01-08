@@ -23,7 +23,7 @@ def reproduce():
         'email': 'portes.angela09@gmail.com', # O e-mail que foi deletado
         'gender': 'F',
         'birth_date': '1980-01-01',
-        'goal': 'PERDA_GORDURA',
+        'goal': 'PERDA_PESO',
         'service_type': 'ONLINE'
     }
     

@@ -20,14 +20,14 @@ import { MealPreset, useDietEditorStore } from '@/stores/diet-editor-store';
 import { PresetFoodItem } from '../presets/PresetFoodItem';
 
 // Tipos de refeio
+// Tipos de refeio
 const MEAL_TYPES = [
     { id: 'cafe_da_manha', label: 'Café da Manhã', icon: Coffee },
-    { id: 'almoco', label: 'Almoço', icon: UtensilsCrossed },
-    { id: 'jantar', label: 'Jantar', icon: UtensilsCrossed },
     { id: 'lanche_manha', label: 'Lanche da Manhã', icon: Cookie },
+    { id: 'almoco', label: 'Almoço', icon: UtensilsCrossed },
     { id: 'lanche_tarde', label: 'Lanche da Tarde', icon: Cookie },
+    { id: 'jantar', label: 'Jantar', icon: UtensilsCrossed },
     { id: 'ceia', label: 'Ceia', icon: Moon },
-    { id: 'suplemento', label: 'Suplemento', icon: Pill },
 ];
 
 // Tipos de dieta - Sincronizado com diet-editor-store.ts
@@ -180,6 +180,8 @@ export function ExpressSelectorModal({ isOpen, onClose, onApplyTemplate, mealTit
                                 onApplyPreset={handlePresetSelect}
                                 targetMealId={mealId ?? undefined}
                                 onPresetApplied={onClose}
+                                initialMealType={mealType}
+                                initialDietType={dietType}
                             />
                         </div>
                     ) : (

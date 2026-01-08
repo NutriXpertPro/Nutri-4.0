@@ -4,6 +4,7 @@ export interface UserType {
   id: string | number; // O ID do usuário pode ser number conforme o contexto de autenticação
   name: string;
   email: string;
+  avatar?: string | null;
 }
 
 export interface Message {

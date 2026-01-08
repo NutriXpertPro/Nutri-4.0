@@ -16,9 +16,10 @@ import { ContentTab } from "@/components/patient-v2/tabs/content-tab"
 import { ExamsTab } from "@/components/patient-v2/tabs/exams-tab"
 import { SettingsTab } from "@/components/patient-v2/tabs/settings-tab"
 import { ProfileTab } from "@/components/patient-v2/tabs/profile-tab"
+import { NotificationsTab } from "@/components/patient-v2/tabs/notifications-tab"
 
 export default function PatientDashboardV2() {
-    const { patient } = usePatient()
+    const { patient, loading } = usePatient()
     const [activeTab, setActiveTab] = useState("home")
 
     return (
@@ -30,7 +31,7 @@ export default function PatientDashboardV2() {
                 <div className="absolute bottom-0 right-0 w-[400px] h-[400px] bg-blue-900/10 rounded-full blur-[100px] mix-blend-screen opacity-30" />
             </div>
 
-            <PatientHeaderV2 />
+            <PatientHeaderV2 onNavigate={setActiveTab} />
 
             <main className="relative z-10 pt-20 px-4 space-y-8 max-w-md mx-auto">
                 <AnimatePresence mode="wait">
@@ -43,11 +44,36 @@ export default function PatientDashboardV2() {
                             transition={{ duration: 0.2 }}
                         >
                             {/* Welcome Section */}
-                            <div className="pt-2 mb-8">
-                                <p className="text-zinc-400 text-sm font-medium">Domingo, 4 Jan</p>
-                                <h1 className="text-3xl font-light tracking-tight mt-1">
-                                    Bom dia, <span className="font-semibold text-emerald-400">{patient?.name?.split(' ')[0] || 'Paciente'}</span>
-                                </h1>
+                            <div className="pt-2 mb-8 flex items-start justify-between">
+                                <div>
+                                    <p className="text-zinc-400 text-sm font-medium">
+                                        {new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'short' })}
+                                    </p>
+                                    <h1 className="text-3xl font-light tracking-tight mt-1">
+                                        Bom dia, <span className="font-semibold text-emerald-400">
+                                            {loading ? (
+                                                <span className="animate-pulse">...</span>
+                                            ) : (
+                                                patient?.name?.split(' ')[0] || 'Paciente'
+                                            )}
+                                        </span>
+                                    </h1>
+                                    {!loading && patient?.nutritionist_name && (
+                                        <div className="flex items-center gap-2 mt-2 group cursor-default">
+                                            <div className="relative">
+                                                <div className="absolute inset-0 bg-emerald-500/20 blur-sm rounded-full group-hover:bg-emerald-500/40 transition-colors" />
+                                                <img
+                                                    src={patient.nutritionist_avatar || "/default-avatar.png"}
+                                                    className="w-6 h-6 rounded-full relative border border-emerald-500/30 object-cover"
+                                                    alt={patient.nutritionist_name}
+                                                />
+                                            </div>
+                                            <p className="text-xs font-medium text-zinc-400">
+                                                {patient.nutritionist_gender === 'M' ? 'Seu Nutri' : 'Sua Nutri'}: <span className="text-zinc-200">{patient.nutritionist_title} {patient.nutritionist_name.split(' ')[0]}</span>
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
 
                             {/* Horizontal Metrics */}
@@ -173,10 +199,22 @@ export default function PatientDashboardV2() {
                             <ProfileTab onBack={() => setActiveTab('menu')} />
                         </motion.div>
                     )}
+
+                    {activeTab === 'notifications' && (
+                        <motion.div
+                            key="notifications"
+                            initial={{ opacity: 0, x: 20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            exit={{ opacity: 0, x: -20 }}
+                            transition={{ duration: 0.2 }}
+                        >
+                            <NotificationsTab onNavigate={setActiveTab} onBack={() => setActiveTab('home')} />
+                        </motion.div>
+                    )}
                 </AnimatePresence>
             </main>
 
-            <PatientBottomNav activeTab={activeTab} onTabChange={setActiveTab} />
+            <PatientBottomNav activeTab={activeTab === 'notifications' ? 'home' : activeTab} onTabChange={setActiveTab} />
         </div>
     )
 }

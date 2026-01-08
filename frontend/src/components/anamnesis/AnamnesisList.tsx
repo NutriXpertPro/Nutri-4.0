@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { useState } from "react"
+import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
@@ -15,50 +15,50 @@ import {
 } from "@/components/ui/table"
 import {
     Search,
-    FileText,
-    Calendar,
     User,
     Target,
-    Clock,
-    CheckCircle2,
-    Plus,
+    Calendar,
     Eye,
     Edit,
     Download,
-    Filter,
     TrendingDown,
     TrendingUp,
     Dumbbell,
     Flame
 } from "lucide-react"
 import { IconWrapper } from "@/components/ui/IconWrapper"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
+import { useQuery } from "@tanstack/react-query"
+import { usePatients } from "@/hooks/usePatients"
+import { anamnesisService } from "@/services/anamnesis-service"
 
 interface AnamnesisItem {
-    id: number
+    id: number // Patient ID for linking
+    anamnesisId?: number
     patientName: string
     patientEmail: string
     objective: string
     status: "completed" | "incomplete" | "pending"
-    lastUpdated: Date
+    lastUpdated: Date | null
     completionPercentage: number
 }
 
 // Helper para obter ícone e cor baseado no objetivo
 const getObjectiveConfig = (objective: string) => {
-    switch (objective) {
-        case "Emagrecimento":
-            return { icon: TrendingDown, variant: "blue" as const }
-        case "Ganho de massa muscular":
-            return { icon: Dumbbell, variant: "amber" as const }
-        case "Ganho de peso":
-            return { icon: TrendingUp, variant: "indigo" as const }
-        case "Trincar o shape":
-            return { icon: Flame, variant: "rose" as const }
-        default:
-            return { icon: Target, variant: "emerald" as const }
+    // Normalizar string para comparação segura
+    const obj = objective?.toLowerCase() || ""
+
+    if (obj.includes("emagrecimento") || obj.includes("perda")) {
+        return { icon: TrendingDown, variant: "blue" as const }
+    } else if (obj.includes("massa") || obj.includes("hipertrofia")) {
+        return { icon: Dumbbell, variant: "amber" as const }
+    } else if (obj.includes("peso")) {
+        return { icon: TrendingUp, variant: "indigo" as const }
+    } else if (obj.includes("definir") || obj.includes("trincar")) {
+        return { icon: Flame, variant: "rose" as const }
+    } else {
+        return { icon: Target, variant: "emerald" as const }
     }
 }
 
@@ -69,58 +69,76 @@ interface AnamnesisListProps {
 }
 
 export function AnamnesisList({ onNewAnamnesis, onEdit, onView }: AnamnesisListProps) {
-    const [anamnesisList, setAnamnesisList] = useState<AnamnesisItem[]>([])
     const [searchQuery, setSearchQuery] = useState("")
     const [filterStatus, setFilterStatus] = useState<string | null>(null)
-    const [isLoading, setIsLoading] = useState(true)
 
-    // Simulando dados - em um cenário real, viria de uma API
-    useEffect(() => {
-        // Simulação de chamada à API
-        const mockData: AnamnesisItem[] = [
-            {
-                id: 1,
-                patientName: "Maria Silva",
-                patientEmail: "maria@example.com",
-                objective: "Emagrecimento",
-                status: "completed",
-                lastUpdated: new Date(2025, 11, 1),
-                completionPercentage: 100
-            },
-            {
-                id: 2,
-                patientName: "João Santos",
-                patientEmail: "joao@example.com",
-                objective: "Ganho de massa muscular",
-                status: "incomplete",
-                lastUpdated: new Date(2025, 11, 5),
-                completionPercentage: 65
-            },
-            {
-                id: 3,
-                patientName: "Ana Costa",
-                patientEmail: "ana@example.com",
-                objective: "Trincar o shape",
-                status: "pending",
-                lastUpdated: new Date(2025, 11, 8),
-                completionPercentage: 15
-            },
-            {
-                id: 4,
-                patientName: "Carlos Oliveira",
-                patientEmail: "carlos@example.com",
-                objective: "Ganho de peso",
-                status: "completed",
-                lastUpdated: new Date(2025, 11, 10),
-                completionPercentage: 100
-            },
-        ]
+    // Buscar Pacientes
+    const { patients, isLoading: isLoadingPatients } = usePatients()
 
-        setTimeout(() => {
-            setAnamnesisList(mockData)
-            setIsLoading(false)
-        }, 500)
-    }, [])
+    // Buscar Anamneses Padrão (todas)
+    const { data: anamneses, isLoading: isLoadingAnamneses } = useQuery({
+        queryKey: ['anamnesis-standard-list'],
+        queryFn: anamnesisService.listStandardAnamneses
+    })
+
+    const isLoading = isLoadingPatients || isLoadingAnamneses
+
+    // Combinar dados
+    const anamnesisList: AnamnesisItem[] = patients?.map(patient => {
+        // Encontrar anamnese deste paciente
+        const anamnesis = anamneses?.find((a: any) => a.patient === patient.id)
+
+        let status: AnamnesisItem['status'] = 'pending'
+        let completionPercentage = 0
+        let lastUpdated: Date | null = null
+
+        if (anamnesis) {
+            completionPercentage = anamnesis.progresso || 0
+
+            if (completionPercentage === 100) status = 'completed'
+            else if (completionPercentage > 0) status = 'incomplete'
+            else status = 'pending'
+
+            lastUpdated = new Date(anamnesis.updated_at)
+        }
+
+        // Mapping objetivos do patient service para display friendlier se não tiver no anamnesis
+        // Patient service: PERDA_GORDURA, GANHO_MASSA, QUALIDADE_VIDA, OUTRO
+        // Anamnesis: Emagrecimento, Ganho de massa muscular, etc.
+        const mapGoal = (goal?: string) => {
+            if (!goal) return "Não definido"
+            if (goal === 'PERDA_GORDURA') return 'Emagrecimento'
+            if (goal === 'GANHO_MASSA') return 'Ganho de Massa'
+            if (goal === 'QUALIDADE_VIDA') return 'Qualidade de Vida'
+            if (goal === 'PERDA_PESO') return 'Perda de peso - Redução de peso com foco em saúde e sustentabilidade'
+            if (goal === 'GANHO_MUSCULAR') return 'Ganho de massa muscular - Hipertrofia e desenvolvimento muscular'
+            if (goal === 'MANUTENCAO_PESO') return 'Manutenção do peso - Equilíbrio e manutenção do peso atual'
+            if (goal === 'PERFORMANCE_ESPORTIVA') return 'Performance esportiva - Otimização do desempenho atlético e competitivo'
+            if (goal === 'GESTACAO_LACTACAO') return 'Gestação e lactação - Acompanhamento nutricional materno-infantil'
+            if (goal === 'DOENCAS_CRONICAS') return 'Manejo de doenças crônicas - Diabetes, hipertensão, dislipidemias, doenças cardiovasculares'
+            if (goal === 'REABILITACAO_NUTRICIONAL') return 'Reabilitação nutricional - Recuperação pós-cirúrgica ou pós-doença'
+            if (goal === 'TRANSTORNOS_ALIMENTARES') return 'Transtornos alimentares - Apoio no tratamento de anorexia, bulimia, compulsão alimentar'
+            if (goal === 'ALERGIAS_INTOLERANCIAS') return 'Alergias e intolerâncias alimentares - Manejo de restrições alimentares específicas'
+            if (goal === 'DISTURBIOS_GASTROINTESTINAIS') return 'Distúrbios gastrointestinais - Síndrome do intestino irritável, doença celíaca, refluxo'
+            if (goal === 'CONDICOES_HORMONAIS') return 'Condições hormonais - SOP (Síndrome dos Ovários Policísticos), hipotireoidismo, menopausa'
+            if (goal === 'NUTRICAO_FUNCIONAL') return 'Nutrição funcional e integrativa - Abordagem holística e preventiva'
+            if (goal === 'SUPLEMENTACAO_ORIENTADA') return 'Suplementação orientada - Otimização do uso de suplementos nutricionais'
+            if (goal === 'SAUDE_IDOSO') return 'Saúde do idoso - Nutrição voltada para longevidade e qualidade de vida'
+            if (goal === 'PREVENCAO_DOENCAS') return 'Prevenção de doenças - Promoção de saúde e hábitos preventivos'
+            return goal
+        }
+
+        return {
+            id: patient.id,
+            anamnesisId: anamnesis?.patient, // ID da anamnese é o mesmo do paciente (OneToOne Primary Key)
+            patientName: patient.name,
+            patientEmail: patient.email,
+            objective: anamnesis?.objetivo || mapGoal(patient.goal),
+            status,
+            lastUpdated,
+            completionPercentage
+        }
+    }) || []
 
     const filteredAnamnesis = anamnesisList.filter(item => {
         const matchesSearch =
@@ -263,7 +281,7 @@ export function AnamnesisList({ onNewAnamnesis, onEdit, onView }: AnamnesisListP
                                             <TableCell>
                                                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                                     <Calendar className="h-4 w-4" />
-                                                    {format(item.lastUpdated, "dd/MM/yyyy", { locale: ptBR })}
+                                                    {item.lastUpdated ? format(item.lastUpdated, "dd/MM/yyyy", { locale: ptBR }) : "-"}
                                                 </div>
                                             </TableCell>
                                             <TableCell>

@@ -311,3 +311,20 @@
     @apply relative after:absolute after:inset-0 after:rounded-full after:bg-current after:opacity-10 after:blur-sm;
   }
 }
+
+@media print {
+  @page {
+    margin: 0;
+    size: auto;
+  }
+
+  body {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    background: white !important;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+}

@@ -7,10 +7,12 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { createPortal } from "react-dom"
 import { useMessages } from "@/hooks/useMessages"
 import { Button } from "@/components/ui/button"
+import { useAuth } from "@/contexts/auth-context"
 
 export function MessagesTab({ onBack }: { onBack?: () => void }) {
     const [mounted, setMounted] = useState(false)
     const [newMessage, setNewMessage] = useState("")
+    const { user } = useAuth()
 
     const {
         conversations,
@@ -97,6 +99,24 @@ export function MessagesTab({ onBack }: { onBack?: () => void }) {
                 <div className="flex-1 overflow-y-auto space-y-1 mt-2 pb-20">
                     {conversations.map(chat => {
                         const isHighlighted = chat.unread > 0
+
+                        // Find the other participant (Nutritionist)
+                        const otherParticipant = chat.participants?.find(p => p.id !== user?.id)
+                        const rawName = otherParticipant?.name || chat.name || 'Nutricionista'
+
+                        // Name abbreviation: First and Last Name
+                        const nameParts = rawName.trim().split(/\s+/)
+                        const firstName = nameParts[0]
+                        const lastName = nameParts.length > 1 ? nameParts[nameParts.length - 1] : ""
+                        const abbreviatedName = lastName ? `${firstName} ${lastName}` : firstName
+
+                        // Title logic
+                        const title = otherParticipant?.professional_title
+                        const formattedName = title ? `${title} ${abbreviatedName}` : abbreviatedName
+
+                        const displayAvatar = otherParticipant?.avatar || chat.avatar
+                        const initial = firstName?.[0] || '?'
+
                         return (
                             <div
                                 key={chat.id}
@@ -108,21 +128,23 @@ export function MessagesTab({ onBack }: { onBack?: () => void }) {
                                         : "bg-card/40 border-border/10 hover:bg-card/60"}
                                 `}
                             >
-                                <div className="relative">
-                                    <Avatar className={`w-12 h-12 border ${isHighlighted ? 'border-primary/50' : 'border-border/10'}`}>
-                                        <AvatarImage src={chat.avatar || undefined} />
-                                        <AvatarFallback className={isHighlighted ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}>{chat.name[0]}</AvatarFallback>
+                                <div className="relative shrink-0">
+                                    <Avatar className={`w-12 h-12 aspect-square border ${isHighlighted ? 'border-primary/50' : 'border-border/10'}`}>
+                                        <AvatarImage src={displayAvatar} className="object-cover" />
+                                        <AvatarFallback className={isHighlighted ? "bg-primary text-primary-foreground font-bold" : "bg-muted text-muted-foreground font-bold"}>{initial}</AvatarFallback>
                                     </Avatar>
                                 </div>
 
                                 <div className="flex-1 min-w-0">
                                     <div className="flex justify-between items-start mb-1">
-                                        <h3 className={`font-semibold truncate text-base ${isHighlighted ? 'text-primary' : 'text-foreground'}`}>{chat.name}</h3>
-                                        <span className={`text-xs whitespace-nowrap ml-2 ${isHighlighted ? 'text-primary font-medium' : 'text-muted-foreground'}`}>{chat.timestamp}</span>
+                                        <h3 className={`font-semibold truncate text-base ${isHighlighted ? 'text-primary' : 'text-foreground'}`}>{formattedName}</h3>
+                                        <span className={`text-xs whitespace-nowrap ml-2 ${isHighlighted ? 'text-primary font-medium' : 'text-muted-foreground'}`}>
+                                            {chat.timestamp ? new Date(chat.timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : ''}
+                                        </span>
                                     </div>
                                     <div className="flex justify-between items-center">
                                         <p className={`text-sm truncate pr-4 ${isHighlighted ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
-                                            {chat.lastMessage}
+                                            {chat.lastMessage || 'Nenhuma mensagem'}
                                         </p>
                                         {chat.unread > 0 && (
                                             <div className="min-w-[1.25rem] h-5 bg-primary rounded-full flex items-center justify-center px-1.5 shadow-sm shadow-primary/20">
@@ -157,15 +179,48 @@ export function MessagesTab({ onBack }: { onBack?: () => void }) {
                                 <ArrowLeft className="w-6 h-6 text-primary" />
                             </button>
 
-                            <Avatar className="w-9 h-9 border border-border/10">
-                                <AvatarImage src={activeChat.avatar || undefined} />
-                                <AvatarFallback>{activeChat.name[0]}</AvatarFallback>
-                            </Avatar>
+                            {(() => {
+                                // Re-calculate correct participant for the active chat header
+                                const activeParticipant = activeChat.participants?.find(p => p.id !== user?.id)
 
-                            <div className="flex-1 min-w-0">
-                                <h3 className="font-semibold text-foreground truncate text-sm">{activeChat.name}</h3>
-                                <p className="text-xs text-muted-foreground truncate">Online</p>
-                            </div>
+                                let activeDisplayName = 'Nutricionista'
+                                let activeAvatar = activeChat.avatar
+
+                                if (activeParticipant) {
+                                    const title = activeParticipant.professional_title
+                                    const pName = activeParticipant.name || 'Nutricionista'
+
+                                    // Abreviar nome também no header para elegância
+                                    const pParts = pName.trim().split(/\s+/)
+                                    const pFirst = pParts[0]
+                                    const pLast = pParts.length > 1 ? pParts[pParts.length - 1] : ""
+                                    const pAbbr = pLast ? `${pFirst} ${pLast}` : pFirst
+
+                                    activeDisplayName = title ? `${title} ${pAbbr}` : pAbbr
+                                    activeAvatar = activeParticipant.avatar || activeChat.avatar
+                                } else if (activeChat.name) {
+                                    activeDisplayName = activeChat.name
+                                }
+
+                                const activeInitial = activeDisplayName.replace(/[^a-zA-Z]/g, '')?.[0] || '?'
+
+                                return (
+                                    <>
+                                        <Avatar className="w-10 h-10 aspect-square border border-border/10 shrink-0">
+                                            <AvatarImage src={activeAvatar} className="object-cover" />
+                                            <AvatarFallback className="font-bold">{activeInitial}</AvatarFallback>
+                                        </Avatar>
+
+                                        <div className="flex-1 min-w-0">
+                                            <h3 className="font-semibold text-foreground truncate text-sm leading-tight">{activeDisplayName}</h3>
+                                            <p className="text-[10px] text-emerald-500 font-medium truncate flex items-center gap-1">
+                                                <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
+                                                Online
+                                            </p>
+                                        </div>
+                                    </>
+                                )
+                            })()}
 
                             <div className="flex gap-4 text-primary">
                                 <Video className="w-5 h-5" />
@@ -181,17 +236,51 @@ export function MessagesTab({ onBack }: { onBack?: () => void }) {
                                 <span className="bg-card/80 text-muted-foreground text-[10px] px-3 py-1 rounded-lg uppercase tracking-wider font-medium shadow-sm border border-border/5">Hoje</span>
                             </div>
 
-                            {messages.map(msg => (
-                                <div key={msg.id} className={`flex ${msg.isOwn ? 'justify-end' : 'justify-start'}`}>
-                                    <div className={`
-                        max-w-[75%] px-3 py-1.5 rounded-lg text-sm relative shadow-md
-                        ${msg.isOwn ? 'bg-primary text-primary-foreground rounded-tr-none' : 'bg-card text-foreground rounded-tl-none'}
-                      `}>
-                                        <p className="mr-12 pb-1 leading-relaxed">{msg.content}</p>
-                                        <span className={`absolute bottom-1 right-2 text-[10px] opacity-70`}>{msg.timestamp}</span>
+                            {messages.map(msg => {
+                                const isOwn = (msg.sender === user?.id || (msg.sender as any)?.id === user?.id)
+
+                                // Helper function to render text with clickable links
+                                const renderMessageContent = (content: string) => {
+                                    const urlRegex = /(https?:\/\/[^\s]+)/g
+                                    const parts = content.split(urlRegex)
+
+                                    return parts.map((part, i) => {
+                                        if (part.match(urlRegex)) {
+                                            return (
+                                                <a
+                                                    key={i}
+                                                    href={part}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className={`underline break-all font-semibold ${isOwn ? 'text-white' : 'text-emerald-700 hover:text-emerald-800'}`}
+                                                    onClick={(e) => e.stopPropagation()}
+                                                >
+                                                    {part}
+                                                </a>
+                                            )
+                                        }
+                                        return part
+                                    })
+                                }
+
+                                return (
+                                    <div key={msg.id} className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}>
+                                        <div className={`
+                                            max-w-[75%] px-3 py-1.5 rounded-lg text-sm relative shadow-sm border
+                                            ${isOwn
+                                                ? 'bg-emerald-600 text-white border-emerald-500 rounded-tr-none'
+                                                : 'bg-zinc-100 text-zinc-950 border-zinc-200 rounded-tl-none'}
+                                        `}>
+                                            <div className="mr-12 pb-1 leading-relaxed whitespace-pre-wrap font-medium">
+                                                {renderMessageContent(msg.content)}
+                                            </div>
+                                            <span className={`absolute bottom-1 right-2 text-[10px] ${isOwn ? 'text-white/80' : 'text-zinc-500'}`}>
+                                                {new Date(msg.timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                                            </span>
+                                        </div>
                                     </div>
-                                </div>
-                            ))}
+                                )
+                            })}
                         </div>
 
                         {/* Chat Footer */}

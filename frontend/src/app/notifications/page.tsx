@@ -32,6 +32,7 @@ interface Notification {
   related_id?: string; // ID do objeto relacionado (mensagem, consulta, etc)
   patient_pid?: string; // ID do perfil do paciente relacionado
   user_name?: string; // Nome do usuário relacionado (paciente, remetente, etc)
+  patient_avatar?: string; // Foto do paciente do backend
 }
 
 const NotificationsPage: React.FC = () => {
@@ -126,9 +127,10 @@ const NotificationsPage: React.FC = () => {
             message: message,
             timestamp: item.sent_at || item.created_at,
             is_read: item.is_read || false,
-            user_name: extracted_user_name || undefined,
+            user_name: extracted_user_name || item.patient_name || undefined,
             related_id: extracted_id || undefined,
-            patient_pid: extracted_pid || undefined
+            patient_pid: extracted_pid || item.patient_id?.toString() || undefined,
+            patient_avatar: item.patient_avatar || undefined
           };
         });
 
@@ -154,9 +156,7 @@ const NotificationsPage: React.FC = () => {
       // Primeiro tenta o endpoint específico
       await api.patch(`notifications/${id}/mark_as_read/`);
       setNotifications(prev =>
-        prev.map(notif =>
-          notif.id === id ? { ...notif, is_read: true } : notif
-        )
+        prev.filter(notif => notif.id !== id)
       );
     } catch (firstError) {
       console.error('Primeira tentativa falhou:', firstError);
@@ -164,17 +164,13 @@ const NotificationsPage: React.FC = () => {
         // Se o endpoint específico falhar, tenta atualizar diretamente
         await api.patch(`notifications/${id}/`, { is_read: true });
         setNotifications(prev =>
-          prev.map(notif =>
-            notif.id === id ? { ...notif, is_read: true } : notif
-          )
+          prev.filter(notif => notif.id !== id)
         );
       } catch (secondError) {
         console.error('Segunda tentativa falhou:', secondError);
         // Se ambas as tentativas falharem, atualiza apenas localmente
         setNotifications(prev =>
-          prev.map(notif =>
-            notif.id === id ? { ...notif, is_read: true } : notif
-          )
+          prev.filter(notif => notif.id !== id)
         );
       }
     }
@@ -184,15 +180,11 @@ const NotificationsPage: React.FC = () => {
   const markAllAsRead = async () => {
     try {
       await api.patch('notifications/mark_all_as_read/');
-      setNotifications(prev =>
-        prev.map(notif => ({ ...notif, is_read: true }))
-      );
+      setNotifications([]);
     } catch (error) {
       console.error('Erro ao marcar todas como lidas:', error);
       // Atualiza apenas localmente se a API falhar
-      setNotifications(prev =>
-        prev.map(notif => ({ ...notif, is_read: true }))
-      );
+      setNotifications([]);
     }
   };
 
@@ -288,7 +280,7 @@ const NotificationsPage: React.FC = () => {
 
     const targetUrl = await (async (): Promise<string> => {
       const type = getDetectedType(notification);
-      let id = notification.related_id;
+      const id = notification.related_id;
       let pid = notification.patient_pid;
       const content = `${notification.title} ${notification.message}`.toLowerCase();
 
@@ -449,6 +441,7 @@ const NotificationsPage: React.FC = () => {
                   <div className="flex items-start gap-4 mb-6">
                     <div className="relative">
                       <Avatar className="h-16 w-16 border-2 border-background shadow-md">
+                        <AvatarImage src={notification.patient_avatar} alt={notification.user_name} />
                         <AvatarFallback className="text-lg bg-primary/10 text-primary">
                           {notification.type === 'message' ? <MessageSquare className="h-6 w-6" /> :
                             notification.type === 'appointment' ? <Calendar className="h-6 w-6" /> :

@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { ArrowLeft, Loader2, Mail } from "lucide-react"
-import api from "@/services/api"
+import api, { getBaseURL } from "@/services/api"
+import axios from 'axios'
 
 export default function ForgotPasswordPage() {
     const router = useRouter()
@@ -22,8 +23,17 @@ export default function ForgotPasswordPage() {
         setIsLoading(true)
 
         try {
+            // Criar uma nova instância do axios sem os interceptadores de autenticação
+            const axiosWithoutAuth = axios.create({
+                baseURL: getBaseURL(),
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                timeout: 10000,
+            });
+
             // Backend API call for password reset
-            await api.post('/users/auth/password-reset/', { email })
+            await axiosWithoutAuth.post('/auth/password-reset/', { email })
 
             setIsSubmitted(true)
         } catch (err) {

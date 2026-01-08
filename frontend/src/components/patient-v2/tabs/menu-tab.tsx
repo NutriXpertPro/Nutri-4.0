@@ -6,12 +6,15 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Button } from "@/components/ui/button"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 
+import { useAuth } from "@/contexts/auth-context"
+
 interface MenuTabProps {
     onNavigate: (tab: string) => void
     onBack?: () => void
 }
 
 export function MenuTab({ onNavigate, onBack }: MenuTabProps) {
+    const { logout } = useAuth()
     const [isHelpOpen, setIsHelpOpen] = useState(false)
 
     const menuItems = [
@@ -35,8 +38,7 @@ export function MenuTab({ onNavigate, onBack }: MenuTabProps) {
 
     const handleLogout = () => {
         if (confirm("Tem certeza que deseja sair?")) {
-            // In a real app, clear tokens here
-            window.location.href = "/" // Redirect to login
+            logout()
         }
     }
 

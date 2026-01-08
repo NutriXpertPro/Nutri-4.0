@@ -31,6 +31,14 @@ class PatientListView(generics.ListCreateAPIView):
         serializer.save(nutritionist=self.request.user)
 
 
+class PatientMeView(generics.RetrieveAPIView):
+    serializer_class = PatientProfileSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self):
+        return get_object_or_404(PatientProfile, user=self.request.user)
+
+
 class PatientDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = PatientProfileSerializer
     permission_classes = [IsAuthenticated]
@@ -157,3 +165,45 @@ def patient_search_view(request):
     ]
     
     return Response(results)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def resend_password_reset_link(request, pk):
+    """
+    Reenvia o link de redefinição de senha para um paciente específico.
+    """
+    patient = get_object_or_404(PatientProfile, pk=pk, nutritionist=request.user)
+
+    try:
+        # Gerar novo token e UID
+        token = default_token_generator.make_token(patient.user)
+        uid = urlsafe_base64_encode(force_bytes(patient.user.pk))
+
+        # Obter URL do frontend
+        frontend_url = getattr(settings, 'FRONTEND_URL', 'http://localhost:3000')
+        reset_link = f"{frontend_url}/auth/reset-password?uid={uid}&token={token}"
+
+        # Enviar e-mail com o novo link
+        subject = 'Redefinição de Senha - NutriXpertPro'
+        message = f'Para redefinir sua senha, clique no link: {reset_link}'
+        from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@nutrixpertpro.com')
+
+        send_mail(
+            subject=subject,
+            message=message,
+            from_email=from_email,
+            recipient_list=[patient.user.email],
+            fail_silently=False,
+        )
+
+        return Response({
+            "message": "Link de redefinição de senha enviado com sucesso.",
+            "link_sent": True
+        }, status=status.HTTP_200_OK)
+
+    except Exception as e:
+        return Response({
+            "error": "Erro ao enviar o e-mail de redefinição de senha.",
+            "details": str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

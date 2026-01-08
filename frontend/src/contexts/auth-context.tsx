@@ -102,8 +102,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
 
     const login = async (tokens: { access: string; refresh: string }, redirect = true) => {
-        Cookies.set("accessToken", tokens.access, { expires: 1 }) // 1 day
-        Cookies.set("refreshToken", tokens.refresh, { expires: 7 }) // 7 days
+        Cookies.set("accessToken", tokens.access, { expires: 1, path: '/' }) // 1 day
+        Cookies.set("refreshToken", tokens.refresh, { expires: 7, path: '/' }) // 7 days
 
         // Sync with localStorage for api.ts interceptor
         localStorage.setItem('access_token', tokens.access)
@@ -118,8 +118,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     const logout = () => {
-        Cookies.remove("accessToken")
-        Cookies.remove("refreshToken")
+        Cookies.remove("accessToken", { path: '/' })
+        Cookies.remove("refreshToken", { path: '/' })
 
         // Clear localStorage
         localStorage.removeItem('access_token')

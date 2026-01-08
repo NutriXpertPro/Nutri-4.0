@@ -26,14 +26,14 @@ import { MealPresetsManager } from './MealPresetsManager';
 import { PresetFoodItem } from './PresetFoodItem';
 
 // Tipos de refeio
+// Tipos de refeio
 const MEAL_TYPES = [
   { id: 'cafe_da_manha', label: 'Café da Manhã', icon: Coffee },
-  { id: 'almoco', label: 'Almoço', icon: UtensilsCrossed },
-  { id: 'jantar', label: 'Jantar', icon: UtensilsCrossed },
   { id: 'lanche_manha', label: 'Lanche da Manhã', icon: Cookie },
+  { id: 'almoco', label: 'Almoço', icon: UtensilsCrossed },
   { id: 'lanche_tarde', label: 'Lanche da Tarde', icon: Cookie },
+  { id: 'jantar', label: 'Jantar', icon: UtensilsCrossed },
   { id: 'ceia', label: 'Ceia', icon: Moon },
-  { id: 'suplemento', label: 'Suplemento', icon: Pill },
 ];
 
 // Tipos de dieta - Sincronizado com diet-editor-store.ts
@@ -188,11 +188,10 @@ export function MealPresetSelector({ mealType, dietType, onPresetSelect, current
                     {MEAL_TYPES.map(meal => (
                       <button
                         key={meal.id}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                          selectedMealType === meal.id
-                            ? 'bg-primary text-primary-foreground'
-                            : 'bg-muted hover:bg-muted/80 text-foreground'
-                        }`}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${selectedMealType === meal.id
+                          ? 'bg-primary text-primary-foreground'
+                          : 'bg-muted hover:bg-muted/80 text-foreground'
+                          }`}
                         onClick={() => setSelectedMealType(meal.id === selectedMealType ? '' : meal.id)}
                       >
                         {meal.label}
@@ -207,11 +206,10 @@ export function MealPresetSelector({ mealType, dietType, onPresetSelect, current
                     {DIET_TYPES.map(diet => (
                       <button
                         key={diet.id}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                          selectedDietType === diet.id
-                            ? 'bg-primary text-primary-foreground'
-                            : 'bg-muted hover:bg-muted/80 text-foreground'
-                        }`}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${selectedDietType === diet.id
+                          ? 'bg-primary text-primary-foreground'
+                          : 'bg-muted hover:bg-muted/80 text-foreground'
+                          }`}
                         onClick={() => setSelectedDietType(diet.id === selectedDietType ? '' : diet.id)}
                       >
                         {diet.label}

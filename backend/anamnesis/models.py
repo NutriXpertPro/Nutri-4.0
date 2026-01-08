@@ -39,7 +39,8 @@ class Anamnesis(models.Model):
     # ========== 2. ROTINA ==========
     hora_acorda = models.TimeField(null=True, blank=True)
     hora_dorme = models.TimeField(null=True, blank=True)
-    dificuldade_dormir = models.TextField(blank=True)
+    dificuldade_dormir = models.BooleanField(default=False)
+    acorda_noite = models.BooleanField(default=False)
     horario_treino = models.CharField(max_length=100, blank=True)
     tempo_disponivel_treino = models.CharField(max_length=100, blank=True)
     dias_treino_semana = models.IntegerField(
@@ -68,7 +69,17 @@ class Anamnesis(models.Model):
         choices=[('Preso', 'Preso'), ('Regular', 'Regular')],
         blank=True
     )
-    dias_sem_banheiro = models.IntegerField(null=True, blank=True)
+    dias_sem_banheiro = models.CharField(
+        max_length=50,
+        choices=[
+            ('a cada 2 dias', 'a cada 2 dias'),
+            ('a cada 3 dias', 'a cada 3 dias'),
+            ('a cada 4 dias', 'a cada 4 dias'),
+            ('a mais de 5 dias', 'a mais de 5 dias')
+        ],
+        null=True,
+        blank=True
+    )
     vezes_banheiro_dia = models.IntegerField(null=True, blank=True)
     litros_agua_dia = models.DecimalField(
         max_digits=3,
@@ -99,6 +110,7 @@ class Anamnesis(models.Model):
     problema_articular = models.TextField(blank=True)
     uso_medicamentos = models.BooleanField(default=False)
     medicamentos_detalhes = models.TextField(blank=True)  # Condicional: mostra se uso_medicamentos=True
+    alergia_medicamento = models.TextField(blank=True, help_text="Intolerância ou alérgico a algum medicamento")
     uso_cigarros = models.BooleanField(default=False)
     intolerancia = models.BooleanField(default=False)
     intolerancia_detalhes = models.TextField(blank=True)  # Condicional: mostra se intolerancia=True
@@ -137,7 +149,7 @@ class Anamnesis(models.Model):
     )
     compromisso_relatorios = models.BooleanField(
         default=False,
-        help_text="Se compromete a enviar fotos e relatórios semanalmente?"
+        help_text="Você se compromete a enviar fotos e relatórios conforme orientado pelo nutri?"
     )
     
     # ========== 6. MEDIDAS (cm) ==========
@@ -198,8 +210,6 @@ class Anamnesis(models.Model):
             self.nome = sanitize_string(self.nome)
         if self.profissao:
             self.profissao = sanitize_string(self.profissao)
-        if self.dificuldade_dormir:
-            self.dificuldade_dormir = sanitize_string(self.dificuldade_dormir)
         if self.horario_treino:
             self.horario_treino = sanitize_string(self.horario_treino)
         if self.tempo_disponivel_treino:
@@ -220,6 +230,8 @@ class Anamnesis(models.Model):
             self.problema_articular = sanitize_string(self.problema_articular)
         if self.medicamentos_detalhes:
             self.medicamentos_detalhes = sanitize_string(self.medicamentos_detalhes)
+        if self.alergia_medicamento:
+            self.alergia_medicamento = sanitize_string(self.alergia_medicamento)
         if self.intolerancia_detalhes:
             self.intolerancia_detalhes = sanitize_string(self.intolerancia_detalhes)
         if self.termogenico_usado:

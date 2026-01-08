@@ -15,6 +15,7 @@ import { Switch } from "@/components/ui/switch"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { anamnesisService, AnamnesisTemplate } from "@/services/anamnesis-service"
+import { usePatients } from "@/hooks/usePatients"
 import {
     Plus,
     Search,
@@ -162,6 +163,12 @@ export default function AnamnesisPage() {
         queryFn: anamnesisService.listTemplates
     })
 
+    const { patients } = usePatients()
+    const { data: standardAnamneses } = useQuery({
+        queryKey: ['anamnesis-standard-list'],
+        queryFn: anamnesisService.listStandardAnamneses
+    })
+
     // Create Template Mutation
     const createTemplateMutation = useMutation({
         mutationFn: anamnesisService.createTemplate,
@@ -264,6 +271,12 @@ export default function AnamnesisPage() {
         )
     }
 
+    // Calculate Stats
+    const totalPatients = patients?.length || 0
+    const completedAnamneses = standardAnamneses?.filter((a: any) => (a.progresso || 0) === 100).length || 0
+    const pendingAnamneses = totalPatients - completedAnamneses
+
+
     return (
         <DashboardLayout>
             {/* Background Decorativo */}
@@ -305,9 +318,9 @@ export default function AnamnesisPage() {
                 {/* Stats Cards Premium */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                     <StatCard
-                        title="Anamneses"
-                        value={24}
-                        icon={List}
+                        title="Total Pacientes"
+                        value={totalPatients}
+                        icon={Users}
                         variant="theme"
                     />
                     <StatCard
@@ -318,13 +331,13 @@ export default function AnamnesisPage() {
                     />
                     <StatCard
                         title="Pendentes"
-                        value={8}
+                        value={pendingAnamneses}
                         icon={Clock}
                         variant="rose"
                     />
                     <StatCard
                         title="Completas"
-                        value={16}
+                        value={completedAnamneses}
                         icon={CheckCircle2}
                         variant="green"
                     />
