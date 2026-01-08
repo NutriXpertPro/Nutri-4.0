@@ -37,7 +37,7 @@ SECRET_KEY = config('SECRET_KEY', default='dev-secret-key-CHANGE-IN-PRODUCTION-!
 GOOGLE_OAUTH2_CLIENT_ID = config('GOOGLE_OAUTH2_CLIENT_ID', default='')
 GOOGLE_OAUTH2_CLIENT_SECRET = config('GOOGLE_OAUTH2_CLIENT_SECRET', default='')
 BACKEND_URL = config('BACKEND_URL', default='http://localhost:8000')
-FRONTEND_URL = config('FRONTEND_URL', default='http://localhost:3000')
+FRONTEND_URL = config('FRONTEND_URL', default='https://nutri-frontend-1wzv.onrender.com')
 DEBUG = config('DEBUG', default=False, cast=bool)
 print(f"DEBUG mode is: {DEBUG}")
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='*', cast=Csv())
