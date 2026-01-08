@@ -1,8 +1,7 @@
 "use client"
 
-import * as React from "react"
+import { Suspense } from "react"
 import { useSearchParams } from "next/navigation"
-import { DashboardLayout } from "@/components/layout"
 import { WizardAnamnesisForm } from "@/components/anamnesis/WizardAnamnesisForm"
 import { StandardAnamnesisForm } from "@/components/anamnesis/StandardAnamnesisForm"
 import { useQuery, useMutation } from "@tanstack/react-query"
@@ -11,13 +10,18 @@ import { Loader2 } from "lucide-react"
 
 function AnamnesisAnswerContent() {
     const searchParams = useSearchParams()
-    const patientId = searchParams.get("patient") ? parseInt(searchParams.get("patient")!) : null
-    const templateId = searchParams.get("template") ? parseInt(searchParams.get("template")!) : null
-    const type = searchParams.get("type") as "standard" | "custom" || "custom"
+
+    const patientParam = searchParams.get("patient")
+    const templateParam = searchParams.get("template")
+    const typeParam = searchParams.get("type")
+
+    const patientId = patientParam ? parseInt(patientParam, 10) : null
+    const templateId = templateParam ? parseInt(templateParam, 10) : null
+    const type = (typeParam as "standard" | "custom") || "custom"
 
     const { data: standardData, isLoading: isLoadingStandard } = useQuery({
         queryKey: ['anamnesis-standard', patientId],
-        queryFn: () => patientId ? anamnesisService.getStandardAnamnesis(patientId) : null,
+        queryFn: () => (patientId ? anamnesisService.getStandardAnamnesis(patientId) : null),
         enabled: !!patientId && type === "standard"
     })
 
@@ -34,7 +38,7 @@ function AnamnesisAnswerContent() {
         }
     })
 
-    if (!patientId) {
+    if (!patientId && typeof window !== 'undefined') {
         return (
             <div className="flex items-center justify-center min-h-screen">
                 <p className="text-destructive">Link inválido: ID do paciente não encontrado.</p>
@@ -50,7 +54,6 @@ function AnamnesisAnswerContent() {
         )
     }
 
-    // TODO: Implement Custom Template fetching and filling logic here
     if (templateId) {
         return (
             <div className="flex items-center justify-center min-h-screen p-4">
@@ -71,16 +74,18 @@ function AnamnesisAnswerContent() {
 
                 {type === "standard" ? (
                     <StandardAnamnesisForm
-                        patientId={patientId}
-                        onBack={() => { }} // No back action needed for standalone page
+                        patientId={patientId || 0}
+                        onBack={() => { }}
                         onSave={async (data) => {
                             await saveStandardMutation.mutateAsync(data)
                         }}
                         initialData={standardData}
-                        isStandalone={true} // Add this prop to StandardAnamnesisForm to hide "Voltar" button if needed
+                        isStandalone={true}
                     />
                 ) : (
-                    <div className="text-center">Tipo de anamnese desconhecido.</div>
+                    <div className="text-center p-8 text-muted-foreground">
+                        Tipo de anamnese não suportado ou ID do paciente ausente.
+                    </div>
                 )}
             </div>
         </div>
@@ -89,12 +94,12 @@ function AnamnesisAnswerContent() {
 
 export default function AnamnesisAnswerPage() {
     return (
-        <React.Suspense fallback={
+        <Suspense fallback={
             <div className="flex items-center justify-center min-h-screen">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>
         }>
             <AnamnesisAnswerContent />
-        </React.Suspense>
+        </Suspense>
     )
 }
