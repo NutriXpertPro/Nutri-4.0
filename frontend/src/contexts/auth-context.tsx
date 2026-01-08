@@ -38,7 +38,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [isAuthenticated, setIsAuthenticated] = useState(false)
     const [isLoading, setIsLoading] = useState(true)
     const router = useRouter()
-    const fetchUserProfile = async (token: string): Promise<boolean> => {
+    const fetchUserProfile = async (token: string): Promise<User | boolean> => {
         try {
             // Use dynamic base URL
             const response = await fetch(`${getBaseURL()}users/me/`, {
@@ -49,7 +49,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             if (response.ok) {
                 const userData = await response.json()
                 setUser(userData)
-                return true
+                return userData
             }
             // Somente retorna false para 401/403 (token inválido)
             if (response.status === 401 || response.status === 403) {
@@ -110,10 +110,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         localStorage.setItem('refresh_token', tokens.refresh)
 
         setIsAuthenticated(true)
-        await fetchUserProfile(tokens.access)
+        const userData = await fetchUserProfile(tokens.access)
 
         if (redirect) {
-            router.push("/dashboard")
+            // Se for paciente, redireciona para o dashboard v2
+            if (userData && (userData as any).user_type === 'paciente') {
+                router.push("/patient-dashboard-v2")
+            } else {
+                router.push("/dashboard")
+            }
         }
     }
 

@@ -52,9 +52,9 @@ export const PatientProvider = ({ children }: { children: React.ReactNode }) => 
 
     if (!isAuthenticated || authLoading) return;
 
-    // Só buscar perfil de paciente se o usuário for do tipo PACIENTE
+    // Só buscar perfil de paciente se o usuário for do tipo paciente
     // Nutricionistas não têm perfil de paciente
-    if (user?.user_type !== 'PACIENTE') {
+    if (user?.user_type !== 'paciente') {
       setLoading(false);
       return;
     }
