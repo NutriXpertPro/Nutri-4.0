@@ -314,11 +314,11 @@ EMAIL_USE_SSL = config('EMAIL_USE_SSL', default=False, cast=bool)
 DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='Nutri Xpert <noreply@nutrixpertpro.com>')
 
 # Configurações do Celery
-# Em ambiente de desenvolvimento local (Windows) sem Redis, usamos ALWAYS_EAGER
-# Isso faz com que as tasks rodem sincronicamente na mesma thread/processo
-if DEBUG:
-    CELERY_TASK_ALWAYS_EAGER = True
-    CELERY_TASK_EAGER_PROPAGATES = True
+# IMPORTANTE: Sem um worker Celery rodando, as tasks assíncronas não serão executadas.
+# Habilitar ALWAYS_EAGER garante que as tasks rodem sincronicamente (sem Redis/worker)
+# TODO: Quando configurar um worker Celery no Render, remover esta configuração
+CELERY_TASK_ALWAYS_EAGER = True
+CELERY_TASK_EAGER_PROPAGATES = True
 
 CELERY_BROKER_URL = config('CELERY_BROKER_URL', default='redis://localhost:6379/0')
 CELERY_RESULT_BACKEND = config('CELERY_RESULT_BACKEND', default='redis://localhost:6379/0')
