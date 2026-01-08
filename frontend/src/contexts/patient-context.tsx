@@ -40,9 +40,9 @@ export const PatientProvider = ({ children }: { children: React.ReactNode }) => 
   const [patient, setPatient] = useState<Patient | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const { isAuthenticated, isLoading: authLoading } = useAuth();
+  const { isAuthenticated, isLoading: authLoading, user } = useAuth();
 
-  // Simular carregamento do paciente
+  // Buscar perfil do paciente apenas se o usuário for do tipo paciente
   useEffect(() => {
     // Only fetch patient profile if authenticated and auth loading is done
     if (!isAuthenticated && !authLoading) {
@@ -50,14 +50,21 @@ export const PatientProvider = ({ children }: { children: React.ReactNode }) => 
       return;
     }
 
-    if (!isAuthenticated) return;
+    if (!isAuthenticated || authLoading) return;
+
+    // Só buscar perfil de paciente se o usuário for do tipo PACIENTE
+    // Nutricionistas não têm perfil de paciente
+    if (user?.user_type !== 'PACIENTE') {
+      setLoading(false);
+      return;
+    }
 
     const loadPatient = async () => {
       try {
         const data = await patientService.getMe();
         setPatient(data);
       } catch (error: any) {
-        // If 404, it just means the user doesn't have a patient profile yet (e.g. nutritionist viewing as patient)
+        // If 404, it just means the user doesn't have a patient profile yet
         if (error?.response?.status !== 404) {
           console.error('Failed to load patient profile:', error);
         }
@@ -67,7 +74,7 @@ export const PatientProvider = ({ children }: { children: React.ReactNode }) => 
     };
 
     loadPatient();
-  }, [isAuthenticated, authLoading]);
+  }, [isAuthenticated, authLoading, user]);
 
   return (
     <PatientContext.Provider value={{ patient, setPatient, loading, setLoading }}>
