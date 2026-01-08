@@ -102,8 +102,14 @@ MIDDLEWARE = [
 # CORS Configuration
 origins_env = config('CORS_ALLOWED_ORIGINS', default="", cast=Csv())
 
-# Inicializa as origens permitidas
-origins = ["http://localhost:3000", "http://127.0.0.1:3000", "http://localhost:8000"]
+# Inicializa as origens permitidas com localhost e URLs do Render (hardcoded para garantir funcionamento)
+origins = [
+    "http://localhost:3000", 
+    "http://127.0.0.1:3000", 
+    "http://localhost:8000",
+    "https://nutri-frontend-1wzv.onrender.com",  # Frontend do Render
+    "https://nutri-4-0-9t8a.onrender.com",       # Backend do Render (para self-requests)
+]
 
 # Adiciona origens da variável de ambiente, removendo barras finais
 for o in origins_env:
@@ -120,8 +126,11 @@ if FRONTEND_URL:
 CORS_ALLOWED_ORIGINS = list(set([o for o in origins if o]))
 CSRF_TRUSTED_ORIGINS = CORS_ALLOWED_ORIGINS
 CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_ALL_ORIGINS = False  # Segurança: não permitir todas as origens
 
-print(f"DEBUG: CORS_ALLOWED_ORIGINS configurado como: {CORS_ALLOWED_ORIGINS}")
+print(f"DEBUG: CORS_ALLOWED_ORIGINS = {CORS_ALLOWED_ORIGINS}")
+print(f"DEBUG: FRONTEND_URL = {FRONTEND_URL}")
+
 CORS_ALLOW_HEADERS = [
     'accept',
     'accept-encoding',
@@ -134,10 +143,14 @@ CORS_ALLOW_HEADERS = [
     'x-requested-with',
 ]
 
-if DEBUG:
-    CORS_ALLOW_ALL_ORIGINS = True
-else:
-    CORS_ALLOW_ALL_ORIGINS = False
+CORS_ALLOW_METHODS = [
+    'DELETE',
+    'GET',
+    'OPTIONS',
+    'PATCH',
+    'POST',
+    'PUT',
+]
 
 ROOT_URLCONF = 'setup.urls'
 
