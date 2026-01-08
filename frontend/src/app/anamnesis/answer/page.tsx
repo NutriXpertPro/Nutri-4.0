@@ -9,7 +9,7 @@ import { useQuery, useMutation } from "@tanstack/react-query"
 import { anamnesisService } from "@/services/anamnesis-service"
 import { Loader2 } from "lucide-react"
 
-export default function AnamnesisAnswerPage() {
+function AnamnesisAnswerContent() {
     const searchParams = useSearchParams()
     const patientId = searchParams.get("patient") ? parseInt(searchParams.get("patient")!) : null
     const templateId = searchParams.get("template") ? parseInt(searchParams.get("template")!) : null
@@ -84,5 +84,17 @@ export default function AnamnesisAnswerPage() {
                 )}
             </div>
         </div>
+    )
+}
+
+export default function AnamnesisAnswerPage() {
+    return (
+        <React.Suspense fallback={
+            <div className="flex items-center justify-center min-h-screen">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+        }>
+            <AnamnesisAnswerContent />
+        </React.Suspense>
     )
 }
