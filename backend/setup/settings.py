@@ -45,8 +45,9 @@ ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='*', cast=Csv())
 # Validade do token de reset de senha: 24 horas (em segundos)
 PASSWORD_RESET_TIMEOUT = 86400
 
-# Permissive CORS for development
-CORS_ALLOW_ALL_ORIGINS = False
+# CORS Configuration - TEMPORARIAMENTE PERMISSIVO PARA DEBUG
+# Isso permite TODAS as origens. Deve ser removido após identificar o problema.
+CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
 
 INSTALLED_APPS = [
@@ -125,9 +126,9 @@ if FRONTEND_URL:
 # Remove duplicatas e valores vazios
 CORS_ALLOWED_ORIGINS = list(set([o for o in origins if o]))
 CSRF_TRUSTED_ORIGINS = CORS_ALLOWED_ORIGINS
-CORS_ALLOW_CREDENTIALS = True
-CORS_ALLOW_ALL_ORIGINS = False  # Segurança: não permitir todas as origens
+# CORS_ALLOW_ALL_ORIGINS já está definido como True no topo do arquivo para debug
 
+print(f"DEBUG: CORS_ALLOW_ALL_ORIGINS = {CORS_ALLOW_ALL_ORIGINS}")
 print(f"DEBUG: CORS_ALLOWED_ORIGINS = {CORS_ALLOWED_ORIGINS}")
 print(f"DEBUG: FRONTEND_URL = {FRONTEND_URL}")
 
