@@ -520,6 +520,32 @@ const WhatsAppChatArea: React.FC<WhatsAppChatAreaProps> = ({ conversationId, cur
     scrollToBottom();
   }, [messages]);
 
+  const handleClearMessages = async (convId: string) => {
+    if (!confirm('Tem certeza que deseja limpar todo o histórico desta conversa?')) return;
+
+    try {
+      await api.post(`/messages/conversations/${convId}/clear-messages/`);
+      setMessages([]);
+      alert('Histórico limpo com sucesso!');
+    } catch (error) {
+      console.error('Error clearing messages:', error);
+      alert('Erro ao limpar histórico.');
+    }
+  };
+
+  const handleDeleteConversation = async (convId: string) => {
+    if (!confirm('Tem certeza que deseja excluir esta conversa? Todas as mensagens serão perdidas.')) return;
+
+    try {
+      await api.delete(`/messages/conversations/${convId}/`);
+      alert('Conversa excluída com sucesso!');
+      window.location.reload();
+    } catch (error) {
+      console.error('Error deleting conversation:', error);
+      alert('Erro ao excluir conversa.');
+    }
+  };
+
   const handleSendMessage = async () => {
     if (message.trim() === '') return;
 
@@ -609,14 +635,14 @@ const WhatsAppChatArea: React.FC<WhatsAppChatAreaProps> = ({ conversationId, cur
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => handleClearMessages(conversation.id)}>
+              <DropdownMenuItem onClick={() => handleClearMessages(conversationId)}>
                 <Eraser className="mr-2 h-4 w-4" />
                 Limpar histórico
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 className="text-destructive focus:text-destructive"
-                onClick={() => handleDeleteConversation(conversation.id)}
+                onClick={() => handleDeleteConversation(conversationId)}
               >
                 <Trash2 className="mr-2 h-4 w-4" />
                 Excluir conversa
