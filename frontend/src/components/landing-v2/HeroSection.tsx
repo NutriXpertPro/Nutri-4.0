@@ -30,10 +30,10 @@ export default function HeroSection() {
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#0a0a0a] border border-emerald-500/30 text-emerald-400 text-sm font-semibold mb-6 shadow-[0_0_20px_-5px_rgba(16,185,129,0.3)] whitespace-nowrap flex-shrink-0"
+          className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-emerald-400 text-xs font-bold tracking-widest uppercase mb-6"
         >
-          <Hexagon className="w-3 h-3 fill-current animate-pulse" />
-          VERSÃO <span className="text-emerald-500" style={{ textShadow: '1px 1px 2px rgba(255,255,255,0.1)' }}><span style={{ fontSize: '20px', textShadow: '1px 1px 2px rgba(255,255,255,0.2)' }}>X</span>pert</span> 4.0 DISPONÍVEL
+          <Hexagon className="w-4 h-4" />
+          <span className="text-white">versão <span className="text-emerald-500">Xpert</span> 2.0 disponível</span>
         </motion.div>
 
         {/* Headline Principal */}
@@ -41,7 +41,7 @@ export default function HeroSection() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.1 }}
-          className="text-3xl md:text-5xl lg:text-6xl font-extrabold tracking-tight mb-6 max-w-5xl leading-tight"
+          className="text-3xl md:text-5xl lg:text-6xl font-extrabold tracking-tight mb-6 max-w-5xl leading-tight text-center"
         >
           BIOQUÍMICA APLICADA <br />
           <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-teal-300 to-emerald-500 drop-shadow-[0_0_25px_rgba(16,185,129,0.4)]">
@@ -54,7 +54,7 @@ export default function HeroSection() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.2 }}
-          className="text-lg md:text-xl text-neutral-400 max-w-3xl mb-10 leading-relaxed font-light whitespace-nowrap text-center mx-auto"
+          className="text-base md:text-lg lg:text-xl text-neutral-400 max-w-3xl mb-10 leading-relaxed font-light text-center mx-auto px-4"
         >
           Aqui a <strong>Elite da Nutrição</strong> transforma seu consultório em um Ecosistema de monitoramento nutricional.
         </motion.p>
@@ -64,21 +64,21 @@ export default function HeroSection() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.3 }}
-          className="flex flex-col sm:flex-row gap-5 items-center w-full justify-center mb-20"
+          className="flex flex-col sm:flex-row gap-5 items-center w-full justify-center mb-20 px-4"
         >
           <motion.div
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            className="relative group"
+            className="relative group w-full sm:w-auto"
           >
             <div className="absolute -inset-1 bg-gradient-to-r from-emerald-600 to-teal-600 rounded-xl blur opacity-25 transition duration-1000"></div>
             <Button
               size="lg"
-              className="relative h-14 px-10 text-lg bg-black hover:bg-black text-white border-0 shadow-[0_0_40px_-10px_rgba(0,0,0,0.6)] font-bold tracking-wide overflow-hidden"
+              className="relative h-14 px-6 sm:px-10 text-base sm:text-lg bg-black hover:bg-black text-white border-0 shadow-[0_0_40px_-10px_rgba(0,0,0,0.6)] font-bold tracking-wide overflow-hidden w-full sm:w-auto"
               asChild
             >
               <Link href="/register">
-                <span className="relative z-10 flex items-center">
+                <span className="relative z-10 flex items-center justify-center sm:justify-start">
                   Seja um<span className="ml-2 text-emerald-500" style={{ textShadow: '1px 1px 2px rgba(255,255,255,0.1)' }}><span style={{ fontSize: '20px', textShadow: '1px 1px 2px rgba(255,255,255,0.2)' }}>X</span>pert</span>
                   <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
                 </span>
@@ -96,15 +96,15 @@ export default function HeroSection() {
           <motion.div
             whileHover={{ scale: 1.05, y: -2 }}
             whileTap={{ scale: 0.95 }}
-            className="relative"
+            className="relative w-full sm:w-auto"
           >
             <Button
               size="lg"
               variant="outline"
-              className="group h-14 px-8 text-lg border-neutral-700 bg-black/40 text-neutral-300 hover:bg-white/5 hover:text-white transition-all backdrop-blur-sm hover:border-emerald-500/50 overflow-hidden relative"
+              className="group h-14 px-6 sm:px-8 text-base sm:text-lg border-neutral-700 bg-black/40 text-neutral-300 hover:bg-white/5 hover:text-white transition-all backdrop-blur-sm hover:border-emerald-500/50 overflow-hidden relative w-full sm:w-auto"
               asChild
             >
-              <Link href="#tour" className="flex items-center">
+              <Link href="#tour" className="flex items-center justify-center sm:justify-start">
                 <Play className="mr-2 h-4 w-4 fill-current group-hover:scale-125 transition-transform text-emerald-500" />
                 Tour pela Plataforma
                 <motion.div

@@ -18,6 +18,9 @@ export interface Patient {
     age?: number
     weight?: number
     height?: number
+    nutritionist_name?: string
+    nutritionist_title?: string
+    nutritionist_avatar?: string
 }
 
 export interface CreatePatientDTO {
@@ -38,6 +41,11 @@ const patientService = {
         return response.data
     },
 
+    getMe: async () => {
+        const response = await api.get<Patient>('/patients/me/profile/')
+        return response.data
+    },
+
     getById: async (id: number) => {
         const response = await api.get<Patient>(`/patients/${id}/`)
         return response.data
@@ -51,10 +59,12 @@ const patientService = {
             formData.append('email', data.email)
             formData.append('gender', data.gender || 'F')
             formData.append('phone', data.phone)
-            formData.append('goal', data.goal)
+
+            if (data.goal) formData.append('goal', data.goal)
             formData.append('service_type', data.service_type)
             formData.append('start_date', data.start_date)
-            formData.append('birth_date', data.birth_date)
+            if (data.birth_date) formData.append('birth_date', data.birth_date)
+
             formData.append('profile_picture', data.profile_picture)
 
             const response = await api.post<Patient>('/patients/', formData, {
@@ -69,10 +79,10 @@ const patientService = {
             gender: data.gender || 'F',
             phone: data.phone,
             address: '', // Optional
-            goal: data.goal,
+            goal: data.goal || null,
             service_type: data.service_type,
             start_date: data.start_date,
-            birth_date: data.birth_date
+            birth_date: data.birth_date || null
         }
 
         const response = await api.post<Patient>('/patients/', payload)

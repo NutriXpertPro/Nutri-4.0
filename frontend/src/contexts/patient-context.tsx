@@ -1,15 +1,24 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import patientService from '@/services/patient-service';
+import { useAuth } from '@/contexts/auth-context';
 
 interface Patient {
   id: number;
   name: string;
   email: string;
-  goal: string;
+  goal?: string;
   avatar?: string;
   service_type?: 'ONLINE' | 'PRESENCIAL';
-  gender?: 'male' | 'female';
+  gender?: string;
+  age?: number;
+  weight?: number;
+  height?: number;
+  nutritionist_name?: string;
+  nutritionist_title?: string;
+  nutritionist_gender?: string;
+  nutritionist_avatar?: string;
 }
 
 
@@ -31,28 +40,34 @@ export const PatientProvider = ({ children }: { children: React.ReactNode }) => 
   const [patient, setPatient] = useState<Patient | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
+
   // Simular carregamento do paciente
   useEffect(() => {
-    const loadPatient = async () => {
-      // Em uma implementação real, isso viria de uma API
-      setTimeout(() => {
-        const mockPatient: Patient = {
-          id: 1,
-          name: 'Maria Silva',
-          email: 'maria.silva@email.com',
-          goal: 'Perda de peso saudável',
-          avatar: undefined,
-          service_type: 'ONLINE',
-          gender: 'female'
-        };
+    // Only fetch patient profile if authenticated and auth loading is done
+    if (!isAuthenticated && !authLoading) {
+      setLoading(false);
+      return;
+    }
 
-        setPatient(mockPatient);
+    if (!isAuthenticated) return;
+
+    const loadPatient = async () => {
+      try {
+        const data = await patientService.getMe();
+        setPatient(data);
+      } catch (error: any) {
+        // If 404, it just means the user doesn't have a patient profile yet (e.g. nutritionist viewing as patient)
+        if (error?.response?.status !== 404) {
+          console.error('Failed to load patient profile:', error);
+        }
+      } finally {
         setLoading(false);
-      }, 500);
+      }
     };
 
     loadPatient();
-  }, []);
+  }, [isAuthenticated, authLoading]);
 
   return (
     <PatientContext.Provider value={{ patient, setPatient, loading, setLoading }}>

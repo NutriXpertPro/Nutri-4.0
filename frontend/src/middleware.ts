@@ -32,10 +32,13 @@ export function middleware(request: NextRequest) {
         return NextResponse.redirect(new URL('/login', request.url))
     }
 
-    // Rotas públicas (Login/Register/Auth) - redireciona se já estiver logado
+    // Essa verificação foi removida para evitar loops de redirecionamento.
+    // O AuthContext no cliente fará a validação real do token e redirecionará se necessário.
+    /*
     if ((pathname === '/login' || pathname === '/register' || pathname === '/auth') && token) {
         return NextResponse.redirect(new URL('/dashboard', request.url))
     }
+    */
 
     return NextResponse.next()
 }

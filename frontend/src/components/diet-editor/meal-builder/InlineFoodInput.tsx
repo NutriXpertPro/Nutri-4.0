@@ -63,9 +63,9 @@ export function InlineFoodInput({ onAddFood }: InlineFoodInputProps) {
     // Effect to handle focus after state changes
     useEffect(() => {
         if (shouldFocusSearch) {
-            setShouldFocusSearch(false);
             // Focus back on the search input for the next item
             setTimeout(() => {
+                setShouldFocusSearch(false);
                 if (searchInputRef.current) {
                     searchInputRef.current.focus()
                     searchInputRef.current.select() // Select all text to make it easier to type
@@ -215,8 +215,8 @@ export function InlineFoodInput({ onAddFood }: InlineFoodInputProps) {
                         onClick={handleAdd}
                         disabled={quantity === '' || (typeof quantity === 'number' && quantity <= 0)}
                         className={`h-9 w-9 p-0 text-white ${(quantity === '' || (typeof quantity === 'number' && quantity <= 0))
-                                ? 'bg-gray-400 cursor-not-allowed'
-                                : 'bg-indigo-600 hover:bg-indigo-700'
+                            ? 'bg-gray-400 cursor-not-allowed'
+                            : 'bg-indigo-600 hover:bg-indigo-700'
                             }`}
                     >
                         <Plus className="h-4 w-4" />

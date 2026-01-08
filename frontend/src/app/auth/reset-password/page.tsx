@@ -7,7 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, CheckCircle, XCircle, Eye, EyeOff } from 'lucide-react';
-import api from '@/services/api';
+import api, { getBaseURL } from '@/services/api';
+import axios from 'axios';
 
 function ResetPasswordForm() {
     const searchParams = useSearchParams();
@@ -43,7 +44,16 @@ function ResetPasswordForm() {
         setErrorMessage('');
 
         try {
-            await api.post(`/auth/password-reset/confirm/`, {
+            // Criar uma nova instância do axios sem os interceptores de autenticação
+            const axiosWithoutAuth = axios.create({
+                baseURL: getBaseURL(),
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                timeout: 10000,
+            });
+
+            await axiosWithoutAuth.post(`/auth/password-reset/confirm/`, {
                 password: password,
                 confirm_password: confirmPassword,
                 uid: uid,
@@ -57,7 +67,7 @@ function ResetPasswordForm() {
             } else if (error.response?.data?.password) {
                 setErrorMessage(error.response.data.password[0]);
             } else {
-                setErrorMessage('Ocorreu um erro ao redefinir a senha. O link pode estar expirado.');
+                setErrorMessage('Ocorreu um erro ao redefinir a senha. O link pode estar expirado ou inválido.');
             }
         } finally {
             setIsLoading(false);

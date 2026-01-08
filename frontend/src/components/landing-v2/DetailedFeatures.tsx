@@ -66,30 +66,30 @@ export default function DetailedFeatures() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-100px" }}
               transition={{ duration: 0.7 }}
-              className={`flex flex-col ${idx % 2 === 1 ? 'lg:flex-row-reverse' : 'lg:flex-row'} items-center gap-12 lg:gap-20`}
+              className={`flex flex-col ${idx % 2 === 1 ? 'lg:flex-row-reverse' : 'lg:flex-row'} items-center gap-8 md:gap-12 lg:gap-20 ${idx % 2 === 1 ? 'md:flex-row-reverse' : 'md:flex-row'}`}
             >
               {/* Content Side */}
-              <div className="flex-1 space-y-8">
+              <div className="flex-1 space-y-8 min-h-[300px]">
                 <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 ${feature.color} text-xs font-bold tracking-widest uppercase`}>
                   <feature.icon className="w-4 h-4" />
                   {feature.subtitle}
                 </div>
 
-                <h3 className="text-3xl md:text-4xl font-bold text-white leading-tight">
+                <h3 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white leading-tight">
                   {feature.title}
                 </h3>
 
-                <p className="text-neutral-400 text-lg leading-relaxed">
+                <p className="text-neutral-400 text-base sm:text-lg leading-relaxed">
                   {feature.description}
                 </p>
 
-                <ul className="space-y-4">
+                <ul className="space-y-3 sm:space-y-4">
                   {feature.points.map((point, pIdx) => (
-                    <li key={pIdx} className="flex items-center gap-3 text-neutral-200 font-medium">
-                      <div className={`w-6 h-6 rounded-full flex items-center justify-center bg-white/5 ${feature.color}`}>
-                        <ShieldCheck className="w-3 h-3" />
+                    <li key={pIdx} className="flex items-start gap-3 text-neutral-200 font-medium sm:items-center">
+                      <div className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center bg-white/5 ${feature.color} flex-shrink-0 mt-0.5 sm:mt-0`}>
+                        <ShieldCheck className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
                       </div>
-                      {point}
+                      <span className="text-sm sm:text-base">{point}</span>
                     </li>
                   ))}
                 </ul>

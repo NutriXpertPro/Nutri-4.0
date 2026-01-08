@@ -18,6 +18,7 @@ export const ColorThemeProvider = ({ children }: { children: React.ReactNode }) 
   useEffect(() => {
     const savedTheme = localStorage.getItem('color-theme');
     if (savedTheme && ['monochrome', 'teal', 'blue', 'violet', 'pink', 'amber', 'emerald'].includes(savedTheme)) {
+      // eslint-disable-next-line
       setColorThemeState(savedTheme as ColorTheme);
     }
   }, []);

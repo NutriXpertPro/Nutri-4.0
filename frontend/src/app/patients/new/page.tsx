@@ -21,6 +21,7 @@ import { usePatients } from "@/hooks/usePatients"
 import { CreatePatientDTO } from "@/services/patient-service"
 
 export default function NewPatientPage() {
+    console.log("!!! FRONTEND VALIDATION V3 LOADED !!!")
     const router = useRouter()
     const { createPatient } = usePatients()
     const [previewUrl, setPreviewUrl] = React.useState<string | null>(null)
@@ -58,8 +59,28 @@ export default function NewPatientPage() {
         }
     }
 
+    const validateName = (name: string) => {
+        // Permite APENAS letras (incluindo acentos) e espaços
+        const nameRegex = /^[A-Za-zÀ-ÖØ-öø-ÿ\s]+$/
+        if (name && !nameRegex.test(name)) {
+            return "Nome não pode conter símbolos especiais. Use apenas letras e espaços."
+        }
+        return null
+    }
+
+    const [nameError, setNameError] = React.useState<string | null>(null)
+
     const handleChange = (field: keyof CreatePatientDTO, value: string) => {
         let finalValue = value
+
+        if (field === "name") {
+            const error = validateName(value)
+            setNameError(error)
+            if (error) {
+                console.log("Validation error detected:", error)
+                window.alert(error)
+            }
+        }
 
         if (field === "phone") {
             finalValue = formatPhone(value)
@@ -67,6 +88,7 @@ export default function NewPatientPage() {
 
         setFormData(prev => ({ ...prev, [field]: finalValue }))
     }
+
 
     const [error, setError] = React.useState<string | null>(null)
 
@@ -212,18 +234,35 @@ export default function NewPatientPage() {
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
-                                {/* Nome Completo */}
                                 <div className="space-y-2 col-span-1 md:col-span-2 group">
-                                    <Label htmlFor="name" className="text-xs uppercase tracking-wider text-muted-foreground font-semibold group-focus-within:text-primary transition-colors">Nome Completo</Label>
+                                    <div className="flex justify-between items-center">
+                                        <Label htmlFor="name" className={cn(
+                                            "text-xs uppercase tracking-wider font-semibold transition-colors",
+                                            nameError ? "text-destructive" : "text-muted-foreground group-focus-within:text-primary"
+                                        )}>
+                                            Nome Completo
+                                        </Label>
+                                        {nameError && (
+                                            <span className="text-[10px] text-destructive font-medium animate-in fade-in slide-in-from-right-1">
+                                                {nameError}
+                                            </span>
+                                        )}
+                                    </div>
                                     <Input
                                         id="name"
                                         value={formData.name}
                                         onChange={(e) => handleChange("name", e.target.value)}
                                         placeholder="Ex: Maria Silva"
                                         required
-                                        className="h-12 bg-background/50 border-input transition-all focus:border-primary focus:ring-4 focus:ring-primary/10 rounded-xl"
+                                        className={cn(
+                                            "h-12 bg-background/50 transition-all rounded-xl focus:ring-4",
+                                            nameError
+                                                ? "border-destructive focus:border-destructive focus:ring-destructive/10"
+                                                : "border-input focus:border-primary focus:ring-primary/10"
+                                        )}
                                     />
                                 </div>
+
 
                                 {/* Email */}
                                 <div className="space-y-2 group">
@@ -293,11 +332,22 @@ export default function NewPatientPage() {
                                         <SelectTrigger className="h-12 bg-background/50 border-input transition-all focus:border-primary focus:ring-4 focus:ring-primary/10 rounded-xl">
                                             <SelectValue placeholder="Qual o foco do tratamento?" />
                                         </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="PERDA_GORDURA">Emagrecimento</SelectItem>
-                                            <SelectItem value="GANHO_MASSA">Hipertrofia / Ganho de Massa</SelectItem>
-                                            <SelectItem value="QUALIDADE_VIDA">Manutenção / Qualidade de Vida</SelectItem>
-                                            <SelectItem value="OUTRO">Outro (Performance/Reeducação)</SelectItem>
+                                        <SelectContent className="max-h-60">
+                                            <SelectItem value="PERDA_PESO">Perda de peso - Redução de peso com foco em saúde e sustentabilidade</SelectItem>
+                                            <SelectItem value="GANHO_MUSCULAR">Ganho de massa muscular - Hipertrofia e desenvolvimento muscular</SelectItem>
+                                            <SelectItem value="MANUTENCAO_PESO">Manutenção do peso - Equilíbrio e manutenção do peso atual</SelectItem>
+                                            <SelectItem value="PERFORMANCE_ESPORTIVA">Performance esportiva - Otimização do desempenho atlético e competitivo</SelectItem>
+                                            <SelectItem value="GESTACAO_LACTACAO">Gestação e lactação - Acompanhamento nutricional materno-infantil</SelectItem>
+                                            <SelectItem value="DOENCAS_CRONICAS">Manejo de doenças crônicas - Diabetes, hipertensão, dislipidemias, doenças cardiovasculares</SelectItem>
+                                            <SelectItem value="REABILITACAO_NUTRICIONAL">Reabilitação nutricional - Recuperação pós-cirúrgica ou pós-doença</SelectItem>
+                                            <SelectItem value="TRANSTORNOS_ALIMENTARES">Transtornos alimentares - Apoio no tratamento de anorexia, bulimia, compulsão alimentar</SelectItem>
+                                            <SelectItem value="ALERGIAS_INTOLERANCIAS">Alergias e intolerâncias alimentares - Manejo de restrições alimentares específicas</SelectItem>
+                                            <SelectItem value="DISTURBIOS_GASTROINTESTINAIS">Distúrbios gastrointestinais - Síndrome do intestino irritável, doença celíaca, refluxo</SelectItem>
+                                            <SelectItem value="CONDICOES_HORMONAIS">Condições hormonais - SOP (Síndrome dos Ovários Policísticos), hipotireoidismo, menopausa</SelectItem>
+                                            <SelectItem value="NUTRICAO_FUNCIONAL">Nutrição funcional e integrativa - Abordagem holística e preventiva</SelectItem>
+                                            <SelectItem value="SUPLEMENTACAO_ORIENTADA">Suplementação orientada - Otimização do uso de suplementos nutricionais</SelectItem>
+                                            <SelectItem value="SAUDE_IDOSO">Saúde do idoso - Nutrição voltada para longevidade e qualidade de vida</SelectItem>
+                                            <SelectItem value="PREVENCAO_DOENCAS">Prevenção de doenças - Promoção de saúde e hábitos preventivos</SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </div>
@@ -310,7 +360,8 @@ export default function NewPatientPage() {
                         <Button variant="ghost" type="button" asChild className="hover:bg-destructive/10 hover:text-destructive transition-colors">
                             <Link href="/patients">Cancelar</Link>
                         </Button>
-                        <Button type="submit" disabled={createPatient.isPending} className="min-w-[160px] h-11 text-base shadow-xl shadow-primary/20 hover:shadow-primary/30 hover:-translate-y-0.5 transition-all rounded-xl">
+                        <Button type="submit" disabled={createPatient.isPending || !!nameError} className="min-w-[160px] h-11 text-base shadow-xl shadow-primary/20 hover:shadow-primary/30 hover:-translate-y-0.5 transition-all rounded-xl">
+
                             {createPatient.isPending ? (
                                 <>
                                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />

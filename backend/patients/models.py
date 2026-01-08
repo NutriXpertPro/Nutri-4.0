@@ -17,10 +17,21 @@ class PatientProfile(models.Model):
         ('PRESENCIAL', _('Presencial')),
     ]
     GOAL_CHOICES = [
-        ('PERDA_GORDURA', _('Perda de Gordura')),
-        ('GANHO_MASSA', _('Ganho de Massa Muscular')),
-        ('QUALIDADE_VIDA', _('Qualidade de Vida e Saúde')),
-        ('OUTRO', _('Outro')),
+        ('PERDA_PESO', _('Perda de peso - Redução de peso com foco em saúde e sustentabilidade')),
+        ('GANHO_MUSCULAR', _('Ganho de massa muscular - Hipertrofia e desenvolvimento muscular')),
+        ('MANUTENCAO_PESO', _('Manutenção do peso - Equilíbrio e manutenção do peso atual')),
+        ('PERFORMANCE_ESPORTIVA', _('Performance esportiva - Otimização do desempenho atlético e competitivo')),
+        ('GESTACAO_LACTACAO', _('Gestação e lactação - Acompanhamento nutricional materno-infantil')),
+        ('DOENCAS_CRONICAS', _('Manejo de doenças crônicas - Diabetes, hipertensão, dislipidemias, doenças cardiovasculares')),
+        ('REABILITACAO_NUTRICIONAL', _('Reabilitação nutricional - Recuperação pós-cirúrgica ou pós-doença')),
+        ('TRANSTORNOS_ALIMENTARES', _('Transtornos alimentares - Apoio no tratamento de anorexia, bulimia, compulsão alimentar')),
+        ('ALERGIAS_INTOLERANCIAS', _('Alergias e intolerâncias alimentares - Manejo de restrições alimentares específicas')),
+        ('DISTURBIOS_GASTROINTESTINAIS', _('Distúrbios gastrointestinais - Síndrome do intestino irritável, doença celíaca, refluxo')),
+        ('CONDICOES_HORMONAIS', _('Condições hormonais - SOP (Síndrome dos Ovários Policísticos), hipotireoidismo, menopausa')),
+        ('NUTRICAO_FUNCIONAL', _('Nutrição funcional e integrativa - Abordagem holística e preventiva')),
+        ('SUPLEMENTACAO_ORIENTADA', _('Suplementação orientada - Otimização do uso de suplementos nutricionais')),
+        ('SAUDE_IDOSO', _('Saúde do idoso - Nutrição voltada para longevidade e qualidade de vida')),
+        ('PREVENCAO_DOENCAS', _('Prevenção de doenças - Promoção de saúde e hábitos preventivos')),
     ]
 
     user = models.OneToOneField(

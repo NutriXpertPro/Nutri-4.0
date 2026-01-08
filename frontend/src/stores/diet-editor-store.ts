@@ -691,24 +691,27 @@ export const useDietEditorStore = create<DietEditorState>((set, get) => ({
     updateMeal: (mealId, updates) => {
         const { weekPlan, currentDayIndex } = get()
         const newWeekPlan = [...weekPlan]
-        const mealIndex = newWeekPlan[currentDayIndex].meals.findIndex(m => m.id === mealId)
-        if (mealIndex !== -1) {
-            newWeekPlan[currentDayIndex].meals[mealIndex] = {
-                ...newWeekPlan[currentDayIndex].meals[mealIndex],
-                ...updates
-            }
-            set({ weekPlan: newWeekPlan, isDirty: true })
+
+        newWeekPlan[currentDayIndex] = {
+            ...newWeekPlan[currentDayIndex],
+            meals: newWeekPlan[currentDayIndex].meals.map(meal =>
+                meal.id === mealId ? { ...meal, ...updates } : meal
+            )
         }
+
+        set({ weekPlan: newWeekPlan, isDirty: true })
     },
 
     removeMeal: (mealId) => {
         const { weekPlan, currentDayIndex } = get()
         get().saveSnapshot()
+
         const newWeekPlan = [...weekPlan]
         newWeekPlan[currentDayIndex] = {
             ...newWeekPlan[currentDayIndex],
             meals: newWeekPlan[currentDayIndex].meals.filter(m => m.id !== mealId)
         }
+
         set({ weekPlan: newWeekPlan, isDirty: true })
     },
 
@@ -717,61 +720,77 @@ export const useDietEditorStore = create<DietEditorState>((set, get) => ({
     addFoodToMeal: (mealId, item) => {
         const { weekPlan, currentDayIndex } = get()
         const newItem: FoodItem = { ...item, id: generateId() }
+
         const newWeekPlan = [...weekPlan]
-        const mealIndex = newWeekPlan[currentDayIndex].meals.findIndex(m => m.id === mealId)
-        if (mealIndex !== -1) {
-            get().saveSnapshot()
-            newWeekPlan[currentDayIndex].meals[mealIndex] = {
-                ...newWeekPlan[currentDayIndex].meals[mealIndex],
-                items: [...newWeekPlan[currentDayIndex].meals[mealIndex].items, newItem]
-            }
-            set({ weekPlan: newWeekPlan, isDirty: true })
+        newWeekPlan[currentDayIndex] = {
+            ...newWeekPlan[currentDayIndex],
+            meals: newWeekPlan[currentDayIndex].meals.map(meal =>
+                meal.id === mealId
+                    ? { ...meal, items: [...meal.items, newItem] }
+                    : meal
+            )
         }
+
+        get().saveSnapshot()
+        set({ weekPlan: newWeekPlan, isDirty: true })
     },
 
     updateFoodItem: (mealId, itemId, updates) => {
         const { weekPlan, currentDayIndex } = get()
+
         const newWeekPlan = [...weekPlan]
-        const mealIndex = newWeekPlan[currentDayIndex].meals.findIndex(m => m.id === mealId)
-        if (mealIndex !== -1) {
-            const itemIndex = newWeekPlan[currentDayIndex].meals[mealIndex].items.findIndex(i => i.id === itemId)
-            if (itemIndex !== -1) {
-                newWeekPlan[currentDayIndex].meals[mealIndex].items[itemIndex] = {
-                    ...newWeekPlan[currentDayIndex].meals[mealIndex].items[itemIndex],
-                    ...updates
-                }
-                set({ weekPlan: newWeekPlan, isDirty: true })
-            }
+        newWeekPlan[currentDayIndex] = {
+            ...newWeekPlan[currentDayIndex],
+            meals: newWeekPlan[currentDayIndex].meals.map(meal =>
+                meal.id === mealId
+                    ? {
+                        ...meal,
+                        items: meal.items.map(item =>
+                            item.id === itemId
+                                ? { ...item, ...updates }
+                                : item
+                        )
+                    }
+                    : meal
+            )
         }
+
+        set({ weekPlan: newWeekPlan, isDirty: true })
     },
 
     removeFoodFromMeal: (mealId, itemId) => {
         const { weekPlan, currentDayIndex } = get()
         get().saveSnapshot()
+
         const newWeekPlan = [...weekPlan]
-        const mealIndex = newWeekPlan[currentDayIndex].meals.findIndex(m => m.id === mealId)
-        if (mealIndex !== -1) {
-            newWeekPlan[currentDayIndex].meals[mealIndex] = {
-                ...newWeekPlan[currentDayIndex].meals[mealIndex],
-                items: newWeekPlan[currentDayIndex].meals[mealIndex].items.filter(i => i.id !== itemId)
-            }
-            set({ weekPlan: newWeekPlan, isDirty: true })
+        newWeekPlan[currentDayIndex] = {
+            ...newWeekPlan[currentDayIndex],
+            meals: newWeekPlan[currentDayIndex].meals.map(meal =>
+                meal.id === mealId
+                    ? { ...meal, items: meal.items.filter(i => i.id !== itemId) }
+                    : meal
+            )
         }
+
+        set({ weekPlan: newWeekPlan, isDirty: true })
     },
 
     applyPreset: (mealId, presetItems) => {
         const { weekPlan, currentDayIndex } = get()
         get().saveSnapshot()
         const newItems: FoodItem[] = presetItems.map(item => ({ ...item, id: generateId() }))
+
         const newWeekPlan = [...weekPlan]
-        const mealIndex = newWeekPlan[currentDayIndex].meals.findIndex(m => m.id === mealId)
-        if (mealIndex !== -1) {
-            newWeekPlan[currentDayIndex].meals[mealIndex] = {
-                ...newWeekPlan[currentDayIndex].meals[mealIndex],
-                items: [...newWeekPlan[currentDayIndex].meals[mealIndex].items, ...newItems]
-            }
-            set({ weekPlan: newWeekPlan, isDirty: true })
+        newWeekPlan[currentDayIndex] = {
+            ...newWeekPlan[currentDayIndex],
+            meals: newWeekPlan[currentDayIndex].meals.map(meal =>
+                meal.id === mealId
+                    ? { ...meal, items: [...meal.items, ...newItems] }
+                    : meal
+            )
         }
+
+        set({ weekPlan: newWeekPlan, isDirty: true })
     },
 
     copyMeal: (fromMealId, toDayIndex) => {
@@ -784,11 +803,13 @@ export const useDietEditorStore = create<DietEditorState>((set, get) => ({
                 id: generateId(),
                 items: meal.items.map(item => ({ ...item, id: generateId() }))
             }
+
             const newWeekPlan = [...weekPlan]
             newWeekPlan[toDayIndex] = {
                 ...newWeekPlan[toDayIndex],
                 meals: [...newWeekPlan[toDayIndex].meals, copiedMeal]
             }
+
             set({ weekPlan: newWeekPlan, isDirty: true })
         }
     },
@@ -954,17 +975,22 @@ export const useDietEditorStore = create<DietEditorState>((set, get) => ({
                 const savedFavorites = localStorage.getItem('favorite_preset_ids');
 
                 if (savedPresets) {
-                    const favorites = savedFavorites ? JSON.parse(savedFavorites) : [];
-                    set({
-                        mealPresets: JSON.parse(savedPresets),
-                        favoritePresetIds: favorites,
-                        presetsLoading: false
-                    });
-                    return;
+                    const parsedPresets = JSON.parse(savedPresets);
+                    // Only return if we actually have presets
+                    if (Array.isArray(parsedPresets) && parsedPresets.length > 0) {
+                        const favorites = savedFavorites ? JSON.parse(savedFavorites) : [];
+                        set({
+                            mealPresets: parsedPresets,
+                            favoritePresetIds: favorites,
+                            presetsLoading: false
+                        });
+                        return;
+                    }
                 }
             }
 
             // Simulação de presets com alimentos para demonstração
+            // Only used if no local storage data found
             const mockPresets: MealPreset[] = [
                 {
                     id: 1,
@@ -1031,8 +1057,11 @@ export const useDietEditorStore = create<DietEditorState>((set, get) => ({
             }
         } catch (error) {
             console.error('Erro ao carregar presets:', error);
+            // Fallback to empty array and STOP loading
+            set({ mealPresets: [], presetsLoading: false });
         } finally {
-            set({ presetsLoading: false });
+            // Ensure loading is set to false in all paths
+            set((state) => ({ ...state, presetsLoading: false }));
         }
     },
 

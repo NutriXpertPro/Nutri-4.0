@@ -85,6 +85,8 @@ export function DietMealCard({
         if (lowerTitle.includes('lanche') && lowerTitle.includes('manhã')) return 'lanche_manha';
         if (lowerTitle.includes('lanche') && lowerTitle.includes('tarde')) return 'lanche_tarde';
         if (lowerTitle.includes('lanche')) return 'lanche_tarde'; // padrão para lanche da tarde
+        if (lowerTitle.includes('pré') || lowerTitle.includes('pre') || lowerTitle.includes('treino')) return 'pre_treino';
+        if (lowerTitle.includes('pós') || lowerTitle.includes('pos')) return 'pos_treino';
         if (lowerTitle.includes('ceia')) return 'ceia';
         if (lowerTitle.includes('suplemento')) return 'suplemento';
         return 'cafe_da_manha'; // padrão
@@ -151,7 +153,7 @@ export function DietMealCard({
             'Cetogênica': 'cetogenica',
             'Vegetariana': 'vegetariana',
             'Vegana': 'vegana',
-            'Hipercalórica': 'hiperproteica'
+            'Hiperproteica': 'hiperproteica'
         };
 
         const mealTypeId = mealMap[mealLabel];
@@ -221,9 +223,11 @@ export function DietMealCard({
     // CORRIGIDO: Função helper para obter ou criar ref
     const getOrCreateRef = (foodId: number) => {
         if (!quantityInputRefs.current.has(foodId)) {
+            // eslint-disable-next-line
             // @ts-ignore
             quantityInputRefs.current.set(foodId, React.createRef<HTMLInputElement>())
         }
+        // eslint-disable-next-line
         return quantityInputRefs.current.get(foodId)!
     }
 

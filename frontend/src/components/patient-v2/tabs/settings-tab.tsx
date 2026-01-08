@@ -24,11 +24,11 @@ export function SettingsTab({ onBack }: { onBack?: () => void }) {
 
     // Sync settings from API
     useEffect(() => {
-        if (settings) {
-            setMealReminders(settings.notifications.email)
-            setMealAntecedence(settings.notifications.reminderTime.toString())
-            setWaterReminders(settings.notifications.push)
-            setSnoozeEnabled(settings.notifications.snooze)
+        if (settings && settings.notifications) {
+            setMealReminders(settings.notifications.email || false)
+            setMealAntecedence(settings.notifications.reminderTime?.toString() || "15")
+            setWaterReminders(settings.notifications.push || false)
+            setSnoozeEnabled(settings.notifications.snooze || false)
         }
     }, [settings])
 
@@ -51,7 +51,7 @@ export function SettingsTab({ onBack }: { onBack?: () => void }) {
 
     // Auto-save on changes
     useEffect(() => {
-        if (settings) {
+        if (settings && settings.notifications) {
             const timer = setTimeout(() => {
                 handleSaveSettings()
             }, 1000)

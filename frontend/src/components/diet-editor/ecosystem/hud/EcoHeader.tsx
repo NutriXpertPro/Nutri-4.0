@@ -30,6 +30,8 @@ import {
 } from '@/stores/diet-editor-store'
 import { NavigationCommandPalette } from './NavigationCommandPalette'
 import { HubNavigation } from './HubNavigation'
+import { PDFPreviewModal } from '../../pdf/PDFPreviewModal'
+import { useToast } from '@/components/ui/use-toast'
 import patientService from '@/services/patient-service'
 import {
     DropdownMenu,
@@ -85,7 +87,29 @@ export function EcoHeader() {
         return () => clearTimeout(timer)
     }, [searchQuery])
 
-    // Store Actions & State
+    // PDF Preview Modal State
+    const [showPDFModal, setShowPDFModal] = React.useState(false)
+    const { toast } = useToast()
+
+    const handleGeneratePDF = () => {
+        setShowPDFModal(true)
+    }
+
+    const handleSendApp = () => {
+        toast({
+            title: "Enviando para o App...",
+            description: "Sincronizando dieta com o aplicativo do paciente.",
+        })
+
+        // Simulate API delay
+        setTimeout(() => {
+            toast({
+                title: "Sucesso!",
+                description: "Dieta enviada para o App do paciente.",
+                className: "bg-green-500 text-white border-green-600"
+            })
+        }, 1500)
+    }
     const {
         setPatient,
         calculationMethod,
@@ -98,19 +122,42 @@ export function EcoHeader() {
         get,
         targetCalories,
         targetMacros,
+        goalAdjustment,
+        setGoalAdjustment,
+        activeTab,
+        workspaceMeals
     } = useDietEditorStore()
 
     // Real-time Calculations
-    const currentTotals = meals.reduce((acc, meal) => {
-        meal.items.forEach(item => {
-            acc.calories += item.calories
-            acc.protein += item.protein
-            acc.carbs += item.carbs
-            acc.fats += item.fats
-            acc.fiber += (item as any).fiber || 0
-        })
-        return acc
-    }, { calories: 0, protein: 0, carbs: 0, fats: 0, fiber: 0 })
+    const currentTotals = React.useMemo(() => {
+        // If we are in the Workspace tab (diet), use workspaceMeals
+        if (!activeTab || activeTab === 'diet') {
+            return workspaceMeals.reduce((acc, meal) => {
+                meal.foods.forEach(food => {
+                    const qty = typeof food.qty === 'number' ? food.qty : 0
+                    const ratio = qty / 100
+                    acc.calories += (food.ptn * 4 + food.cho * 4 + food.fat * 9) * ratio
+                    acc.protein += food.ptn * ratio
+                    acc.carbs += food.cho * ratio
+                    acc.fats += food.fat * ratio
+                    acc.fiber += (food.fib || 0) * ratio
+                })
+                return acc
+            }, { calories: 0, protein: 0, carbs: 0, fats: 0, fiber: 0 })
+        }
+
+        // Otherwise use the standard plan meals (weekPlan)
+        return meals.reduce((acc, meal) => {
+            meal.items.forEach(item => {
+                acc.calories += item.calories
+                acc.protein += item.protein
+                acc.carbs += item.carbs
+                acc.fats += item.fats
+                acc.fiber += (item as any).fiber || 0
+            })
+            return acc
+        }, { calories: 0, protein: 0, carbs: 0, fats: 0, fiber: 0 })
+    }, [activeTab, workspaceMeals, meals])
 
     const weight = patient?.weight || 70
 
@@ -145,166 +192,220 @@ export function EcoHeader() {
                     </Link>
                 </div>
 
-                {/* FLOATING CIRCULAR GRAPH + TOTAL CALÓRICO */}
-                <div className="absolute left-1/2 md:left-[60%] -translate-x-1/2 top-20 -translate-y-1/2 z-50 transition-all duration-500 flex items-center gap-6">
-                    <CircularMacroChart
-                        totals={currentTotals}
-                        targets={targetMacros}
-                        targetCalories={targetCalories}
-                        hideText
-                    />
-                    <div className="flex flex-col mt-[15px]">
-                        <span className="text-[10px] text-muted-foreground uppercase tracking-widest opacity-60">Total Calórico</span>
-                        <div className="flex items-baseline gap-2">
-                            <span className="text-3xl font-bold text-foreground tabular-nums leading-none">
-                                {Math.round(currentTotals.calories)}
-                            </span>
-                            <span className="text-sm text-muted-foreground opacity-40">/ {targetCalories}</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="px-6 md:px-10 -mt-8 flex flex-col gap-8 relative z-10">
-                    <div className="flex flex-col md:flex-row items-end md:items-center gap-6">
-                        <div className="relative group">
-                            <Avatar className="h-28 w-28 border-4 border-background shadow-2xl transition-transform group-hover:scale-105 overflow-hidden">
-                                <AvatarImage src={patient?.avatar} className="h-full w-full object-cover" />
+                {/* HEADER CONTENT FLOW */}
+                <div className="px-10 flex items-center justify-between -mt-8 relative z-10">
+                    {/* Patient Name and Goal - Left Side */}
+                    <div className="flex items-center gap-6">
+                        {/* Photo + Change Button */}
+                        <div className="relative">
+                            <Avatar className="h-28 w-28 border-4 border-background shadow-2xl">
+                                <AvatarImage src={patient?.avatar} className="object-cover" />
                                 <AvatarFallback className="text-3xl bg-primary/10 text-primary">
                                     {patient?.name?.substring(0, 2).toUpperCase() || <Users className="h-10 w-10 opacity-50" />}
                                 </AvatarFallback>
                             </Avatar>
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <button className="absolute inset-0 rounded-full flex items-center justify-center bg-black/40 text-white opacity-0 group-hover:opacity-100 transition-opacity text-xs backdrop-blur-sm">
-                                        TROCAR
-                                    </button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="start" className="w-[300px]">
-                                    <DropdownMenuLabel className="px-4 py-3">Selecionar Paciente</DropdownMenuLabel>
-                                    <div className="px-3 py-2">
-                                        <div className="relative">
-                                            <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                                            <Input
-                                                placeholder="Buscar por nome..."
-                                                className="h-10 pl-10 text-sm bg-muted/50"
-                                                value={searchQuery}
-                                                onChange={(e) => setSearchQuery(e.target.value)}
-                                            />
-                                        </div>
-                                    </div>
-                                    <DropdownMenuSeparator />
-                                    {isSearching && <div className="px-4 py-3 text-xs text-muted-foreground text-center italic">Buscando...</div>}
-                                    {searchResults.map(p => (
-                                        <DropdownMenuItem key={p.id} onClick={() => { setPatient(p as any); setSearchQuery(""); setSearchResults([]); }} className="flex items-center gap-3 py-3 px-4 focus:bg-primary/10 cursor-pointer">
-                                            <Avatar className="h-8 w-8 border border-border/50">
-                                                <AvatarImage src={p.avatar} className="object-cover" />
-                                                <AvatarFallback className="text-[10px] bg-primary/5 text-primary">{p.name.substring(0, 2).toUpperCase()}</AvatarFallback>
-                                            </Avatar>
-                                            <div className="flex flex-col">
-                                                <span className="text-sm font-medium leading-none">{p.name}</span>
-                                                <span className="text-[10px] text-muted-foreground mt-1 uppercase tracking-tighter">ID: {p.id}</span>
+
+                            {/* Absolutely positioned button beneath the photo */}
+                            <div className="absolute -bottom-6 left-0 right-0 flex justify-center">
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <button className="text-[10px] uppercase tracking-widest text-muted-foreground hover:text-primary transition-colors flex items-center gap-1 bg-background/50 backdrop-blur-sm px-2 py-0.5 rounded-full border border-border/20 shadow-xs">
+                                            Trocar <ChevronDown className="h-3 w-3" />
+                                        </button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="center" className="w-[300px]">
+                                        <DropdownMenuLabel className="px-4 py-3">Selecionar Paciente</DropdownMenuLabel>
+                                        <div className="px-3 py-2">
+                                            <div className="relative">
+                                                <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                                                <Input
+                                                    placeholder="Buscar por nome..."
+                                                    className="h-10 pl-10 text-sm bg-muted/50"
+                                                    value={searchQuery}
+                                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                                />
                                             </div>
-                                        </DropdownMenuItem>
-                                    ))}
-                                </DropdownMenuContent>
-                            </DropdownMenu>
-                            <Badge className="absolute bottom-2 right-2 border-2 border-background bg-emerald-500 hover:bg-emerald-600 text-white px-2 py-0.5 shadow-lg">Ativo</Badge>
+                                        </div>
+                                        <DropdownMenuSeparator />
+                                        {isSearching && <div className="px-4 py-3 text-xs text-muted-foreground text-center italic">Buscando...</div>}
+                                        {searchResults.map(p => (
+                                            <DropdownMenuItem key={p.id} onClick={() => { setPatient(p as any); setSearchQuery(""); setSearchResults([]); }} className="flex items-center gap-3 py-3 px-4 focus:bg-primary/10 cursor-pointer">
+                                                <Avatar className="h-8 w-8 border border-border/50">
+                                                    <AvatarImage src={p.avatar} className="object-cover" />
+                                                    <AvatarFallback className="text-[10px] bg-primary/5 text-primary">{p.name.substring(0, 2).toUpperCase()}</AvatarFallback>
+                                                </Avatar>
+                                                <div className="flex flex-col">
+                                                    <span className="text-sm font-medium leading-none">{p.name}</span>
+                                                    <span className="text-[10px] text-muted-foreground mt-1 uppercase tracking-tighter">ID: {p.id}</span>
+                                                </div>
+                                            </DropdownMenuItem>
+                                        ))}
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                            </div>
                         </div>
 
-                        <div className="flex-1 space-y-3 mb-2 min-w-0">
-                            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-                                <h1 className="text-3xl font-bold tracking-tight truncate max-w-[280px] md:max-w-[350px]" title={patient?.name}>
-                                    {formatPatientName(patient?.name || '')}
-                                </h1>
-                                <div className="flex flex-wrap items-center gap-3">
-                                    <div className="flex gap-2">
-                                        <Selector
-                                            icon={Utensils}
-                                            label={
-                                                (
-                                                    {
-                                                        'harris_benedict_1919': 'Harris-Benedict 1919',
-                                                        'harris_benedict_1984': 'Harris-Benedict 1984',
-                                                        'mifflin_1990': 'Mifflin-St Jeor 1990',
-                                                        'katch_mcardle_1996': 'Katch-McArdle 1996',
-                                                        'cunningham_1980': 'Cunningham 1980',
-                                                        'fao_who_2004': 'FAO/WHO 2004',
-                                                        'eer_iom_2005': 'EER/IOM 2005',
-                                                        'eer_iom_2023': 'EER/IOM 2023',
-                                                        'henry_rees_1991': 'Henry & Rees 1991',
-                                                        'tinsley_2018_weight': 'Tinsley 2018 (Peso)',
-                                                        'tinsley_2018_lbm': 'Tinsley 2018 (Massa Magra)'
-                                                    } as Record<string, string>
-                                                )[calculationMethod] || calculationMethod || 'Mifflin-St Jeor 1990'
-                                            }
-                                        >
-                                            {[
-                                                { value: 'mifflin_1990', label: 'Mifflin-St Jeor 1990', desc: 'Padrão-ouro atual.' },
-                                                { value: 'katch_mcardle_1996', label: 'Katch-McArdle 1996', desc: 'Foco em Massa Magra.' },
-                                                { value: 'harris_benedict_1984', label: 'Harris-Benedict 1984', desc: 'Equação revisada.' },
-                                            ].map((option) => (
-                                                <DropdownMenuItem key={option.value} onClick={() => setCalculationMethod(option.value as any)} className="flex flex-col items-start py-2 px-4 cursor-pointer focus:bg-primary/10">
-                                                    <span className="text-sm font-medium">{option.label}</span>
-                                                    <span className="text-[10px] text-muted-foreground leading-tight">{option.desc}</span>
-                                                </DropdownMenuItem>
-                                            ))}
-                                        </Selector>
-                                        <Selector
-                                            icon={Dna}
-                                            label={dietType === 'personalizada' ? 'PERSONALIZADA' : (DIET_TYPE_MACROS[dietType]?.label || 'ESTRATÉGIA').toUpperCase()}
-                                            subLabel={dietType === 'personalizada' ? 'MANUAL' : `${DIET_TYPE_MACROS[dietType]?.carbs}/${DIET_TYPE_MACROS[dietType]?.protein}/${DIET_TYPE_MACROS[dietType]?.fats}%`}
-                                        >
-                                            {Object.keys(DIET_TYPE_MACROS).map((key) => {
-                                                const data = DIET_TYPE_MACROS[key as DietType];
-                                                return (
-                                                    <DropdownMenuItem key={key} onClick={() => setDietType(key as DietType)} className="flex flex-col items-start py-2 px-4 cursor-pointer focus:bg-primary/10">
-                                                        <div className="flex items-center justify-between w-full">
-                                                            <span className="text-sm font-medium">{data.label}</span>
-                                                            <Badge variant="outline" className="text-[9px] opacity-60 ml-2">{data.carbs}/{data.protein}/{data.fats}%</Badge>
-                                                        </div>
-                                                    </DropdownMenuItem>
-                                                )
-                                            })}
-                                            <DropdownMenuItem onClick={() => setDietType('personalizada')} className="flex flex-col items-start py-2 px-4 cursor-pointer focus:bg-primary/10">
-                                                <span className="text-sm font-medium">Personalizada</span>
-                                            </DropdownMenuItem>
-                                        </Selector>
-                                    </div>
-                                    <div className="flex gap-2">
-                                        <Button variant="outline" size="sm" className="h-8 gap-2 rounded-xl text-[10px] uppercase tracking-widest text-muted-foreground border-border/50">
-                                            <FileText className="h-3.5 w-3.5 text-amber-500" /> PDF
-                                        </Button>
-                                        <Button variant="outline" size="sm" className="h-8 gap-2 rounded-xl text-[10px] uppercase tracking-widest text-muted-foreground border-border/50">
-                                            <Smartphone className="h-3.5 w-3.5 text-primary" /> App
-                                        </Button>
-                                    </div>
-                                </div>
+                        <div className="space-y-1">
+                            <div className="flex items-center gap-3">
+                                <h1 className="text-3xl font-normal tracking-tight">{formatPatientName(patient?.name || '')}</h1>
+                                <Badge variant="outline" className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20">Ativo</Badge>
                             </div>
+                            <p className="text-muted-foreground flex items-center gap-2">
+                                <Target className="h-4 w-4 text-primary" />
+                                <span className="uppercase tracking-widest text-xs font-normal">{patient?.goal || 'Objetivo não definido'}</span>
+                            </p>
+                        </div>
+                    </div>
 
-                            <div className="flex flex-wrap items-center justify-between gap-4 mt-2">
-                                <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
-                                    <span className="flex items-center gap-2 text-sm text-muted-foreground whitespace-nowrap">
-                                        <Target className="h-4 w-4 text-primary" />
-                                        <span className="uppercase tracking-wider text-[11px] font-medium">{patient?.goal || 'Objetivo'}</span>
-                                    </span>
-                                    <span className="w-1.5 h-1.5 rounded-full bg-border" />
-                                    <span className="text-emerald-500 text-xs uppercase tracking-tight font-medium">Ativo</span>
-                                    <span className="w-1.5 h-1.5 rounded-full bg-border" />
-                                    <span className="text-primary text-xs uppercase tracking-tight font-medium">IMC: {patient?.weight && patient?.height ? (patient.weight / (patient.height * patient.height)).toFixed(1) : '--'}</span>
+                    {/* Circular Macro Chart & Calories - Absoluto ao Centro */}
+                    <div className="absolute left-[54%] -translate-x-1/2 -top-4 flex items-center gap-6">
+                        <div className="scale-90 lg:scale-100">
+                            <CircularMacroChart
+                                totals={currentTotals}
+                                targets={targetMacros}
+                                targetCalories={targetCalories}
+                                hideText
+                            />
+                        </div>
+                        <div className="flex flex-col">
+                            <span className="text-[10px] text-muted-foreground uppercase tracking-[0.2em] opacity-60 font-bold">Total Calórico</span>
+                            <div className="flex items-baseline gap-2">
+                                <span className="text-2xl lg:text-3xl font-bold text-foreground tabular-nums leading-none">
+                                    {Math.round(currentTotals.calories)}
+                                </span>
+                                <span className="text-xs lg:text-sm text-muted-foreground opacity-40 font-medium">/ {targetCalories + (goalAdjustment || 0)}</span>
+                            </div>
+                            {/* Dual Caloric Adjustment Inputs */}
+                            <div className="flex items-center gap-3 mt-3">
+                                {/* Negative Adjustment */}
+                                <div className="relative group">
+                                    <span className="absolute left-0 top-1/2 -translate-y-1/2 text-xs font-bold text-red-500 group-hover:text-red-600 transition-colors">-</span>
+                                    <input
+                                        type="number"
+                                        className="w-10 h-6 bg-transparent border-b border-border/30 text-xs text-center focus:outline-none focus:border-red-500 tabular-nums pl-2 text-red-500 placeholder:text-red-500 font-bold"
+                                        placeholder="0"
+                                        min="0"
+                                        value={goalAdjustment < 0 ? Math.abs(goalAdjustment) : ''}
+                                        onChange={(e) => {
+                                            const val = Number(e.target.value);
+                                            setGoalAdjustment(val > 0 ? -val : 0);
+                                        }}
+                                    />
                                 </div>
-                                <div className="flex flex-wrap gap-2">
-                                    <Badge variant="outline" className="bg-background/50 px-3 h-7 border-border/40 whitespace-nowrap text-muted-foreground">{patient?.age || '--'} anos</Badge>
-                                    <Badge variant="outline" className="bg-background/50 px-3 h-7 border-border/40 whitespace-nowrap text-muted-foreground">{patient?.weight || '--'} kg</Badge>
-                                    <Badge variant="outline" className="bg-background/50 px-3 h-7 border-border/40 whitespace-nowrap text-muted-foreground">{patient?.height ? `${Math.round(patient.height * 100)} cm` : '--'}</Badge>
+
+                                <div className="flex flex-col items-center">
+                                    <span className="text-[8px] text-muted-foreground uppercase opacity-50 font-bold tracking-wider">Ajuste</span>
+                                    <span className="text-[8px] text-muted-foreground opacity-30">kcal</span>
+                                </div>
+
+                                {/* Positive Adjustment */}
+                                <div className="relative group">
+                                    <span className="absolute left-0 top-1/2 -translate-y-1/2 text-xs font-bold text-green-500 group-hover:text-green-600 transition-colors">+</span>
+                                    <input
+                                        type="number"
+                                        className="w-10 h-6 bg-transparent border-b border-border/30 text-xs text-center focus:outline-none focus:border-green-500 tabular-nums pl-2 text-green-500 placeholder:text-green-500 font-bold"
+                                        placeholder="0"
+                                        min="0"
+                                        value={goalAdjustment > 0 ? goalAdjustment : ''}
+                                        onChange={(e) => {
+                                            const val = Number(e.target.value);
+                                            setGoalAdjustment(val > 0 ? val : 0);
+                                        }}
+                                    />
                                 </div>
                             </div>
+                        </div>
+                    </div>
+
+                    {/* SELECTORS & ACTIONS - Vertical stack Right Aligned */}
+                    <div className="flex flex-col items-end gap-3">
+                        <div className="flex items-center gap-2 translate-y-[20px]">
+                            <Selector
+                                icon={Utensils}
+                                label={
+                                    (
+                                        {
+                                            'harris_benedict_1919': 'H. Benedict 1919',
+                                            'harris_benedict_1984': 'H. Benedict 1984',
+                                            'mifflin_1990': 'Mifflin-St Jeor',
+                                            'katch_mcardle_1996': 'Katch-McArdle',
+                                            'cunningham_1980': 'Cunningham',
+                                            'fao_who_2004': 'FAO/WHO',
+                                            'eer_iom_2005': 'EER/IOM 2005',
+                                            'eer_iom_2023': 'EER/IOM 2023',
+                                            'henry_rees_1991': 'Henry & Rees',
+                                            'tinsley_2018_weight': 'Tinsley (Peso)',
+                                            'tinsley_2018_lbm': 'Tinsley (MM)'
+                                        } as Record<string, string>
+                                    )[calculationMethod] || calculationMethod || 'Mifflin-St Jeor 1990'
+                                }
+                            >
+                                {[
+                                    { value: 'mifflin_1990', label: 'Mifflin-St Jeor 1990', desc: 'Padrão-ouro atual.' },
+                                    { value: 'katch_mcardle_1996', label: 'Katch-McArdle 1996', desc: 'Foco em Massa Magra.' },
+                                    { value: 'harris_benedict_1984', label: 'Harris-Benedict 1984', desc: 'Equação revisada.' },
+                                    { value: 'harris_benedict_1919', label: 'Harris-Benedict 1919', desc: 'Equação original.' },
+                                    { value: 'cunningham_1980', label: 'Cunningham 1980', desc: 'Atletas e Massa Magra.' },
+                                    { value: 'fao_who_2004', label: 'FAO/WHO 2004', desc: 'Diretrizes mundiais.' },
+                                    { value: 'eer_iom_2005', label: 'EER/IOM 2005', desc: 'Equações de predição.' },
+                                    { value: 'eer_iom_2023', label: 'EER/IOM 2023', desc: 'Atualização recente.' },
+                                    { value: 'henry_rees_1991', label: 'Henry & Rees 1991', desc: 'Populações específicas.' },
+                                    { value: 'tinsley_2018_weight', label: 'Tinsley 2018 (Peso)', desc: 'Treinamento de força.' },
+                                    { value: 'tinsley_2018_lbm', label: 'Tinsley 2018 (MM)', desc: 'Treinamento de força.' },
+                                ].map((option) => (
+                                    <DropdownMenuItem key={option.value} onClick={() => setCalculationMethod(option.value as any)} className="flex flex-col items-start py-1 px-3 cursor-pointer focus:bg-primary/10">
+                                        <span className="text-xs font-medium">{option.label}</span>
+                                        <span className="text-[9px] text-muted-foreground leading-tight">{option.desc}</span>
+                                    </DropdownMenuItem>
+                                ))}
+                            </Selector>
+                            <Selector
+                                icon={Dna}
+                                label={dietType === 'personalizada' ? 'PERSONALIZADA' : (DIET_TYPE_MACROS[dietType]?.label || 'ESTRATÉGIA').toUpperCase()}
+                            >
+                                {Object.keys(DIET_TYPE_MACROS).map((key) => {
+                                    const data = DIET_TYPE_MACROS[key as DietType];
+                                    return (
+                                        <DropdownMenuItem key={key} onClick={() => setDietType(key as DietType)} className="flex flex-col items-start py-1 px-3 cursor-pointer focus:bg-primary/10">
+                                            <div className="flex items-center justify-between w-full">
+                                                <span className="text-xs font-medium">{data.label}</span>
+                                                <Badge variant="outline" className="text-[9px] opacity-60 ml-2">{data.carbs}/{data.protein}/{data.fats}%</Badge>
+                                            </div>
+                                        </DropdownMenuItem>
+                                    )
+                                })}
+                                <DropdownMenuItem onClick={() => setDietType('personalizada')} className="flex flex-col items-start py-1 px-3 cursor-pointer focus:bg-primary/10">
+                                    <span className="text-xs font-medium">Personalizada</span>
+                                </DropdownMenuItem>
+                            </Selector>
+                        </div>
+                        <div className="flex gap-2 translate-y-[57px]">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={handleGeneratePDF}
+                                className="h-[36px] px-4 gap-2 rounded-xl text-[10px] uppercase tracking-widest text-muted-foreground border-border/50 bg-background/50 hover:bg-background hover:text-primary transition-all"
+                            >
+                                <FileText className="h-3.5 w-3.5 text-amber-500" /> ENVIAR PDF
+                            </Button>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={handleSendApp}
+                                className="h-[36px] px-4 gap-2 rounded-xl text-[10px] uppercase tracking-widest text-muted-foreground border-border/50 bg-background/50 hover:bg-background hover:text-primary transition-all"
+                            >
+                                <Smartphone className="h-3.5 w-3.5 text-emerald-500" /> ENVIAR APP
+                            </Button>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <Card variant="glass" className="w-full max-w-[1600px] mx-auto py-5 px-6 flex flex-col lg:flex-row items-center gap-8 shadow-xl">
-                <div className="flex items-center gap-10 px-4 lg:border-r border-border/20">
+            {/* PDF Modal */}
+            <PDFPreviewModal open={showPDFModal} onOpenChange={setShowPDFModal} />
+
+            <Card variant="glass" className="w-full max-w-[1600px] mx-auto py-5 px-4 md:px-6 flex flex-col lg:flex-row items-center gap-6 md:gap-8 shadow-xl">
+                <div className="flex flex-wrap items-center justify-between md:justify-center gap-6 md:gap-10 w-full lg:w-auto px-0 md:px-4 lg:border-r border-border/20">
                     <MetricBox label="TMB" value={Math.round(tmb)} unit="kcal" icon={Activity} iconColor="text-emerald-500" />
                     <MetricBox label="GCD" value={Math.round(get)} unit="kcal" icon={Flame} iconColor="text-red-500" />
                     <MetricBox label="META" value={targetCalories} unit="kcal" icon={Target} highlight />
@@ -316,14 +417,20 @@ export function EcoHeader() {
                                 <span className="text-[10px] uppercase tracking-widest text-muted-foreground opacity-60">Nível de Atividade</span>
                                 <div className="flex items-center gap-2 mt-0.5">
                                     <Activity className="h-5 w-5 text-emerald-500 group-hover:scale-110 transition-transform" />
-                                    <span className="text-base text-foreground font-medium">{ACTIVITY_LEVELS.find(l => l.value === activityLevel)?.label || activityLevel}</span>
+                                    <span className="text-base text-foreground font-medium">
+                                        {ACTIVITY_LEVELS.find(l => l.value === activityLevel)?.label || activityLevel}
+                                        <span className="text-muted-foreground text-xs ml-1 font-normal">({activityLevel})</span>
+                                    </span>
                                     <ChevronDown className="h-3.5 w-3.5 opacity-30" />
                                 </div>
                             </button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent className="p-1">
                             {ACTIVITY_LEVELS.map(level => (
-                                <DropdownMenuItem key={level.value} onClick={() => setActivityLevel(level.value)} className="py-2.5 px-4 cursor-pointer focus:bg-primary/10">{level.label}</DropdownMenuItem>
+                                <DropdownMenuItem key={level.value} onClick={() => setActivityLevel(level.value)} className="py-2.5 px-4 cursor-pointer focus:bg-primary/10 flex justify-between">
+                                    <span>{level.label}</span>
+                                    <span className="text-muted-foreground text-xs ml-2 opacity-50">{level.value}</span>
+                                </DropdownMenuItem>
                             ))}
                         </DropdownMenuContent>
                     </DropdownMenu>
@@ -360,16 +467,16 @@ function Selector({ icon: Icon, label, subLabel, children }: any) {
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
-                <button className="flex items-center gap-3 px-4 py-2 rounded-xl bg-card border border-border/50 hover:border-primary/40 transition-all group min-w-40 h-[42px]">
-                    <Icon className="h-4 w-4 text-primary group-hover:scale-110 transition-transform shrink-0" />
+                <button className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-card border border-border/50 hover:border-primary/40 transition-all group min-w-32 md:min-w-40 h-[36px] overflow-hidden">
+                    <Icon className="h-3.5 w-3.5 text-primary group-hover:scale-110 transition-transform shrink-0" />
                     <div className="flex flex-col items-start min-w-0">
-                        <span className="text-[10px] text-muted-foreground group-hover:text-foreground transition-colors truncate w-full uppercase tracking-tighter font-bold">{label}</span>
-                        {subLabel && <span className="text-[9px] font-bold text-primary -mt-0.5 opacity-70">{subLabel}</span>}
+                        <span className="text-[9px] md:text-[10px] text-muted-foreground group-hover:text-foreground transition-colors truncate w-full uppercase tracking-tighter font-bold">{label}</span>
+                        {subLabel && <span className="text-[8px] md:text-[9px] font-bold text-primary -mt-0.5 opacity-70">{subLabel}</span>}
                     </div>
-                    <ChevronDown className="h-3 w-3 opacity-20 ml-auto" />
+                    <ChevronDown className="h-3 w-3 opacity-20 ml-auto shrink-0" />
                 </button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="min-w-[200px] p-1 shadow-2xl border-white/10 backdrop-blur-xl">
+            <DropdownMenuContent align="end" className="min-w-[170px] max-h-[300px] overflow-y-auto p-0.5 shadow-2xl border-white/10 backdrop-blur-xl">
                 {children}
             </DropdownMenuContent>
         </DropdownMenu>

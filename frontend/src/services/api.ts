@@ -59,7 +59,18 @@ api.interceptors.response.use(
             } catch (refreshError) {
                 localStorage.removeItem('access_token')
                 localStorage.removeItem('refresh_token')
+                // Remove cookies to prevent middleware from redirecting back to protected routes
                 if (typeof window !== 'undefined') {
+                    // Import dynamically or assume it's available if added to imports
+                    // Since we can't easily change imports in this replace block effectively without touching top of file,
+                    // we will use document.cookie for immediate safety or add import in a separate block.
+                    // Let's add the import to the top of the file in a separate step or just use document.cookie fallback
+                    // Actually, let's just use document.cookie = ... to expire it manually to be safe and dependency-free here
+                    // Force expiry of cookies to clean up any state
+                    document.cookie = 'accessToken=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;'
+                    document.cookie = 'refreshToken=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;'
+                    document.cookie = 'refreshToken=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;'
+
                     window.location.href = '/login'
                 }
                 return Promise.reject(refreshError)
@@ -151,28 +162,34 @@ export const appointmentsAPI = {
 // --- Messages ---
 export const messagesAPI = {
     getConversations: () =>
-        api.get('/patients/me/messages/'),
+        api.get('/messages/inbox/'),
 
     getMessages: (conversationId: number) =>
-        api.get(`/messages/${conversationId}/`),
+        api.get(`/messages/messages/?conversation=${conversationId}`),
 
     sendMessage: (conversationId: number, content: string) =>
-        api.post('/messages/', { conversation: conversationId, content }),
+        api.post('/messages/messages/', { content, conversation: conversationId }),
+
+    findOrCreateByPatient: (patientId: number) =>
+        api.post('/messages/conversations/find-or-create-by-patient/', { patient_id: patientId }).then(res => res.data),
 
     markAsRead: (messageId: number) =>
-        api.patch(`/messages/${messageId}/`, { is_read: true }),
+        api.patch(`/messages/messages/${messageId}/`, { is_read: true }),
+
+    markAllAsRead: (conversationId: number) =>
+        api.post(`/messages/conversations/${conversationId}/mark-all-as-read/`),
 }
 
 // --- Settings ---
 export const settingsAPI = {
     getSettings: () =>
-        api.get('/patients/me/settings/'),
+        api.get('/users/me/'),
 
     updateSettings: (data: any) =>
-        api.patch('/patients/me/settings/', data),
+        api.patch('/users/me/', data),
 
     getNotifications: () =>
-        api.get('/patients/me/notifications/'),
+        api.get('/notifications/'),
 }
 
 export default api

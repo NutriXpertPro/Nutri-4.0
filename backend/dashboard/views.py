@@ -63,7 +63,7 @@ class DashboardStatsView(APIView):
             patients_with_goals_count += 1
             
             # Lógica para perda de peso/gordura
-            if patient.goal in ['PERDA_GORDURA', 'QUALIDADE_VIDA']:
+            if patient.goal in ['PERDA_PESO', 'MANUTENCAO_PESO']:
                 total_change_required = float(initial_weight) - float(patient.target_weight)
                 change_achieved = float(initial_weight) - float(current_weight)
                 
@@ -73,7 +73,7 @@ class DashboardStatsView(APIView):
                     progress = (change_achieved / total_change_required) * 100
             
             # Lógica para ganho de massa/peso
-            elif patient.goal == 'GANHO_MASSA':
+            elif patient.goal == 'GANHO_MUSCULAR':
                 total_change_required = float(patient.target_weight) - float(initial_weight)
                 change_achieved = float(current_weight) - float(initial_weight)
                 

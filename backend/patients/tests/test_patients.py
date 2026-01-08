@@ -26,7 +26,7 @@ class PatientAPITests(APITestCase):
         self.patient_profile1 = PatientProfile.objects.create(
             user=self.patient1,
             nutritionist=self.nutritionist,
-            goal='PERDA_GORDURA'
+            goal='PERDA_PESO'
         )
 
         self.patient2 = User.objects.create_user(
@@ -38,7 +38,7 @@ class PatientAPITests(APITestCase):
         self.patient_profile2 = PatientProfile.objects.create(
             user=self.patient2,
             nutritionist=self.nutritionist,
-            goal='GANHO_MASSA'
+            goal='GANHO_MUSCULAR'
         )
 
         self.inactive_patient = User.objects.create_user(
@@ -89,7 +89,7 @@ class PatientAPITests(APITestCase):
             PatientProfile.objects.create(
                 user=user,
                 nutritionist=self.nutritionist,
-                goal='QUALIDADE_VIDA'
+                goal='MANUTENCAO_PESO'
             )
         
         url = reverse('patients:list_create')

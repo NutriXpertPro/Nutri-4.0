@@ -219,7 +219,7 @@ export function Sidebar({ className, collapsed, onToggle }: SidebarProps) {
                         </div>
                         {!isCollapsed && (
                             <div
-                                className="text-lg font-bold tracking-tighter transition-colors ml-[-12px] text-foreground flex items-center"
+                                className="text-lg font-bold tracking-tighter transition-colors ml-[-15px] text-foreground flex items-center"
                                 suppressHydrationWarning
                             >
                                 <span className="mr-1 text-foreground drop-shadow-sm">

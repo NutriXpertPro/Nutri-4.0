@@ -10,6 +10,8 @@ from django.contrib.auth import get_user_model
 from users.models import UserProfile
 
 User = get_user_model()
+import html
+from utils.sanitization import sanitize_string
 
 def file_log(msg):
     try:
@@ -31,15 +33,43 @@ class PatientProfileSerializer(serializers.ModelSerializer):
     height = serializers.DecimalField(source='active_evaluation.height', max_digits=5, decimal_places=2, read_only=True)
     is_active = serializers.BooleanField(read_only=True)
 
+    nutritionist_name = serializers.SerializerMethodField()
+    nutritionist_title = serializers.SerializerMethodField()
+    nutritionist_gender = serializers.SerializerMethodField()
+    nutritionist_avatar = serializers.SerializerMethodField()
+
     class Meta:
         model = PatientProfile
         fields = [
             'id', 'user_id', 'name', 'email', 'gender', 'status', 'is_active',
             'birth_date', 'phone', 'address', 'goal', 
             'service_type', 'start_date', 'created_at',
-            'target_weight', 'target_body_fat', 'avatar', 'profile_picture', 'age', 'weight', 'height'
+            'target_weight', 'target_body_fat', 'avatar', 'profile_picture', 'age', 'weight', 'height',
+            'nutritionist_name', 'nutritionist_title', 'nutritionist_gender', 'nutritionist_avatar'
         ]
         read_only_fields = ['user_id', 'created_at']
+
+    def get_nutritionist_name(self, obj):
+        return obj.nutritionist.name
+
+    def get_nutritionist_title(self, obj):
+        if obj.nutritionist.professional_title:
+            return obj.nutritionist.get_professional_title_display()
+        return "Nutricionista"
+
+    def get_nutritionist_gender(self, obj):
+        return obj.nutritionist.gender
+
+    def get_nutritionist_avatar(self, obj):
+        try:
+            if hasattr(obj.nutritionist, 'profile') and obj.nutritionist.profile.profile_picture:
+                request = self.context.get('request')
+                if request:
+                    return request.build_absolute_uri(obj.nutritionist.profile.profile_picture.url)
+                return obj.nutritionist.profile.profile_picture.url
+        except Exception:
+            pass
+        return None
 
     def get_avatar(self, obj):
         try:
@@ -72,7 +102,14 @@ class PatientProfileSerializer(serializers.ModelSerializer):
         with transaction.atomic():
             email = user_data.get('email')
             file_log(f"[SERIALIZER] Iniciando create para {email}")
-            name = user_data.get('name', '').title()
+            raw_name = user_data.get('name', '')
+            file_log(f"[DEBUG-NAME] RAW: {repr(raw_name)}")
+            # Usa a sanitização centralizada que agora lida com deep unescape
+            # Removido .title() pois o usuário deve ter controle sobre a capitalização do nome
+            name = sanitize_string(raw_name)
+            file_log(f"[DEBUG-NAME] SANITIZED: {repr(name)}")
+
+
             
             user = User.objects.filter(email=email).first()
             
@@ -158,12 +195,14 @@ class PatientProfileSerializer(serializers.ModelSerializer):
         # Atualizar dados do usuário (User)
         user = instance.user
         if 'name' in user_data:
-            user.name = user_data['name']
+            # Aplicar sanitização na atualização também (removido .title())
+            user.name = sanitize_string(user_data['name'])
         if 'email' in user_data:
             user.email = user_data['email']
         if 'gender' in user_data:
             user.gender = user_data['gender']
         user.save()
+
 
         # Atualizar foto do perfil (UserProfile)
         if 'profile_picture' in profile_data:

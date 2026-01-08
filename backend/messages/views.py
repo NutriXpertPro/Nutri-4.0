@@ -68,6 +68,29 @@ class ConversationViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(conversation)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
+    @action(detail=True, methods=['post'], url_path='mark-all-as-read')
+    def mark_all_as_read(self, request, pk=None):
+        """
+        Marca todas as mensagens da conversa como lidas para o usuário atual.
+        """
+        conversation = self.get_object()
+        conversation.messages.filter(is_read=False).exclude(sender=request.user).update(is_read=True)
+        return Response({'status': 'messages marked as read'}, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=['post'], url_path='clear-messages')
+    def clear_messages(self, request, pk=None):
+        """
+        Deleta todas as mensagens de uma conversa específica.
+        """
+        conversation = self.get_object()
+        conversation.messages.all().delete()
+        
+        # Atualizar o updated_at da conversa
+        conversation.save()
+        
+        return Response({'status': 'messages cleared'}, status=status.HTTP_200_OK)
+
+
 class MessageViewSet(viewsets.ModelViewSet):
     """
     ViewSet para gerenciar mensagens.
@@ -110,9 +133,27 @@ def inbox_view(request):
     for conv in conversations:
         last_message = conv.messages.last()
         unread_count = conv.messages.filter(is_read=False).exclude(sender=request.user).count()
+        # Construir lista de participantes com avatar
+        participants_data = []
+        for p in conv.participants.all():
+            avatar_url = None
+            if hasattr(p, 'profile') and p.profile.profile_picture:
+                try:
+                    avatar_url = request.build_absolute_uri(p.profile.profile_picture.url)
+                except:
+                    pass
+            participants_data.append({
+                'id': p.id,
+                'name': p.name,
+                'email': p.email,
+                'avatar': avatar_url,
+                'professional_title': p.get_professional_title_display(),
+                'user_type': p.user_type
+            })
+
         data.append({
             'id': conv.id,
-            'participants': [p.name for p in conv.participants.exclude(id=request.user.id)],
+            'participants': participants_data,
             'last_message': last_message.content if last_message else '',
             'last_message_time': last_message.timestamp if last_message else None,
             'unread_count': unread_count,

@@ -33,14 +33,14 @@ export function ProfileTab({ onBack }: { onBack?: () => void }) {
                     <div className="p-2 bg-blue-500/10 text-blue-500 rounded-xl mb-2">
                         <Ruler className="w-5 h-5" />
                     </div>
-                    <span className="text-2xl font-bold text-foreground">1.75</span>
+                    <span className="text-2xl font-bold text-foreground">{patient?.height ? patient.height : '--'}</span>
                     <span className="text-xs text-muted-foreground uppercase tracking-wider">Altura (m)</span>
                 </div>
                 <div className="bg-card border border-border/10 p-4 rounded-2xl flex flex-col items-center text-center shadow-sm">
                     <div className="p-2 bg-emerald-500/10 text-emerald-500 rounded-xl mb-2">
                         <Weight className="w-5 h-5" />
                     </div>
-                    <span className="text-2xl font-bold text-foreground">69.7</span>
+                    <span className="text-2xl font-bold text-foreground">{patient?.weight ? patient.weight : '--'}</span>
                     <span className="text-xs text-muted-foreground uppercase tracking-wider">Peso (kg)</span>
                 </div>
             </div>
@@ -57,7 +57,7 @@ export function ProfileTab({ onBack }: { onBack?: () => void }) {
                     </div>
                 </div>
                 <p className="text-lg font-medium text-foreground leading-relaxed">
-                    "{patient?.goal || 'Manter hábitos saudáveis e constância nos exercícios.'}"
+                    "{patient?.goal ? patient.goal.replace(/_/g, ' ') : 'Objetivo não definido'}"
                 </p>
             </div>
 
@@ -65,11 +65,13 @@ export function ProfileTab({ onBack }: { onBack?: () => void }) {
             <div className="bg-card border border-border/10 rounded-3xl overflow-hidden divide-y divide-border/5">
                 <div className="p-4 flex justify-between items-center">
                     <span className="text-sm text-muted-foreground">Gênero</span>
-                    <span className="font-medium text-foreground capitalize">{patient?.gender === 'female' ? 'Feminino' : 'Masculino'}</span>
+                    <span className="font-medium text-foreground capitalize">
+                        {patient?.gender === 'female' ? 'Feminino' : patient?.gender === 'male' ? 'Masculino' : '--'}
+                    </span>
                 </div>
                 <div className="p-4 flex justify-between items-center">
                     <span className="text-sm text-muted-foreground">Idade</span>
-                    <span className="font-medium text-foreground">28 anos</span>
+                    <span className="font-medium text-foreground">{patient?.age ? `${patient.age} anos` : '--'}</span>
                 </div>
                 <div className="p-4 flex justify-between items-center">
                     <span className="text-sm text-muted-foreground">Tipo de Acompanhamento</span>
