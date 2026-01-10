@@ -26,18 +26,23 @@ function PatientDetailsContent() {
     const rawId = params?.id
     const patientId = typeof rawId === 'string' ? parseInt(rawId, 10) : 0
 
-    // Seleção de aba via query param
+    // Seleção de aba via store global
+    const activeTab = useDietEditorStore(state => state.activeTab)
+    const setActiveTab = useDietEditorStore(state => state.setActiveTab)
+    const setPatientStore = useDietEditorStore(state => state.setPatient)
     const searchParams = useSearchParams()
     const tabParam = searchParams.get('tab')
-    const [activeTab, setActiveTab] = React.useState(tabParam || 'overview')
-    const setPatientStore = useDietEditorStore(state => state.setPatient)
 
-    // Atualizar aba se o parâmetro mudar
+    // Atualizar aba no store se o parâmetro mudar ou se for a primeira carga sem parâmetro (garantir overview)
     React.useEffect(() => {
         if (tabParam) {
-            setActiveTab(tabParam)
+            if (tabParam !== activeTab) {
+                setActiveTab(tabParam)
+            }
+        } else if (activeTab === 'diet') { // 'diet' é o default do store, mas no dashboard queremos 'overview'
+            setActiveTab('overview')
         }
-    }, [tabParam])
+    }, [tabParam, activeTab, setActiveTab])
 
     const { isAuthenticated, isLoading: isAuthLoading } = useAuth()
     const { patient, isLoading: isPatientLoading, error } = usePatient(patientId)
