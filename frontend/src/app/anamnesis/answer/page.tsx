@@ -35,8 +35,29 @@ function AnamnesisAnswerContent() {
         onSuccess: () => {
             alert("Anamnese enviada com sucesso! Obrigado.")
         },
-        onError: () => {
-            alert("Erro ao enviar anamnese. Tente novamente.")
+        onError: (error: any) => {
+            console.error("Anamnesis save error:", error)
+            const serverErrors = error.response?.data
+            const url = error.config?.url
+            const baseURL = error.config?.baseURL
+            const method = error.config?.method?.toUpperCase()
+
+            let message = "Erro ao enviar anamnese. Tente novamente."
+
+            if (serverErrors) {
+                const details = Object.entries(serverErrors)
+                    .map(([field, msgs]) => `${field}: ${Array.isArray(msgs) ? msgs.join(", ") : msgs}`)
+                    .join("\n")
+                message += `\n\nDetalhes do Erro:\n${details}`
+            }
+
+            message += `\n\n--- Diagnóstico de Rede ---`
+            message += `\nURL: ${url}`
+            message += `\nBaseURL: ${baseURL}`
+            message += `\nMétodo: ${method}`
+            message += `\nStatus: ${error.response?.status || 'Sem resposta'}`
+
+            alert(message)
         }
     })
 
