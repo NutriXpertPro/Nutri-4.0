@@ -36,14 +36,18 @@ def sync_anamnesis_data(sender, instance, created, **kwargs):
         patient.phone = instance.telefone
         profile_updated = True
 
-    # Mapeamento de objetivos
+    # Mapeamento de objetivos (incluindo novos e legados)
     goal_map = {
         'Emagrecimento': 'PERDA_PESO',
         'Ganho de massa muscular': 'GANHO_MUSCULAR',
         'Ganho de peso': 'GANHO_MUSCULAR',
         'Trincar o shape': 'PERDA_PESO'
     }
-    new_goal = goal_map.get(instance.objetivo)
+    
+    # Se o objetivo já for uma das chaves padrão do PatientProfile, usamos diretamente.
+    # Caso contrário, tentamos o mapeamento legado.
+    new_goal = instance.objetivo if instance.objetivo in dict(patient.GOAL_CHOICES) else goal_map.get(instance.objetivo)
+    
     if new_goal and patient.goal != new_goal:
         patient.goal = new_goal
         profile_updated = True
