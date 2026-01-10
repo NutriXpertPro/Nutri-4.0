@@ -24,8 +24,35 @@ export const notificationService = {
     return Notification.permission === 'granted';
   },
 
+  // Tocar som de notificação
+  playNotificationSound(): void {
+    console.log('Tentando tocar som: /sounds/notification.mp3');
+    try {
+      const audio = new Audio('/sounds/notification.mp3');
+      const playPromise = audio.play();
+
+      if (playPromise !== undefined) {
+        playPromise
+          .then(() => {
+            console.log('Som tocado com sucesso!');
+          })
+          .catch(error => {
+            // Silencioso se for bloqueio de autoplay (comum em navegadores modernos)
+            if (error.name !== 'NotAllowedError') {
+              console.error('Falha ao tocar som:', error);
+            }
+          });
+      }
+    } catch (e) {
+      console.error('Erro ao inicializar áudio:', e);
+    }
+  },
+
   // Enviar notificação de nova mensagem
   notifyNewMessage(senderName: string, messageContent: string): void {
+    // Tocar som sempre que houver tentativa de notificar, independente da permissão visual
+    this.playNotificationSound();
+
     if (this.isNotificationEnabled()) {
       this.showNotification(`Nova mensagem de ${senderName}`, {
         body: messageContent,
@@ -62,6 +89,22 @@ export const notificationService = {
           }
         }
       }
+
+      // Atualizar o ícone de notificação para piscar em vermelho quando houver notificações não lidas
+      const notificationButton = document.querySelector('button[aria-label="Notifications"]') ||
+        document.querySelector('button svg.lucide-bell')?.closest('button');
+
+      if (notificationButton) {
+        if (count > 0) {
+          // Adiciona classes para efeito de piscar em vermelho
+          notificationButton.classList.add('animate-pulse', 'text-red-500');
+          // Garante que o botão tenha a classe de animação pulsante
+          notificationButton.classList.add('animate-pulse');
+        } else {
+          // Remove classes de efeito quando não há notificações
+          notificationButton.classList.remove('animate-pulse', 'text-red-500');
+        }
+      }
     }
   },
 
@@ -71,8 +114,14 @@ export const notificationService = {
       const response = await api.get('/notifications/');
       const unreadNotifications = response.data.filter((notif: any) => !notif.is_read);
       return unreadNotifications.length;
-    } catch (error) {
-      console.error('Erro ao buscar contagem de notificações não lidas:', error);
+    } catch (error: any) {
+      // Falha silenciosa para erros de rede para não poluir o console do usuário
+      if (error?.message === 'Network Error') {
+        // Apenas aviso em dev, silencioso em prod se preferir
+        console.warn('Backend indisponível para notificações (Network Error). Tentando novamente em breve...');
+      } else {
+        console.warn('Aviso ao buscar notificações:', error?.message || error);
+      }
       return 0;
     }
   },
@@ -104,3 +153,6 @@ export const initializeNotificationService = () => {
     notificationService.requestPermission();
   }
 };
+
+// Adiciona o método ao objeto do serviço
+notificationService.initializeNotificationService = initializeNotificationService;
