@@ -126,6 +126,7 @@ export interface StandardAnamnesisData {
     peso: number | null
     altura: number | null
     peso_status: string
+    altura_status: string
     alimentos_restritos: string
     ja_fez_dieta: boolean
     resultado_dieta: string
@@ -188,6 +189,7 @@ const defaultData: StandardAnamnesisData = {
     peso: null,
     altura: null,
     peso_status: "",
+    altura_status: "Estável",
     alimentos_restritos: "",
     ja_fez_dieta: false,
     resultado_dieta: "",
@@ -572,6 +574,17 @@ export function StandardAnamnesisForm({ patientId, onBack, initialData, onSave }
                                 <div className="space-y-2">
                                     <Label>Como o peso está?</Label>
                                     <Select value={formData.peso_status} onValueChange={(v) => updateField("peso_status", v)}>
+                                        <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="Aumentando">Aumentando</SelectItem>
+                                            <SelectItem value="Diminuindo">Diminuindo</SelectItem>
+                                            <SelectItem value="Estável">Estável</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Como a altura está?</Label>
+                                    <Select value={formData.altura_status} onValueChange={(v) => updateField("altura_status", v)}>
                                         <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
                                         <SelectContent>
                                             <SelectItem value="Aumentando">Aumentando</SelectItem>
