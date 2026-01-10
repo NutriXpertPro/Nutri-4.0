@@ -4,6 +4,7 @@ from django.contrib.auth.password_validation import validate_password
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
 from .models import UserProfile, AuthenticationLog
+from utils.validators import validate_cpf
 import re
 
 
@@ -54,7 +55,7 @@ class NutritionistRegistrationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ('name', 'email', 'password', 'confirm_password', 'professional_title', 'gender')
+        fields = ('name', 'email', 'password', 'confirm_password', 'professional_title', 'gender', 'cpf', 'crn')
 
     def validate_password(self, value):
         # Validação padrão do Django
@@ -83,7 +84,9 @@ class NutritionistRegistrationSerializer(serializers.ModelSerializer):
             name=validated_data['name'],
             user_type='nutricionista',
             professional_title=validated_data.get('professional_title'),
-            gender=validated_data.get('gender')
+            gender=validated_data.get('gender'),
+            cpf=validated_data.get('cpf'),
+            crn=validated_data.get('crn')
         )
         return user
 
