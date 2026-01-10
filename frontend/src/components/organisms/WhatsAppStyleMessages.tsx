@@ -30,6 +30,31 @@ const getInitials = (name?: string) => {
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 };
 
+// Função para acionar efeito visual de notificação
+const triggerNotificationVisualEffect = () => {
+  // Toca o som de notificação
+  notificationService.playNotificationSound();
+
+  // Adiciona classe de animação ao ícone de notificação no header
+  const notificationIcon = document.querySelector('button[aria-label="Notifications"]') ||
+                           document.querySelector('button svg.lucide-bell').closest('button');
+
+  if (notificationIcon) {
+    // Adiciona classes para efeito de piscar em vermelho
+    notificationIcon.classList.add('animate-pulse');
+
+    // Remove a classe após 3 segundos para parar o efeito
+    setTimeout(() => {
+      notificationIcon.classList.remove('animate-pulse');
+    }, 3000);
+  }
+
+  // Atualiza o badge de notificações
+  notificationService.fetchUnreadCount().then(count => {
+    notificationService.updateNotificationBadge(count);
+  });
+};
+
 interface WhatsAppConversationsListProps {
   selectedConversationId: string | null;
   onConversationSelect: (conversationId: string) => void;
@@ -186,6 +211,9 @@ const WhatsAppConversationsList: React.FC<WhatsAppConversationsListProps> = ({
                 participant.name,
                 newConv.last_message || 'Nova mensagem'
               );
+
+              // Adiciona efeito visual de piscar no ícone de notificação
+              triggerNotificationVisualEffect();
             }
           }
         });
@@ -462,16 +490,34 @@ const WhatsAppChatArea: React.FC<WhatsAppChatAreaProps> = ({ conversationId, cur
 
         // Buscar mensagens da conversa
         const response = await api.get(`/messages/messages/?conversation=${conversationId}`);
-        setMessages(response.data);
+
+        // Verificar se há novas mensagens não vistas
+        const previousMessageCount = messages.length;
+        const newMessages = response.data;
+
+        setMessages(newMessages);
 
         // Atualizar informações da conversa com base nas mensagens, se necessário
-        if (!conversationDetails.last_message && response.data && response.data.length > 0) {
-          const lastMessage = response.data[response.data.length - 1];
+        if (!conversationDetails.last_message && newMessages && newMessages.length > 0) {
+          const lastMessage = newMessages[newMessages.length - 1];
           conversationDetails.last_message = lastMessage.content;
           conversationDetails.last_message_time = lastMessage.timestamp;
         }
 
         setConversation(conversationDetails);
+
+        // Verificar se há novas mensagens para o usuário atual (não lidas)
+        if (!silent && newMessages.length > previousMessageCount) {
+          // Identificar se as novas mensagens são de outro participante (não do usuário atual)
+          const newUnreadMessages = newMessages.slice(previousMessageCount).filter(
+            msg => msg.sender.id !== currentUserId
+          );
+
+          if (newUnreadMessages.length > 0) {
+            // Acionar efeito de notificação para novas mensagens
+            triggerNotificationVisualEffect();
+          }
+        }
       } catch (error) {
         if (!silent) console.error('Erro ao carregar mensagens:', error);
         // Em caso de erro, tentar endpoints alternativos
