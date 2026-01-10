@@ -29,14 +29,15 @@ class PatientProfileSerializer(serializers.ModelSerializer):
     avatar = serializers.SerializerMethodField()
     profile_picture = serializers.ImageField(source='user.profile.profile_picture', required=False, allow_null=True, write_only=True)
     age = serializers.IntegerField(source='get_age', read_only=True)
-    weight = serializers.DecimalField(source='active_evaluation.weight', max_digits=5, decimal_places=2, read_only=True)
-    height = serializers.DecimalField(source='active_evaluation.height', max_digits=5, decimal_places=2, read_only=True)
+    weight = serializers.SerializerMethodField()
+    height = serializers.SerializerMethodField()
     is_active = serializers.BooleanField(read_only=True)
 
     nutritionist_name = serializers.SerializerMethodField()
     nutritionist_title = serializers.SerializerMethodField()
     nutritionist_gender = serializers.SerializerMethodField()
     nutritionist_avatar = serializers.SerializerMethodField()
+    anamnesis = serializers.SerializerMethodField()
 
     class Meta:
         model = PatientProfile
@@ -45,9 +46,33 @@ class PatientProfileSerializer(serializers.ModelSerializer):
             'birth_date', 'phone', 'address', 'goal', 
             'service_type', 'start_date', 'created_at',
             'target_weight', 'target_body_fat', 'avatar', 'profile_picture', 'age', 'weight', 'height',
-            'nutritionist_name', 'nutritionist_title', 'nutritionist_gender', 'nutritionist_avatar'
+            'nutritionist_name', 'nutritionist_title', 'nutritionist_gender', 'nutritionist_avatar',
+            'anamnesis'
         ]
         read_only_fields = ['user_id', 'created_at']
+
+    def get_anamnesis(self, obj):
+        """Retorna informações resumidas da anamnese para o dashboard."""
+        try:
+            # Tentar pegar a anamnese padrão (OneToOne)
+            if hasattr(obj, 'anamnesis'):
+                return {
+                    'template_title': 'Anamnese Padrão',
+                    'filled_date': obj.anamnesis.updated_at
+                }
+            
+            # Se não houver, tentar pegar a resposta de template mais recente
+            # Nota: responses é o related_name de AnamnesisResponse para PatientProfile
+            last_response = obj.responses.order_by('-filled_date').first()
+            if last_response:
+                return {
+                    'template_title': last_response.template.title,
+                    'filled_date': last_response.filled_date
+                }
+        except Exception:
+            pass
+        return None
+
 
     def get_nutritionist_name(self, obj):
         return obj.nutritionist.name
@@ -80,6 +105,28 @@ class PatientProfileSerializer(serializers.ModelSerializer):
                 return obj.user.profile.profile_picture.url
         except Exception:
             pass
+        return None
+
+    def get_weight(self, obj):
+        """Retorna o peso da avaliação mais recente ou da anamnese se não houver avaliações."""
+        active_evaluation = obj.active_evaluation
+        if active_evaluation and active_evaluation.weight:
+            return active_evaluation.weight
+        
+        # Fallback para anamnese padrão
+        if hasattr(obj, 'anamnesis') and obj.anamnesis.peso:
+            return obj.anamnesis.peso
+        return None
+
+    def get_height(self, obj):
+        """Retorna a altura da avaliação mais recente ou da anamnese se não houver avaliações."""
+        active_evaluation = obj.active_evaluation
+        if active_evaluation and active_evaluation.height:
+            return active_evaluation.height
+            
+        # Fallback para anamnese padrão
+        if hasattr(obj, 'anamnesis') and obj.anamnesis.altura:
+            return obj.anamnesis.altura
         return None
 
     def create(self, validated_data):
