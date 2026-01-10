@@ -48,5 +48,10 @@ export const dashboardService = {
     getFeaturedPatient: async (): Promise<DashboardFeaturedPatient> => {
         const response = await api.get<DashboardFeaturedPatient>("/dashboard/patients/featured/");
         return response.data;
+    },
+
+    getBirthdaysToday: async (): Promise<any[]> => {
+        const response = await api.get<any[]>("/dashboard/patients/birthdays/");
+        return response.data;
     }
 };
