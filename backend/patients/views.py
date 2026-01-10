@@ -160,14 +160,22 @@ def patient_search_view(request):
     ).select_related('user')[:10] # Limit to 10 results
 
     # Return a simplified structure for the autocomplete component
-    results = [
-        {
+    results = []
+    for patient in patients:
+        avatar_url = None
+        try:
+            # Check if user has profile and profile_picture
+            if hasattr(patient.user, 'profile') and patient.user.profile.profile_picture:
+                avatar_url = request.build_absolute_uri(patient.user.profile.profile_picture.url)
+        except Exception:
+            # Silently fail for avatar issues to ensure the patient is still returned
+            pass
+            
+        results.append({
             "id": patient.id, 
             "name": patient.user.name,
-            "avatar": request.build_absolute_uri(patient.user.profile.profile_picture.url) if patient.user.profile.profile_picture else None
-        }
-        for patient in patients
-    ]
+            "avatar": avatar_url
+        })
     
     return Response(results)
 
