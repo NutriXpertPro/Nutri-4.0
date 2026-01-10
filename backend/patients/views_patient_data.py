@@ -30,6 +30,19 @@ class PatientMetricsViewSet(viewsets.ViewSet):
     def list(self, request):
         """GET /api/v1/patients/me/metrics/"""
         try:
+            # DEBUG LOG
+            try:
+                with open('debug_errors.log', 'a') as f:
+                    f.write(f"METRICS REQUEST: User {request.user.id} | Type: {request.user.user_type} | Email: {request.user.email}\n")
+            except: pass
+
+            # SEGURANÇA: Impedir acesso de nutricionistas a endpoints de paciente
+            if request.user.user_type != 'paciente':
+                return Response(
+                    {'error': 'Acesso negado. Você está logado como nutricionista em uma área de paciente.'},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+
             patient = request.user.patient_profile
             today = date.today()
             
@@ -114,6 +127,19 @@ class PatientMealsViewSet(viewsets.ViewSet):
         from datetime import datetime
         
         try:
+            # DEBUG LOG
+            try:
+                with open('debug_errors.log', 'a') as f:
+                    f.write(f"MEALS REQUEST: User {request.user.id} | Type: {request.user.user_type}\n")
+            except: pass
+
+            # SEGURANÇA: Impedir acesso de nutricionistas
+            if request.user.user_type != 'paciente':
+                return Response(
+                    {'error': 'Acesso negado. Você está logado como nutricionista em uma área de paciente.'},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+
             patient = request.user.patient_profile
             today = datetime.now()
             current_day = today.weekday()  # 0=Monday, 6=Sunday
@@ -153,7 +179,13 @@ class PatientMealsViewSet(viewsets.ViewSet):
                 
                 # Get food items
                 foods = [item.food_name for item in meal.items.all()]
-                total_calories = sum(float(item.calories) for item in meal.items.all())
+                total_calories = 0
+                for item in meal.items.all():
+                    try:
+                        cal = float(item.calories) if item.calories is not None else 0
+                        total_calories += cal
+                    except (ValueError, TypeError):
+                        pass
                 
                 result.append({
                     'id': meal.id,
@@ -170,6 +202,14 @@ class PatientMealsViewSet(viewsets.ViewSet):
             return Response(
                 {'error': 'Patient profile not found'},
                 status=status.HTTP_404_NOT_FOUND
+            )
+        except Exception as e:
+            import traceback
+            error_details = traceback.format_exc()
+            print(f"CRITICAL ERROR IN MEALS VIEW: {error_details}")
+            return Response(
+                {'error': 'Internal Server Error', 'details': error_details, 'message': str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
     
     @action(detail=True, methods=['post'])
@@ -207,6 +247,10 @@ class PatientEvolutionViewSet(viewsets.ViewSet):
         from datetime import datetime, timedelta
         
         try:
+            # SEGURANÇA
+            if request.user.user_type != 'paciente':
+                return Response({'error': 'Acesso negado.'}, status=status.HTTP_403_FORBIDDEN)
+
             patient = request.user.patient_profile
             metric_type = request.query_params.get('metric', 'weight')
             period = request.query_params.get('period', '3m')  # 1m, 3m, 6m, 1y
@@ -266,6 +310,9 @@ class PatientMeasurementsViewSet(viewsets.ViewSet):
     def list(self, request):
         """GET /api/v1/patients/me/measurements/"""
         try:
+            if request.user.user_type != 'paciente':
+                return Response({'error': 'Acesso negado.'}, status=status.HTTP_403_FORBIDDEN)
+
             patient = request.user.patient_profile
             measurements = BodyMeasurement.objects.filter(patient=patient).order_by('-date')
             
@@ -303,6 +350,8 @@ class ProgressPhotoViewSet(viewsets.ModelViewSet):
     serializer_class = ProgressPhotoSerializer
     
     def get_queryset(self):
+        if self.request.user.user_type != 'paciente':
+            return ProgressPhoto.objects.none()
         return ProgressPhoto.objects.filter(patient=self.request.user.patient_profile)
     
     def perform_create(self, serializer):
@@ -320,6 +369,9 @@ class PatientExamsViewSet(viewsets.ViewSet):
         from evaluations.models import ExternalExam
         
         try:
+            if request.user.user_type != 'paciente':
+                return Response({'error': 'Acesso negado.'}, status=status.HTTP_403_FORBIDDEN)
+
             patient = request.user.patient_profile
             exams = ExternalExam.objects.filter(patient=patient).order_by('-uploaded_at')
             
@@ -355,6 +407,9 @@ class PatientAppointmentsViewSet(viewsets.ViewSet):
         from datetime import datetime
         
         try:
+            if request.user.user_type != 'paciente':
+                return Response({'error': 'Acesso negado.'}, status=status.HTTP_403_FORBIDDEN)
+
             patient = request.user.patient_profile
             status_filter = request.query_params.get('status', 'upcoming')
             today = datetime.now()
@@ -438,4 +493,3 @@ class PatientAppointmentsViewSet(viewsets.ViewSet):
                 {'error': 'Patient profile not found'},
                 status=status.HTTP_404_NOT_FOUND
             )
-
