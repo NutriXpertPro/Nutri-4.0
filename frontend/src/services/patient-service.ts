@@ -21,6 +21,10 @@ export interface Patient {
     nutritionist_name?: string
     nutritionist_title?: string
     nutritionist_avatar?: string
+    anamnesis?: {
+        template_title: string
+        filled_date: string
+    }
 }
 
 export interface CreatePatientDTO {
