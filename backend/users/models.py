@@ -84,6 +84,8 @@ class User(AbstractBaseUser, PermissionsMixin):
         blank=True,
         null=True,
     )
+    cpf = models.CharField(max_length=14, unique=True, null=True, blank=True)
+    crn = models.CharField(max_length=20, null=True, blank=True)
     is_staff = models.BooleanField(default=False)  # Necessário para acesso ao admin
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
