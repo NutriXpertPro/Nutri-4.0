@@ -52,13 +52,20 @@ export function DietEcosystem() {
                         )
                         : null;
 
-                    // Fetch Anamnesis
+                    // Fetch Anamnesis - both standard and custom responses
                     let anamnesisData = null
                     try {
-                        const responses = await anamnesisService.listResponses(completePatient.id)
-                        if (responses && responses.length > 0) {
-                            // Get most recent - prioritize filled_date
-                            anamnesisData = responses.sort((a, b) => new Date(b.filled_date).getTime() - new Date(a.filled_date).getTime())[0]
+                        // First, try to get standard anamnesis (more common)
+                        const standardAnamnesis = await anamnesisService.getStandardAnamnesis(completePatient.id)
+                        if (standardAnamnesis) {
+                            anamnesisData = standardAnamnesis
+                        } else {
+                            // If no standard anamnesis, try to get custom responses
+                            const responses = await anamnesisService.listResponses(completePatient.id)
+                            if (responses && responses.length > 0) {
+                                // Get most recent - prioritize filled_date
+                                anamnesisData = responses.sort((a, b) => new Date(b.filled_date).getTime() - new Date(a.filled_date).getTime())[0]
+                            }
                         }
                     } catch (e) {
                         console.warn('Failed to fetch anamnesis', e)
