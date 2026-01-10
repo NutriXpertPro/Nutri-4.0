@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -130,10 +130,10 @@ interface WizardAnamnesisData {
     cintura: number | null
     quadril: number | null
 
-    // 7. Fotos (URLs)
-    foto_frente: string | null
-    foto_lado: string | null
-    foto_costas: string | null
+    // 7. Fotos (URLs ou Files)
+    foto_frente: string | File | null
+    foto_lado: string | File | null
+    foto_costas: string | File | null
 }
 
 interface WizardAnamnesisFormProps {
@@ -206,6 +206,30 @@ export function WizardAnamnesisForm({ patientId, initialData, onSave, onCancel }
     const [isSaving, setIsSaving] = useState(false)
     const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
     const [lastSaved, setLastSaved] = useState<Date | null>(null)
+    const [previews, setPreviews] = useState<Record<string, string>>({})
+
+    // Refs para os inputs de foto
+    const fileInputRefs = {
+        foto_frente: useRef<HTMLInputElement>(null),
+        foto_lado: useRef<HTMLInputElement>(null),
+        foto_costas: useRef<HTMLInputElement>(null),
+    }
+
+    const handlePhotoClick = (key: "foto_frente" | "foto_lado" | "foto_costas") => {
+        fileInputRefs[key].current?.click()
+    }
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, key: "foto_frente" | "foto_lado" | "foto_costas") => {
+        const file = e.target.files?.[0]
+        if (!file) return
+
+        // Guardar o File para envio no estado do form
+        updateField(key, file)
+
+        // Criar preview local
+        const previewUrl = URL.createObjectURL(file)
+        setPreviews(prev => ({ ...prev, [key]: previewUrl }))
+    }
 
     // Função para validar se um campo obrigatório está preenchido
     const isFieldValid = (value: any): boolean => {
@@ -1035,29 +1059,56 @@ export function WizardAnamnesisForm({ patientId, initialData, onSave, onCancel }
                         <CardContent>
                             <div className="grid gap-6 md:grid-cols-3">
                                 {[
-                                    { key: "foto_frente" as keyof WizardAnamnesisData, label: "Frente" },
-                                    { key: "foto_lado" as keyof WizardAnamnesisData, label: "Lado" },
-                                    { key: "foto_costas" as keyof WizardAnamnesisData, label: "Costas" },
+                                    { key: "foto_frente" as const, label: "Frente" },
+                                    { key: "foto_lado" as const, label: "Lado" },
+                                    { key: "foto_costas" as const, label: "Costas" },
                                 ].map(({ key, label }) => (
                                     <div key={key} className="flex flex-col items-center gap-4">
-                                        <div className="w-full aspect-[3/4] bg-muted/30 rounded-xl border-2 border-dashed flex flex-col items-center justify-center gap-2 hover:border-primary/50 transition-colors cursor-pointer">
+                                        <input
+                                            type="file"
+                                            ref={fileInputRefs[key]}
+                                            className="hidden"
+                                            accept="image/*"
+                                            onChange={(e) => handleFileChange(e, key)}
+                                        />
+                                        <div
+                                            onClick={() => handlePhotoClick(key)}
+                                            className="w-full aspect-[3/4] bg-muted/30 rounded-xl border-2 border-dashed overflow-hidden flex flex-col items-center justify-center gap-2 hover:border-primary/50 transition-colors cursor-pointer group relative"
+                                        >
                                             {formData[key] ? (
-                                                <div className="w-full h-full flex items-center justify-center">
-                                                    <div className="text-center p-2">
-                                                        <CheckCircle className="h-8 w-8 text-emerald-500 mx-auto" />
-                                                        <p className="text-sm mt-1">Foto {label}</p>
-                                                        <p className="text-xs text-muted-foreground">Carregada</p>
+                                                <div className="w-full h-full relative">
+                                                    <img
+                                                        src={previews[key] || (typeof formData[key] === 'string' ? formData[key] as string : "")}
+                                                        alt={`Foto ${label}`}
+                                                        className="w-full h-full object-cover"
+                                                    />
+                                                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                                        <Camera className="h-8 w-8 text-white" />
+                                                    </div>
+                                                    <div className="absolute top-2 right-2">
+                                                        <Badge variant="secondary" className="bg-emerald-500 text-white border-none">
+                                                            Carregada
+                                                        </Badge>
                                                     </div>
                                                 </div>
                                             ) : (
                                                 <>
-                                                    <Camera className="h-8 w-8 text-muted-foreground" />
-                                                    <span className="text-sm text-muted-foreground">{label}</span>
-                                                    <p className="text-xs text-muted-foreground text-center px-2">Clique para adicionar</p>
+                                                    <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center group-hover:bg-primary/10 transition-colors">
+                                                        <Camera className="h-6 w-6 text-muted-foreground group-hover:text-primary transition-colors" />
+                                                    </div>
+                                                    <div className="text-center px-4">
+                                                        <span className="text-sm font-medium block">{label}</span>
+                                                        <p className="text-xs text-muted-foreground mt-1">Clique para adicionar</p>
+                                                    </div>
                                                 </>
                                             )}
                                         </div>
-                                        <Button variant="outline" size="sm" className="w-full">
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            className="w-full"
+                                            onClick={() => handlePhotoClick(key)}
+                                        >
                                             <Camera className="h-4 w-4 mr-2" />
                                             {formData[key] ? "Substituir" : "Adicionar"} Foto
                                         </Button>
