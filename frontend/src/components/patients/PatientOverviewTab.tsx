@@ -12,6 +12,7 @@ export function PatientOverviewTab() {
     const patient = useDietEditorPatient() as PatientContext
 
     const setActiveTab = useDietEditorStore(state => state.setActiveTab)
+    const setAnamnesisViewMode = useDietEditorStore(state => state.setAnamnesisViewMode)
 
     // Função para calcular idade com base na data de nascimento
     const calculateAge = (ageVal?: number): string => {
@@ -208,7 +209,16 @@ export function PatientOverviewTab() {
                                 <div>
                                     <p className="text-sm font-medium text-foreground mb-1">{patient.anamnesis.template_title || 'Anamnese Padrão'}</p>
                                     <p className="text-xs text-muted-foreground">Preenchida em {formatDate(patient.anamnesis.filled_date)}</p>
-                                    <Button variant="link" onClick={() => setActiveTab('anamnesis')} className="text-emerald-500 p-0 h-auto text-xs mt-3">Ver respostas</Button>
+                                    <Button
+                                        variant="link"
+                                        onClick={() => {
+                                            useDietEditorStore.getState().setAnamnesisViewMode('view-responses')
+                                            setActiveTab('anamnesis')
+                                        }}
+                                        className="text-emerald-500 p-0 h-auto text-xs mt-3"
+                                    >
+                                        Ver respostas
+                                    </Button>
                                 </div>
                             ) : (
                                 <p className="text-sm text-muted-foreground/60 py-2">
