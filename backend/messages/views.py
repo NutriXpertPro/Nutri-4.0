@@ -136,6 +136,10 @@ def inbox_view(request):
         # Construir lista de participantes com avatar
         participants_data = []
         for p in conv.participants.all():
+            # SEGURANÇA: Se sou paciente, não devo ver outros pacientes
+            if request.user.user_type == 'paciente' and p.user_type == 'paciente' and p.id != request.user.id:
+                continue
+
             avatar_url = None
             if hasattr(p, 'profile') and p.profile.profile_picture:
                 try:
