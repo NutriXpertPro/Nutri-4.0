@@ -7,6 +7,8 @@ import { User, HeartPulse, Stethoscope, AlertCircle, Calendar, Briefcase, Heart,
 import { IconWrapper } from "@/components/ui/IconWrapper"
 import { PatientContext } from "@/stores/diet-editor-store"
 import { cn } from "@/lib/utils"
+import { useEffect } from "react"
+import { notificationService } from "@/services/notification-service"
 
 interface PatientContextTabProps {
     patient?: PatientContext
@@ -60,6 +62,12 @@ export function PatientContextTab({ patient }: PatientContextTabProps) {
         if (typeof val === 'string') return val.split(',').map(s => s.trim()).filter(Boolean)
         return []
     }
+
+    // Efeito para monitorar notificações quando o paciente estiver visualizando a aba de contexto
+    useEffect(() => {
+        // Inicializa o serviço de notificação
+        notificationService.initializeNotificationService();
+    }, []);
 
     return (
         <div className="grid gap-6 md:grid-cols-7 pb-10">
