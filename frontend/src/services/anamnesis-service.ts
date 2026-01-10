@@ -75,12 +75,37 @@ export const anamnesisService = {
         const existing = await anamnesisService.getStandardAnamnesis(patientId)
 
         const formData = new FormData()
+        // Lista de campos de foto que precisam de tratamento especial
+        const photoFields = ['foto_frente', 'foto_lado', 'foto_costas']
+
+
         Object.keys(data).forEach(key => {
+            // Skip the 'patient' key if it exists in data, we append it explicitly below
+            if (key === 'patient') return;
+
             if (data[key] !== null && data[key] !== undefined) {
+                // Para campos de foto, apenas aceitar arquivos File - ignorar qualquer string
+                // (URLs http://, /media/, blob:, etc.) para evitar enviar dados inválidos
+                if (photoFields.includes(key)) {
+                    if (data[key] instanceof File) {
+                        formData.append(key, data[key])
+                    }
+                    // Se não for um File, pular este campo (URL existente, blob URL, etc.)
+                    return;
+                }
+
+
+
                 // Skip base64 strings if we have files, or handle them specifically
-                // If it's a URL (already saved), we don't need to send it back as a file
-                if (typeof data[key] === 'string' && data[key].startsWith('http')) {
-                    // Don't append existing URLs to avoid issues, or append to keep it
+                // If it's a URL (already saved), we don't need to send it back as a file.
+                // Works for absolute (http), relative (/media), and blob paths.
+                if (typeof data[key] === 'string' && (data[key].startsWith('http') || data[key].startsWith('/media/') || data[key].startsWith('blob:'))) {
+                    return;
+                }
+
+                // If it's an empty string, we should generally skip it to allow backend defaults/nulls
+                // especially for Date/Time fields where "" is invalid
+                if (typeof data[key] === 'string' && data[key] === "") {
                     return;
                 }
 
@@ -93,17 +118,25 @@ export const anamnesisService = {
         })
         formData.append('patient', patientId.toString())
 
+        // Configuração de headers para FormData (multipart/form-data)
+        const config = {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        }
+
         if (existing) {
-            const response = await api.patch(`/anamnesis/standard/${existing.id}/`, formData, {
-                headers: { 'Content-Type': 'multipart/form-data' }
-            })
+            const response = await api.patch(`/anamnesis/standard/${existing.patient}/`, formData, config)
             return response.data
         } else {
-            const response = await api.post("/anamnesis/standard/", formData, {
-                headers: { 'Content-Type': 'multipart/form-data' }
-            })
+            const response = await api.post("/anamnesis/standard/", formData, config)
             return response.data
         }
-    }
+    },
+
+    getEvolution: async (patient_id: number) => {
+        const { data } = await api.get<any>(`/anamnesis/standard/evolution/?patient_id=${patient_id}`)
+        return data
+    },
 }
 
