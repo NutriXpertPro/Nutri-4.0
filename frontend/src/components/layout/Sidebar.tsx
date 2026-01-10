@@ -66,24 +66,44 @@ export function Sidebar({ className, collapsed, onToggle }: SidebarProps) {
         setAnimateTrigger(prev => prev + 1)
     }, [color])
 
+    // Ref para armazenar a contagem anterior e evitar som no load inicial
+    const prevCountRef = React.useRef<number | null>(null);
+
     // Efeito para buscar o número de notificações não lidas
     React.useEffect(() => {
+        // Verificar se há token antes de tentar buscar
+        const token = localStorage.getItem('access_token');
+        if (!token) return;
+
         const fetchNotificationCount = async () => {
             try {
                 // Importar o serviço de notificações dinamicamente
                 const notificationServiceModule = await import('@/services/notification-service');
                 const notificationService = notificationServiceModule.notificationService;
                 const count = await notificationService.fetchUnreadCount();
+
+                // Lógica para tocar som se houver NOVAS notificações
+                // Ignora a primeira verificação (null) para não tocar ao recarregar a página
+                if (prevCountRef.current !== null && count > prevCountRef.current) {
+                    console.log('Novas notificações detectadas! Tocando som...');
+                    notificationService.playNotificationSound();
+                }
+
+                prevCountRef.current = count;
                 setNotificationCount(count);
             } catch (error) {
-                console.error('Erro ao buscar contagem de notificações:', error);
+                // Silencioso aqui, já tratado no serviço
             }
         };
 
         fetchNotificationCount();
 
         // Atualizar periodicamente (a cada 30 segundos)
-        const interval = setInterval(fetchNotificationCount, 30000);
+        const interval = setInterval(() => {
+            if (localStorage.getItem('access_token')) {
+                fetchNotificationCount();
+            }
+        }, 10000); // Reduzi para 10s para ficar mais responsivo ao som
 
         return () => clearInterval(interval);
     }, []);
