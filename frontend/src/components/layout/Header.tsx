@@ -57,6 +57,66 @@ export function Header({ className, sidebarCollapsed }: HeaderProps) {
     }, [color])
     const [notifications, setNotifications] = React.useState<any[]>([]);
     const [unreadCount, setUnreadCount] = React.useState(0);
+    const previousUnreadCountRef = React.useRef(0);
+    const isFirstLoad = React.useRef(true);
+
+    // Helper para cores do tema
+    const getThemeStyles = (colorId: string) => {
+        const styles: Record<string, { icon: string, bg: string, text: string, dot: string, hover: string }> = {
+            monochrome: {
+                icon: "text-zinc-500",
+                bg: "bg-zinc-500/10",
+                text: "text-zinc-700 dark:text-zinc-300",
+                dot: "bg-zinc-500",
+                hover: "hover:bg-zinc-500/10"
+            },
+            teal: {
+                icon: "text-teal-500",
+                bg: "bg-teal-500/10",
+                text: "text-teal-700 dark:text-teal-300",
+                dot: "bg-teal-500",
+                hover: "hover:bg-teal-500/10"
+            },
+            blue: {
+                icon: "text-blue-500",
+                bg: "bg-blue-500/10",
+                text: "text-blue-700 dark:text-blue-300",
+                dot: "bg-blue-500",
+                hover: "hover:bg-blue-500/10"
+            },
+            violet: {
+                icon: "text-violet-500",
+                bg: "bg-violet-500/10",
+                text: "text-violet-700 dark:text-violet-300",
+                dot: "bg-violet-500",
+                hover: "hover:bg-violet-500/10"
+            },
+            pink: {
+                icon: "text-pink-500",
+                bg: "bg-pink-500/10",
+                text: "text-pink-700 dark:text-pink-300",
+                dot: "bg-pink-500",
+                hover: "hover:bg-pink-500/10"
+            },
+            amber: {
+                icon: "text-amber-500",
+                bg: "bg-amber-500/10",
+                text: "text-amber-700 dark:text-amber-300",
+                dot: "bg-amber-500",
+                hover: "hover:bg-amber-500/10"
+            },
+            emerald: {
+                icon: "text-emerald-500",
+                bg: "bg-emerald-500/10",
+                text: "text-emerald-700 dark:text-emerald-300",
+                dot: "bg-emerald-500",
+                hover: "hover:bg-emerald-500/10"
+            }
+        };
+        return styles[colorId] || styles.blue; // Fallback para blue
+    };
+
+    const themeStyles = getThemeStyles(color);
 
     React.useEffect(() => {
         setMounted(true)
@@ -66,8 +126,8 @@ export function Header({ className, sidebarCollapsed }: HeaderProps) {
         console.log('Header renderizado')
     }, [])
 
-    // Carregar notificações e contagem não lida - Desativado temporariamente devido a erro no backend
-    /* React.useEffect(() => {
+    // Carregar notificações e contagem não lida
+    React.useEffect(() => {
         const fetchNotifications = async () => {
             try {
                 const response = await api.get('/notifications');
@@ -81,15 +141,21 @@ export function Header({ className, sidebarCollapsed }: HeaderProps) {
 
                 // Calcular quantidade de não lidas
                 const unread = allNotifications.filter((n: any) => !n.is_read).length;
+
+                // Tocar som se houver NOVAS notificações não lidas (aumento na contagem)
+                if (unread > previousUnreadCountRef.current) {
+                    notificationService.playNotificationSound();
+                }
+
+                previousUnreadCountRef.current = unread;
                 setUnreadCount(unread);
 
-                // Atualizar badge no serviço de notificações
-                notificationService.updateNotificationBadge(unread);
+                // Atualizar badge externa (se houver implementação para favicon/título)
+                // notificationService.updateNotificationBadge(unread); // Removido para evitar conflito com React
             } catch (error) {
                 console.error('Erro ao carregar notificações:', error);
                 // Em caso de erro, definir contagem como 0 para evitar confusão
                 setUnreadCount(0);
-                notificationService.updateNotificationBadge(0);
             }
         };
 
@@ -101,7 +167,40 @@ export function Header({ className, sidebarCollapsed }: HeaderProps) {
 
             return () => clearInterval(interval);
         }
-    }, [user]); */
+    }, [user]);
+
+    const handleNotificationClick = async (notification: any) => {
+        try {
+            // Marcar como lida
+            if (!notification.is_read) {
+                await notificationService.markAsRead(notification.id);
+                // Atualizar localmente para feedback imediato
+                setNotifications(prev => prev.map(n =>
+                    n.id === notification.id ? { ...n, is_read: true } : n
+                ));
+                setUnreadCount(prev => Math.max(0, prev - 1));
+            }
+
+            // Navegação baseada no tipo
+            if (notification.type === 'new_message' && notification.patient_id) {
+                router.push(`/patient-dashboard-v2?patientId=${notification.patient_id}&tab=messages`);
+            } else if (notification.type === 'appointment_reminder') {
+                router.push('/appointments');
+            } else if (notification.type === 'diet_expiry') {
+                if (notification.patient_id) {
+                    // Redireciona para a dieta do paciente ou perfil
+                    router.push(`/patients/${notification.patient_id}`);
+                } else {
+                    router.push('/diets');
+                }
+            } else {
+                // Default fallback
+                router.push('/notifications');
+            }
+        } catch (error) {
+            console.error("Erro ao processar clique na notificação:", error);
+        }
+    };
 
     return (
         <header
@@ -238,16 +337,25 @@ export function Header({ className, sidebarCollapsed }: HeaderProps) {
                         </DropdownMenu>
                     )}
 
-                    {/* Notifications - Desativado temporariamente devido a erro no backend */}
-                    {/* {mounted && (
+                    {/* Notifications */}
+                    {mounted && (
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon" className="relative rounded-full">
-                                    <Bell className="h-4 w-4" />
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className={cn(
+                                        "relative rounded-full transition-all duration-300",
+                                        unreadCount > 0 && "text-red-500 animate-pulse"
+                                    )}
+                                    aria-label="Notifications"
+                                >
+                                    <Bell className="h-4 w-4" id="notification-icon" />
                                     {unreadCount > 0 && (
                                         <Badge
+                                            id="notification-badge"
                                             variant="destructive"
-                                            className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-[10px] animate-pulse"
+                                            className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-[10px]"
                                         >
                                             {unreadCount}
                                         </Badge>
@@ -258,53 +366,78 @@ export function Header({ className, sidebarCollapsed }: HeaderProps) {
                                 <DropdownMenuLabel className="flex items-center justify-between">
                                     <span>Notificações</span>
                                     <Button
-                                    variant="link"
-                                    size="sm"
-                                    className="h-auto p-0 text-xs"
-                                    onClick={() => router.push('/notifications')}
-                                >
-                                    Ver todas
-                                </Button>
+                                        variant="link"
+                                        size="sm"
+                                        className="h-auto p-0 text-xs"
+                                        onClick={() => router.push('/notifications')}
+                                    >
+                                        Ver todas
+                                    </Button>
                                 </DropdownMenuLabel>
                                 <DropdownMenuSeparator />
                                 {notifications.map((notification) => (
                                     <DropdownMenuItem
                                         key={notification.id}
+                                        onClick={() => handleNotificationClick(notification)}
                                         className={cn(
-                                            "flex items-start gap-3 p-3 cursor-pointer",
-                                            !notification.is_read && "bg-accent"
+                                            "flex items-start gap-3 p-3 cursor-pointer w-full focus:bg-transparent",
+                                            !notification.is_read && themeStyles.bg,
+                                            themeStyles.hover
                                         )}
                                     >
-                                        <span className="mt-0.5">
-                                            {notification.type === 'message' ? (
-                                                <MessageSquare className="h-4 w-4 text-blue-500" />
-                                            ) : notification.type === 'appointment' ? (
-                                                <Calendar className="h-4 w-4 text-amber-500" />
-                                            ) : notification.type === 'diet' ? (
-                                                <UtensilsCrossed className="h-4 w-4 text-green-500" />
+                                        <div className="flex-shrink-0 mt-0.5">
+                                            {notification.patient_avatar ? (
+                                                <Avatar className="h-9 w-9 border border-border/50">
+                                                    <AvatarImage src={notification.patient_avatar} className="object-cover" />
+                                                    <AvatarFallback className="text-[10px] bg-muted text-muted-foreground">
+                                                        {(notification.patient_name || notification.title || "?").substring(0, 2).toUpperCase()}
+                                                    </AvatarFallback>
+                                                </Avatar>
                                             ) : (
-                                                <Bell className="h-4 w-4 text-gray-500" />
+                                                <div className={cn("p-2 rounded-full", themeStyles.bg)}>
+                                                    {notification.type === 'message' ? (
+                                                        <MessageSquare className={cn("h-4 w-4", themeStyles.icon)} />
+                                                    ) : notification.type === 'appointment' ? (
+                                                        <Calendar className={cn("h-4 w-4", themeStyles.icon)} />
+                                                    ) : notification.type === 'diet' ? (
+                                                        <UtensilsCrossed className={cn("h-4 w-4", themeStyles.icon)} />
+                                                    ) : (
+                                                        <Bell className={cn("h-4 w-4", themeStyles.icon)} />
+                                                    )}
+                                                </div>
                                             )}
-                                        </span>
+                                        </div>
                                         <div className="flex-1 min-w-0">
-                                            <p className={cn(
-                                                "text-sm truncate",
-                                                !notification.is_read && "font-medium text-foreground"
-                                            )}>
-                                                {notification.title}
+                                            <div className="flex justify-between items-start">
+                                                <p className={cn(
+                                                    "text-sm",
+                                                    !notification.is_read ? `font-semibold ${themeStyles.text}` : "font-medium"
+                                                )}>
+                                                    {notification.patient_name || notification.title}
+                                                </p>
+                                                {!notification.is_read && (
+                                                    <span className={cn("flex-shrink-0 w-2 h-2 rounded-full", themeStyles.dot)} />
+                                                )}
+                                            </div>
+                                            <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2 leading-snug">
+                                                {notification.message}
                                             </p>
-                                            <p className="text-xs text-muted-foreground">
-                                                {new Date(notification.sent_at || notification.created_at).toLocaleString('pt-BR')}
+                                            <p className="text-[10px] text-muted-foreground mt-1.5 opacity-70">
+                                                {new Date(notification.sent_at || notification.created_at).toLocaleString('pt-BR', {
+                                                    day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit'
+                                                })}
                                             </p>
                                         </div>
-                                        {!notification.is_read && (
-                                            <div className="w-2 h-2 rounded-full bg-blue-500"></div>
-                                        )}
                                     </DropdownMenuItem>
                                 ))}
+                                {notifications.length === 0 && (
+                                    <div className="py-6 text-center text-muted-foreground text-sm">
+                                        Nenhuma notificação nova
+                                    </div>
+                                )}
                             </DropdownMenuContent>
                         </DropdownMenu>
-                    )} */}
+                    )}
 
                     {/* Profile Dropdown */}
                     {mounted && (
@@ -340,6 +473,14 @@ export function Header({ className, sidebarCollapsed }: HeaderProps) {
                                 <DropdownMenuItem onClick={() => router.push("/settings")}>
                                     <Settings className="mr-2 h-4 w-4" />
                                     Configurações
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem onClick={() => {
+                                    console.log('Testando som via botão...');
+                                    notificationService.playNotificationSound();
+                                }}>
+                                    <Bell className="mr-2 h-4 w-4" />
+                                    Testar Som
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem onClick={logout} className="text-destructive focus:text-destructive">
