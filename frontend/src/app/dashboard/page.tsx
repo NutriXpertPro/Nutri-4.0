@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { useAuth } from "@/contexts/auth-context"
 import { DashboardLayout } from "@/components/layout"
 import { AgendaDoDia, type Appointment } from "@/components/dashboard/AgendaDoDia"
-import { PacienteEmFoco, type Patient } from "@/components/dashboard/PacienteEmFoco"
+import { AniversariantesCard, type BirthdayPatient } from "@/components/dashboard/AniversariantesCard"
 import { StatCard, AcoesRapidas } from "@/components/dashboard"
 import { Users, Calendar, UtensilsCrossed, Activity } from "lucide-react"
 import { dashboardService, DashboardStats, DashboardAppointment, DashboardFeaturedPatient } from "@/services/dashboard-service"
@@ -18,7 +18,7 @@ export default function DashboardPage() {
     // States for real data
     const [stats, setStats] = useState<DashboardStats | null>(null)
     const [appointments, setAppointments] = useState<Appointment[]>([])
-    const [featuredPatient, setFeaturedPatient] = useState<Patient | null>(null)
+    const [birthdays, setBirthdays] = useState<BirthdayPatient[]>([])
     const [loadingData, setLoadingData] = useState(true)
 
     useEffect(() => {
@@ -36,10 +36,10 @@ export default function DashboardPage() {
     const fetchDashboardData = async () => {
         try {
             setLoadingData(true)
-            const [statsData, appointmentsData, featuredData] = await Promise.all([
+            const [statsData, appointmentsData, birthdaysData] = await Promise.all([
                 dashboardService.getStats(),
                 dashboardService.getAppointmentsToday(),
-                dashboardService.getFeaturedPatient()
+                dashboardService.getBirthdaysToday()
             ])
 
             setStats(statsData)
@@ -57,24 +57,8 @@ export default function DashboardPage() {
             }))
             setAppointments(mappedAppointments)
 
-            // Map Featured Patient
-            if (featuredData && featuredData.id) {
-                const mappedFeatured: Patient = {
-                    id: String(featuredData.id),
-                    name: featuredData.name,
-                    avatar: featuredData.avatar || undefined, // Convert null to undefined
-                    goal: featuredData.goal,
-                    metrics: [
-                        { label: "Peso", value: `${featuredData.metrics.weight || '--'}kg`, trend: featuredData.metrics.weight_trend || 0, isPositive: (featuredData.metrics.weight_trend || 0) < 0 },
-                        { label: "Gordura", value: `${featuredData.metrics.body_fat || '--'}%`, trend: featuredData.metrics.body_fat_trend || 0, isPositive: (featuredData.metrics.body_fat_trend || 0) < 0 },
-                        { label: "IMC", value: featuredData.metrics.bmi || '--', trend: featuredData.metrics.bmi_trend || 0, isPositive: (featuredData.metrics.bmi_trend || 0) < 0 },
-                        { label: "Músculo", value: `${featuredData.metrics.muscle_mass || '--'}kg`, trend: featuredData.metrics.muscle_mass_trend || 0, isPositive: (featuredData.metrics.muscle_mass_trend || 0) > 0 },
-                    ]
-                }
-                setFeaturedPatient(mappedFeatured)
-            } else {
-                setFeaturedPatient(null)
-            }
+            // Set Birthdays
+            setBirthdays(birthdaysData)
 
         } catch (error) {
             console.error("Failed to fetch dashboard data:", error)
@@ -189,7 +173,7 @@ export default function DashboardPage() {
             {/* Agenda + Paciente em Foco */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
                 <AgendaDoDia appointments={loadingData ? [] : appointments} />
-                <PacienteEmFoco patient={loadingData ? undefined : (featuredPatient || undefined)} />
+                <AniversariantesCard patients={loadingData ? [] : birthdays} />
             </div>
 
             {/* Ações Rápidas */}
