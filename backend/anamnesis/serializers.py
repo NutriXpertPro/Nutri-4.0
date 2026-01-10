@@ -1,7 +1,14 @@
 from rest_framework import serializers
 from .models import Anamnesis, AnamnesisTemplate, AnamnesisResponse
 
+from patients.models import PatientProfile
+
 class AnamnesisSerializer(serializers.ModelSerializer):
+    patient = serializers.PrimaryKeyRelatedField(
+        queryset=PatientProfile.objects.all(),
+        required=False,
+        allow_null=True
+    )
     patient_name = serializers.CharField(source='patient.user.name', read_only=True)
     patient_email = serializers.EmailField(source='patient.user.email', read_only=True)
     progresso = serializers.IntegerField(source='get_progresso', read_only=True)
