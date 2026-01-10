@@ -199,6 +199,44 @@ class DashboardFeaturedPatientView(APIView):
         })
 
 
+class DashboardBirthdaysView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        nutritionist = request.user
+        today = timezone.now().date()
+        
+        # Filter patients with matching day and month
+        patients = PatientProfile.objects.filter(
+            nutritionist=nutritionist,
+            is_active=True,
+            birth_date__month=today.month,
+            birth_date__day=today.day
+        )
+
+        data = []
+        for p in patients:
+            avatar_url = None
+            try:
+                if hasattr(p.user, 'profile') and p.user.profile.profile_picture:
+                    avatar_url = request.build_absolute_uri(p.user.profile.profile_picture.url)
+            except Exception:
+                pass
+            
+            # Age calculation
+            age = p.get_age()
+
+            data.append({
+                "id": p.id,
+                "name": p.user.name,
+                "avatar": avatar_url,
+                "age": age,
+                "date": today.strftime('%d/%m')
+            })
+        
+        return Response(data)
+
+
 class PatientDashboardView(APIView):
     """
     API para o dashboard do paciente
