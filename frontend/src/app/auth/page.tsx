@@ -43,6 +43,8 @@ export default function AuthPage() {
         gender: "",
         password: "",
         confirm_password: "",
+        cpf: "",
+        crn: "",
     })
     const [registerShowPassword, setRegisterShowPassword] = useState(false)
     const [registerIsLoading, setRegisterIsLoading] = useState(false)
@@ -104,6 +106,8 @@ export default function AuthPage() {
                     confirm_password: registerFormData.confirm_password,
                     professional_title: registerFormData.professional_title,
                     gender: registerFormData.gender,
+                    cpf: registerFormData.cpf,
+                    crn: registerFormData.crn,
                 }),
             })
 
@@ -416,6 +420,34 @@ export default function AuthPage() {
                                                 <option value="F">Feminino</option>
                                                 <option value="O">Outro</option>
                                             </select>
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-4">
+                                        {/* CPF */}
+                                        <div className="space-y-2">
+                                            <label htmlFor="cpf" className="text-sm font-medium">CPF</label>
+                                            <Input
+                                                id="cpf"
+                                                placeholder="000.000.000-00"
+                                                value={registerFormData.cpf}
+                                                onChange={handleRegisterChange}
+                                                required
+                                                className="h-11"
+                                            />
+                                        </div>
+
+                                        {/* CRN */}
+                                        <div className="space-y-2">
+                                            <label htmlFor="crn" className="text-sm font-medium">CRN</label>
+                                            <Input
+                                                id="crn"
+                                                placeholder="12345"
+                                                value={registerFormData.crn}
+                                                onChange={handleRegisterChange}
+                                                required
+                                                className="h-11"
+                                            />
                                         </div>
                                     </div>
 
