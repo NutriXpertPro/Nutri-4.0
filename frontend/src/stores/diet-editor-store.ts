@@ -208,6 +208,7 @@ interface DietEditorState {
 
     // Navigation
     activeTab: string
+    anamnesisViewMode: 'list' | 'view-responses' | 'fill-standard' | 'fill-custom'
 
     // Meal Plan
     currentDayIndex: number
@@ -252,6 +253,7 @@ interface DietEditorState {
     calculateMetabolics: () => void
 
     setActiveTab: (tab: string) => void
+    setAnamnesisViewMode: (mode: 'list' | 'view-responses' | 'fill-standard' | 'fill-custom') => void
 
     setCurrentDay: (index: number) => void
     addMeal: (meal: Omit<Meal, 'id'>) => void
@@ -458,6 +460,7 @@ const initialState = {
     customMacros: { carbs: 40, protein: 30, fats: 30 },
     customTargets: {},
     activeTab: 'diet',
+    anamnesisViewMode: 'list',
     currentDayIndex: 0,
     weekPlan: createDefaultWeekPlan(),
     selectedMealId: null,
@@ -673,6 +676,7 @@ export const useDietEditorStore = create<DietEditorState>((set, get) => ({
     },
 
     setActiveTab: (activeTab) => set({ activeTab }),
+    setAnamnesisViewMode: (anamnesisViewMode) => set({ anamnesisViewMode }),
 
     setCurrentDay: (currentDayIndex) => set({ currentDayIndex }),
 
