@@ -17,14 +17,25 @@ export interface Patient {
     avatar?: string
     age?: number
     weight?: number
+    initial_weight?: number
     height?: number
     nutritionist_name?: string
     nutritionist_title?: string
     nutritionist_avatar?: string
     anamnesis?: {
+        type?: string
         template_title: string
         filled_date: string
+        answers?: Record<string, any>
     }
+    notes?: ClinicalNote[]
+}
+
+export interface ClinicalNote {
+    id: number
+    title?: string
+    content: string
+    created_at: string
 }
 
 export interface CreatePatientDTO {
@@ -129,6 +140,20 @@ const patientService = {
         if (query.length < 2) return Promise.resolve([]);
         const response = await api.get<{ id: number; name: string; avatar?: string }[]>(`/patients/search/?q=${encodeURIComponent(query)}`);
         return response.data;
+    },
+
+    createClinicalNote: async (patientId: number, content: string, title?: string) => {
+        const response = await api.post<ClinicalNote>(`/patients/${patientId}/notes/`, { content, title })
+        return response.data
+    },
+
+    updateClinicalNote: async (noteId: number, content: string, title?: string) => {
+        const response = await api.patch<ClinicalNote>(`/patients/me/notes/${noteId}/`, { content, title })
+        return response.data
+    },
+
+    deleteClinicalNote: async (noteId: number) => {
+        await api.delete(`/patients/me/notes/${noteId}/`)
     }
 }
 
