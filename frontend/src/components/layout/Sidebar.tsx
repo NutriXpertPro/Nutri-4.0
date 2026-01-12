@@ -25,6 +25,7 @@ import {
 } from "lucide-react"
 import { motion } from "framer-motion"
 import { useColor } from "@/components/color-provider"
+import { useSidebarStats } from "@/hooks/useSidebarStats"
 
 interface SidebarItem {
     icon: React.ReactNode
@@ -60,6 +61,9 @@ export function Sidebar({ className, collapsed, onToggle }: SidebarProps) {
     const isCollapsed = collapsed !== undefined ? collapsed : internalCollapsed
     const { color } = useColor()
     const [animateTrigger, setAnimateTrigger] = React.useState(0)
+    
+    // Buscar estatísticas reais para a sidebar
+    const stats = useSidebarStats()
 
     // Trigger animation when color changes
     React.useEffect(() => {
@@ -127,7 +131,7 @@ export function Sidebar({ className, collapsed, onToggle }: SidebarProps) {
             icon: <Users className="h-5 w-5" />,
             label: "Pacientes",
             href: "/patients",
-            badge: mockBadges.patients,
+            badge: stats.patients,
             badgeVariant: "default",
         },
         {
@@ -139,7 +143,7 @@ export function Sidebar({ className, collapsed, onToggle }: SidebarProps) {
             icon: <Calendar className="h-5 w-5" />,
             label: "Agenda",
             href: "/calendar",
-            badge: mockBadges.appointments,
+            badge: stats.appointments,
             badgeVariant: "default",
         },
         {
@@ -153,14 +157,14 @@ export function Sidebar({ className, collapsed, onToggle }: SidebarProps) {
                 </span>
             ),
             href: "/messages",
-            badge: mockBadges.messages,
+            badge: stats.messages,
             badgeVariant: "destructive", // Vermelho para mensagens não lidas
         },
         {
             icon: <ClipboardList className="h-5 w-5" />,
             label: "Anamneses",
             href: "/anamnesis",
-            badge: mockBadges.anamnesis,
+            badge: stats.anamnesis,
             badgeVariant: "warning",
         },
         {

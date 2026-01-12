@@ -9,9 +9,6 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Switch } from "@/components/ui/switch"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { anamnesisService, AnamnesisTemplate } from "@/services/anamnesis-service"
@@ -25,49 +22,33 @@ import {
     Loader2,
     LayoutTemplate,
     Users,
-    Star,
     ChevronDown,
     ChevronLeft,
     ChevronRight,
     User,
-    Calendar,
     Moon,
     Activity,
     Heart,
-    Target,
+    TrendingUp,
     Ruler,
     Camera,
-    Upload,
-    Download,
-    Edit3,
-    Trash2,
-    Copy,
     Sparkles,
-    FileUp,
     AlertCircle,
     List,
-    Edit,
-    Eye,
-    TrendingUp,
-    TrendingDown,
-    Dumbbell,
-    Flame,
-    ClipboardList,
+    Star,
+    Copy,
+    Trash2,
 } from "lucide-react"
-import Link from "next/link"
 import { cn } from "@/lib/utils"
 import { TemplateBuilder } from "@/components/anamnesis/TemplateBuilder"
 import { AnamnesisList } from "@/components/anamnesis/AnamnesisList"
 import { WizardAnamnesisForm } from "@/components/anamnesis/WizardAnamnesisForm"
 import { CsvTemplateImporter } from "@/components/anamnesis/CsvTemplateImporter"
+import { AnamnesisReportView } from "@/components/anamnesis/AnamnesisReportView"
 import {
     Dialog,
     DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
     DialogTitle,
-    DialogTrigger,
 } from "@/components/ui/dialog"
 
 // Tipo para as seções da anamnese padrão
@@ -152,8 +133,8 @@ export default function AnamnesisPage() {
     const [searchQuery, setSearchQuery] = React.useState("")
     const [expandedSections, setExpandedSections] = React.useState<string[]>(["identificacao"])
     const [showTemplateBuilder, setShowTemplateBuilder] = React.useState(false)
-    const [editingTemplate, setEditingTemplate] = React.useState<AnamnesisTemplate | null>(null)
-    const [viewMode, setViewMode] = React.useState<"list" | "form">("list") // Para alternar entre lista e formulário
+    const [viewMode, setViewMode] = React.useState<"list" | "form">("list")
+    const [viewingPatientId, setViewingPatientId] = React.useState<number | null>(null)
 
     const queryClient = useQueryClient()
 
@@ -175,7 +156,6 @@ export default function AnamnesisPage() {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['anamnesis-templates'] })
             setShowTemplateBuilder(false)
-            setEditingTemplate(null)
         }
     })
 
@@ -204,8 +184,6 @@ export default function AnamnesisPage() {
         createTemplateMutation.mutate(templateData)
     }
 
-    // Função de importação JSON removida - usando importação CSV via componente CsvTemplateImporter
-
     const handleDuplicateTemplate = (template: AnamnesisTemplate) => {
         createTemplateMutation.mutate({
             title: `${template.title} (Cópia)`,
@@ -220,12 +198,10 @@ export default function AnamnesisPage() {
 
     const handleEditAnamnesis = (id: number) => {
         setViewMode("form")
-        // Aqui você pode carregar os dados da anamnese com o ID especificado
     }
 
     const handleViewAnamnesis = (id: number) => {
-        // Aqui você pode implementar a visualização da anamnese
-        alert(`Visualizando anamnese ${id}`)
+        setViewingPatientId(id)
     }
 
     const handleCancelForm = () => {
@@ -240,7 +216,6 @@ export default function AnamnesisPage() {
                     onSave={handleSaveTemplate}
                     onCancel={() => {
                         setShowTemplateBuilder(false)
-                        setEditingTemplate(null)
                     }}
                     isLoading={createTemplateMutation.isPending}
                 />
@@ -271,19 +246,15 @@ export default function AnamnesisPage() {
         )
     }
 
-    // Calculate Stats
     const totalPatients = patients?.length || 0
     const completedAnamneses = standardAnamneses?.filter((a: any) => (a.progresso || 0) === 100).length || 0
     const pendingAnamneses = totalPatients - completedAnamneses
 
-
     return (
         <DashboardLayout>
-            {/* Background Decorativo */}
             <div className="fixed inset-0 bg-linear-to-br from-primary/5 via-background to-secondary/5 -z-10" />
 
             <div className="space-y-6 relative animate-in fade-in slide-in-from-bottom-4 duration-500">
-                {/* Header Premium */}
                 <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
                     <div className="flex items-center gap-4">
                         <div>
@@ -315,7 +286,6 @@ export default function AnamnesisPage() {
                     </div>
                 </div>
 
-                {/* Stats Cards Premium */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                     <StatCard
                         title="Total Pacientes"
@@ -343,7 +313,6 @@ export default function AnamnesisPage() {
                     />
                 </div>
 
-                {/* Tabs Principal */}
                 <Tabs defaultValue="list" className="space-y-6">
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                         <TabsList className="bg-muted/30 backdrop-blur-sm p-1 rounded-xl">
@@ -377,7 +346,6 @@ export default function AnamnesisPage() {
                         </div>
                     </div>
 
-                    {/* Aba Lista de Anamneses */}
                     <TabsContent value="list" className="space-y-6 mt-6">
                         <AnamnesisList
                             onNewAnamnesis={handleNewAnamnesis}
@@ -386,9 +354,7 @@ export default function AnamnesisPage() {
                         />
                     </TabsContent>
 
-                    {/* Aba Anamnese Padrão */}
                     <TabsContent value="standard" className="space-y-6 mt-6">
-                        {/* Hero Card */}
                         <Card className="bg-linear-to-br from-primary/10 via-card to-card border-primary/20 overflow-hidden relative">
                             <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
                             <CardContent className="p-8 relative">
@@ -419,9 +385,8 @@ export default function AnamnesisPage() {
                             </CardContent>
                         </Card>
 
-                        {/* Seções Expansíveis */}
                         <div className="grid gap-4">
-                            {STANDARD_SECTIONS.map((section, index) => (
+                            {STANDARD_SECTIONS.map((section) => (
                                 <Collapsible
                                     key={section.id}
                                     open={expandedSections.includes(section.id)}
@@ -496,7 +461,6 @@ export default function AnamnesisPage() {
                             ))}
                         </div>
 
-                        {/* Info Box */}
                         <Card className="bg-muted/30 border-dashed">
                             <CardContent className="p-6 flex items-start gap-4">
                                 <div className="h-10 w-10 rounded-full bg-blue-500/10 flex items-center justify-center shrink-0">
@@ -512,7 +476,6 @@ export default function AnamnesisPage() {
                         </Card>
                     </TabsContent>
 
-                    {/* Aba Meus Templates */}
                     <TabsContent value="templates" className="space-y-6 mt-6">
                         {templatesLoading ? (
                             <div className="flex items-center justify-center py-16">
@@ -599,7 +562,6 @@ export default function AnamnesisPage() {
                                     </Card>
                                 ))}
 
-                                {/* Card para adicionar novo */}
                                 <Card
                                     className="bg-card/30 border-dashed border-2 hover:border-primary/50 hover:bg-card/50 transition-all cursor-pointer group"
                                     onClick={() => setShowTemplateBuilder(true)}
@@ -617,6 +579,21 @@ export default function AnamnesisPage() {
                     </TabsContent>
                 </Tabs>
             </div>
+
+            {/* Modal de Visualização da Anamnese */}
+            <Dialog open={viewingPatientId !== null} onOpenChange={(open) => !open && setViewingPatientId(null)}>
+                <DialogContent className="sm:max-w-5xl w-full max-h-[95vh] overflow-y-auto p-0 bg-transparent border-none shadow-none">
+                    <DialogTitle className="sr-only">Visualização da Anamnese</DialogTitle>
+                    <div className="w-full px-2 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                        {viewingPatientId && (
+                            <AnamnesisReportView
+                                patientId={viewingPatientId}
+                                onClose={() => setViewingPatientId(null)}
+                            />
+                        )}
+                    </div>
+                </DialogContent>
+            </Dialog>
         </DashboardLayout>
     )
 }
