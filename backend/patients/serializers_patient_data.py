@@ -4,7 +4,8 @@ from .models_patient_data import (
     MealCheckIn,
     ProgressPhoto,
     BodyMeasurement,
-    AppointmentConfirmation
+    AppointmentConfirmation,
+    ClinicalNote
 )
 
 
@@ -42,3 +43,10 @@ class AppointmentConfirmationSerializer(serializers.ModelSerializer):
         model = AppointmentConfirmation
         fields = ['id', 'appointment', 'status', 'confirmed_at']
         read_only_fields = ['id', 'confirmed_at']
+
+
+class ClinicalNoteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ClinicalNote
+        fields = ['id', 'title', 'content', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'created_at', 'updated_at']

@@ -142,3 +142,27 @@ class AppointmentConfirmation(models.Model):
     
     def __str__(self):
         return f"{self.appointment} - {self.status}"
+    
+    def __str__(self):
+        return f"{self.patient} - {self.date}"
+
+class ClinicalNote(models.Model):
+    """
+    Anotações clínicas rápidas sobre o paciente.
+    """
+    patient = models.ForeignKey(
+        PatientProfile,
+        on_delete=models.CASCADE,
+        related_name='notes'
+    )
+    title = models.CharField(max_length=255, blank=True, null=True)
+    content = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'clinical_notes'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Nota para {self.patient} em {self.created_at.date()}"

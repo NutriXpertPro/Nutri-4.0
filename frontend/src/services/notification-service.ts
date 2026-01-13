@@ -144,15 +144,14 @@ export const notificationService = {
       console.error('Erro ao marcar todas as notificações como lidas:', error);
       throw error;
     }
+  },
+
+  // Inicializar o serviço de notificação
+  initializeNotificationService(): void {
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      this.requestPermission();
+    }
   }
 };
 
-// Função para inicializar o serviço de notificação
-export const initializeNotificationService = () => {
-  if (typeof window !== 'undefined' && 'Notification' in window) {
-    notificationService.requestPermission();
-  }
-};
-
-// Adiciona o método ao objeto do serviço
-notificationService.initializeNotificationService = initializeNotificationService;
+export const initializeNotificationService = notificationService.initializeNotificationService;

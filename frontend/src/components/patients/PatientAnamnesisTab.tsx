@@ -164,12 +164,18 @@ export function PatientAnamnesisTab({ patientId, patient }: PatientAnamnesisTabP
         enabled: !!patientId
     })
 
-    // Inteligência: Se o usuário entrar na aba sem um modo específico e já tiver anamnese, mostra o relatório
+    // Efeito para atualizar a view quando o anamnesisViewMode mudar externamente (pelo store)
+    // Isso é importante para navegação via links externos ou abas
     useEffect(() => {
-        if (view === 'LIST' && standardAnamnesis && (!anamnesisViewMode || anamnesisViewMode === 'list')) {
-            setView('VIEW_RESPONSES');
+        if (anamnesisViewMode === 'view-responses') {
+            setView('VIEW_RESPONSES')
+        } else if (anamnesisViewMode === 'fill-standard') {
+            setView('FILL_STANDARD')
+        } else if (anamnesisViewMode === 'fill-custom') {
+            setView('FILL_CUSTOM')
         }
-    }, [standardAnamnesis, view, anamnesisViewMode]);
+        // Nota: Não forçamos 'LIST' aqui para não atrapalhar a navegação interna se o modo for apenas 'list' (default)
+    }, [anamnesisViewMode]);
 
     const saveStandardMutation = useMutation({
         mutationFn: (data: any) => anamnesisService.saveStandardAnamnesis(patientId, data),
@@ -322,181 +328,6 @@ export function PatientAnamnesisTab({ patientId, patient }: PatientAnamnesisTabP
             )
             }
         </div >
-    )
-}
-
-// COMPONENTES AUXILIARES PARA A FICHA CLÍNICA SUPERIOR
-
-function ClinicalSection({ title, icon: Icon, children }: { title: string, icon: any, children: React.ReactNode }) {
-    return (
-        <div className="space-y-8 animate-in fade-in duration-1000">
-            <div className="flex items-center gap-3 pb-4 border-b border-border/10">
-                <div className="w-10 h-10 rounded-xl bg-primary/5 flex items-center justify-center text-primary shadow-sm border border-primary/10">
-                    <Icon className="h-5 w-5" />
-                </div>
-                <h4 className="text-sm font-medium text-foreground uppercase tracking-[0.2em]">{title}</h4>
-            </div>
-            <div className="space-y-8 pt-2">
-                {children}
-            </div>
-        </div>
-    )
-}
-
-function DataField({ label, value, badge, isLong, compact }: { label: string, value: string | number, badge?: 'green' | 'amber' | 'red', isLong?: boolean, compact?: boolean }) {
-    const badgeColors = {
-        green: 'bg-primary/10 text-primary border-primary/20',
-        amber: 'bg-amber-500/10 text-amber-600 border-amber-500/20',
-        red: 'bg-rose-500/10 text-rose-600 border-rose-500/20'
-    }
-
-    return (
-        <div className={cn("space-y-3 group", compact ? "mb-0" : "mb-10")}>
-            <p className="text-[10px] font-normal text-muted-foreground/60 uppercase tracking-widest flex items-center gap-2">
-                {label}
-                {badge && (
-                    <span className={cn("h-1 w-1 rounded-full animate-pulse", badge === 'green' ? 'bg-primary' : badge === 'amber' ? 'bg-amber-500' : 'bg-rose-500')} />
-                )}
-            </p>
-            {badge ? (
-                <div className="flex items-start">
-                    <Badge variant="outline" className={cn("px-2.5 py-0.5 rounded-lg font-normal text-[10px] uppercase tracking-wider h-auto min-h-[24px] inline-flex", badgeColors[badge])}>
-                        {value}
-                    </Badge>
-                </div>
-            ) : (
-                <p className={cn(
-                    "font-normal text-foreground leading-relaxed first-letter:uppercase lowercase",
-                    isLong ? "text-sm bg-muted/5 p-4 rounded-2xl border border-border/5" : "text-sm",
-                    compact ? "text-sm" : ""
-                )}>
-                    {value || '--'}
-                </p>
-            )}
-        </div>
-    )
-}
-
-function LogoInFrame() {
-    return (
-        <div className="flex items-center gap-3 group select-none cursor-default">
-            {/* Logo Icon */}
-            <div className="relative">
-                <div className="absolute -inset-2 bg-primary/20 blur-md rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
-                <img src="/logo.png" alt="Icon" className="h-10 w-auto relative z-10 drop-shadow-md transition-all duration-500 group-hover:scale-110" />
-            </div>
-            {/* Logo Text */}
-            <div className="flex flex-col">
-                <div className="text-sm font-medium flex items-center tracking-tight leading-none">
-                    <span className="text-zinc-900 dark:text-white">Nutri</span>
-                    <span className="text-primary ml-1">Xpert</span>
-                    <span className="text-zinc-900 dark:text-white ml-1">Pro</span>
-                </div>
-                <div className="text-[6px] font-medium text-primary/60 uppercase tracking-[0.4em] mt-1 leading-none">Performance Lab</div>
-            </div>
-        </div>
-    )
-}
-
-function EvolutionAngle({ title, firstPhoto, lastPhoto, dates }: { title: string, firstPhoto?: string, lastPhoto?: string, dates?: string[] }) {
-    const [zoomPhoto, setZoomPhoto] = useState<string | null>(null)
-
-    return (
-        <div className="group/angle animate-in zoom-in duration-1000 mb-20">
-            {/* Título da Seção */}
-            <div className="flex justify-center mb-8">
-                <div className="relative">
-                    <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 to-primary/5 blur-sm opacity-50 rounded-full" />
-                    <Badge variant="outline" className="relative px-8 py-2 rounded-full border-zinc-200 dark:border-primary/30 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-md text-primary dark:text-primary text-[11px] font-normal uppercase tracking-[0.5em] shadow-xl">
-                        {title}
-                    </Badge>
-                </div>
-            </div>
-
-            {/* MOLDURA ÚNICA PREMIUM (COLLAGE) */}
-            <div className="relative bg-zinc-50 dark:bg-[#050505] rounded-[2.5rem] p-1 shadow-[0_20px_50px_rgba(0,0,0,0.1)] dark:shadow-[0_40px_100px_-20px_rgba(0,0,0,0.8)] overflow-hidden border-[14px] border-zinc-100 dark:border-[#0a0a0a] ring-1 ring-black/5 dark:ring-white/10 mx-auto max-w-4xl group/frame">
-
-                {/* LOGO CENTRAL SUPERIOR INTEGRADA NA MOLDURA */}
-                <div className="absolute top-6 left-1/2 -translate-x-1/2 z-40 flex flex-col items-center pointer-events-none transition-transform duration-500 group-hover/frame:scale-105">
-                    <LogoInFrame />
-                    <div className="h-[2px] w-12 bg-gradient-to-r from-transparent via-primary/50 to-transparent mt-2" />
-                </div>
-
-                <div className="grid grid-cols-2 gap-1 relative z-10 pt-20">
-                    {/* FOTO INICIAL (ESQUERDA) */}
-                    <div className="relative aspect-[4/4.25] bg-zinc-100 dark:bg-[#111] group/photo overflow-hidden rounded-bl-[1.5rem] border-r border-black/5 dark:border-white/5">
-                        {firstPhoto ? (
-                            <img
-                                src={firstPhoto}
-                                alt="Inicial"
-                                className="w-full h-full object-cover transition-all duration-1000 group-hover/photo:scale-110 cursor-zoom-in"
-                                onClick={() => setZoomPhoto(firstPhoto)}
-                            />
-                        ) : (
-                            <div className="w-full h-full flex flex-col items-center justify-center text-zinc-400 dark:text-zinc-800">
-                                <div className="w-16 h-16 rounded-full bg-black/5 dark:bg-white/5 flex items-center justify-center mb-4">
-                                    <Camera className="h-8 w-8 opacity-20" />
-                                </div>
-                                <span className="text-[9px] font-normal uppercase tracking-[0.3em] opacity-30">Inicial Pendente</span>
-                            </div>
-                        )}
-
-                        {/* Overlay Premium */}
-                        <div className="absolute inset-0 ring-inset ring-1 ring-black/5 dark:ring-white/5 pointer-events-none" />
-                        <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-zinc-50/90 via-zinc-50/40 to-transparent dark:from-black/90 dark:via-black/40 dark:to-transparent pointer-events-none" />
-
-                        <div className="absolute bottom-6 left-8 z-20">
-                            <p className="text-[9px] text-zinc-500 dark:text-white/40 font-normal tracking-[0.3em] mb-1">INÍCIO</p>
-                            <p className="text-sm font-normal text-zinc-900 dark:text-white tracking-widest">{dates?.[0] || '--/--/----'}</p>
-                        </div>
-                    </div>
-
-                    {/* FOTO ATUAL (DIREITA) */}
-                    <div className="relative aspect-[4/4.25] bg-zinc-100 dark:bg-[#111] group/photo overflow-hidden rounded-br-[1.5rem]">
-                        {/* Só mostrar a foto 'atual' se ela for diferente da inicial. */}
-                        {lastPhoto && lastPhoto !== firstPhoto ? (
-                            <img
-                                src={lastPhoto}
-                                alt="Atual"
-                                className="w-full h-full object-cover transition-all duration-1000 group-hover/photo:scale-110 cursor-zoom-in"
-                                onClick={() => setZoomPhoto(lastPhoto)}
-                            />
-                        ) : (
-                            <div className="w-full h-full flex flex-col items-center justify-center text-primary/30">
-                                <div className="w-16 h-16 rounded-full bg-primary/5 flex items-center justify-center mb-4">
-                                    <TrendingUp className="h-8 w-8 opacity-20" />
-                                </div>
-                                <span className="text-[9px] font-normal uppercase tracking-[0.3em] opacity-30">Resultado Pendente</span>
-                            </div>
-                        )}
-
-                        {/* Overlay Premium */}
-                        <div className="absolute inset-0 ring-inset ring-1 ring-black/5 dark:ring-white/5 pointer-events-none" />
-                        <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-zinc-50/90 via-zinc-50/40 to-transparent dark:from-black/90 dark:via-black/40 dark:to-transparent pointer-events-none" />
-
-                        <div className="absolute bottom-6 right-8 z-20 text-right">
-                            <p className="text-[9px] text-primary dark:text-primary/60 font-normal tracking-[0.3em] mb-1">RESULTADO</p>
-                            <p className="text-sm font-normal text-zinc-900 dark:text-white tracking-widest">{dates?.[1] || '--/--/----'}</p>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Divisória Central */}
-                <div className="absolute top-0 bottom-0 left-1/2 w-px bg-zinc-200 dark:bg-white/10 z-20 pointer-events-none" />
-            </div>
-
-            {/* LIGHTBOX / ZOOM */}
-            {zoomPhoto && (
-                <div className="fixed inset-0 z-[100] bg-black/95 flex items-center justify-center p-4 md:p-10 cursor-zoom-out animate-in fade-in duration-500" onClick={() => setZoomPhoto(null)}>
-                    <div className="relative max-w-full max-h-full">
-                        <img src={zoomPhoto} className="max-w-full max-h-full object-contain rounded-lg shadow-2xl ring-2 ring-white/10" />
-                        <Button variant="ghost" className="absolute -top-12 right-0 text-white hover:bg-white/10 rounded-full h-10 w-10 flex items-center justify-center" onClick={() => setZoomPhoto(null)}>
-                            <X className="h-6 w-6" />
-                        </Button>
-                    </div>
-                </div>
-            )}
-        </div>
     )
 }
 

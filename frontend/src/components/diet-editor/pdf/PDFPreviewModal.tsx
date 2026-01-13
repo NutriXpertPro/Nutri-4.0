@@ -43,6 +43,8 @@ import {
     TableRow,
 } from "@/components/ui/table"
 import { motion } from 'framer-motion'
+import api from '@/services/api'
+import dietService from '@/services/diet-service'
 import { cn } from '@/lib/utils'
 
 interface PDFPreviewModalProps {
@@ -57,6 +59,8 @@ export function PDFPreviewModal({ open, onOpenChange }: PDFPreviewModalProps) {
     const [nutritionist, setNutritionist] = useState<any>(null)
 
     const {
+        dietId,
+        dietName,
         dietType,
         targetCalories,
         targetMacros,
@@ -64,7 +68,8 @@ export function PDFPreviewModal({ open, onOpenChange }: PDFPreviewModalProps) {
         workspaceMeals,
         goalAdjustment,
         tmb,
-        get
+        get,
+        setDietId
     } = useDietEditorStore()
     const patient = useDietEditorPatient()
     const weekPlanMeals = useDietEditorMeals()
@@ -149,11 +154,90 @@ export function PDFPreviewModal({ open, onOpenChange }: PDFPreviewModalProps) {
     const handleSendToPatient = async () => {
         setIsSending(true)
         setSendSuccess(false)
-        await new Promise(resolve => setTimeout(resolve, 1500))
-        setSendSuccess(true)
-        setIsSending(false)
-        setTimeout(() => setSendSuccess(false), 3000)
+        
+        try {
+            // 1. Ensure Diet is Saved
+            let activeDietId = dietId;
+            
+            if (!activeDietId && patient) {
+                // Construct diet object to save
+                const dietData = {
+                    patient: patient.id,
+                    name: dietName || `Dieta ${new Date().toLocaleDateString()}`,
+                    goal: patient.goal,
+                    diet_type: dietType,
+                    is_active: true, // Forçar dieta como ativa
+                    // Send to new serializer field for relational creation
+                    meals_data: mealsToDisplay.map(m => ({
+                        name: m.name,
+                        time: m.time,
+                        items: m.items.map(i => ({
+                            food_name: i.name,
+                            quantity: i.quantity,
+                            unit: i.unit,
+                            calories: i.calories,
+                            protein: i.protein,
+                            carbs: i.carbs,
+                            fats: i.fats
+                        }))
+                    })),
+                    // Legacy field compatible with validator if needed, or empty
+                    meals: []
+                };
+                
+                try {
+                    const savedDiet = await dietService.create(dietData);
+                    activeDietId = savedDiet.id;
+                    setDietId(savedDiet.id);
+                } catch (e) {
+                    console.error("Failed to auto-save diet", e);
+                    // Can't proceed without ID
+                    setIsSending(false);
+                    return; 
+                }
+            }
+            
+            if (!activeDietId) {
+                console.error("No diet ID available");
+                setIsSending(false);
+                return;
+            }
+
+            // 2. Generate PDF Blob using html2pdf (Dynamic Import)
+            // @ts-ignore
+            const html2pdf = (await import('html2pdf.js')).default;
+            
+            const element = contentRef.current;
+            const opt = {
+                margin: 0,
+                filename: `Plano_Alimentar_${patient?.name}.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2, useCORS: true },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+
+            const pdfBlob = await html2pdf().set(opt).from(element).output('blob');
+
+            // 3. Upload PDF to Backend
+            const formData = new FormData();
+            formData.append('file', pdfBlob, `diet_${activeDietId}.pdf`);
+
+            await api.post(`/diets/${activeDietId}/upload_pdf/`, formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data'
+                }
+            });
+
+            setSendSuccess(true)
+            setTimeout(() => setSendSuccess(false), 3000)
+            
+        } catch (err) {
+            console.error("Error generating/uploading PDF:", err);
+        } finally {
+            setIsSending(false)
+        }
     }
+
 
     const dietTypeLabel = DIET_TYPE_MACROS[dietType as keyof typeof DIET_TYPE_MACROS]?.label || 'Personalizada'
 

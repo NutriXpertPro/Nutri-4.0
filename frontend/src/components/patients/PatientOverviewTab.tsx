@@ -1,44 +1,139 @@
 "use client"
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { StatCard } from "@/components/dashboard/StatCard"
-import { Activity, Calendar, TrendingUp, Utensils, MessageSquareText, FileText, Plus } from "lucide-react"
+import { Activity, Calendar, TrendingUp, Utensils, MessageSquareText, FileText, Plus, Pencil, Trash2, Loader2 } from "lucide-react"
 import { IconWrapper } from "@/components/ui/IconWrapper"
-import { useDietEditorPatient, useDietEditorStore, PatientContext } from "@/stores/diet-editor-store"
+import { useDietEditorStore } from "@/stores/diet-editor-store"
 import { Button } from "@/components/ui/button"
+import { useQueryClient } from '@tanstack/react-query'
+import { usePatient } from '@/hooks/usePatients'
+import patientService from '@/services/patient-service'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { Textarea } from '@/components/ui/textarea'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { toast } from 'sonner'
+import { Skeleton } from "@/components/ui/skeleton"
 
-export function PatientOverviewTab() {
-    const patient = useDietEditorPatient() as PatientContext
+export function PatientOverviewTab({ patientId }: { patientId: number }) {
+    // 2. Fonte da Verdade: React Query (Direto da API/Cache)
+    const { patient, isLoading, error } = usePatient(patientId)
+    const queryClient = useQueryClient()
 
     const setActiveTab = useDietEditorStore(state => state.setActiveTab)
     const setAnamnesisViewMode = useDietEditorStore(state => state.setAnamnesisViewMode)
 
-    // Função para calcular idade com base na data de nascimento
-    const calculateAge = (ageVal?: number): string => {
-        if (!ageVal) return '--'
-        return String(ageVal)
+    // State for note dialog
+    const [isNoteDialogOpen, setIsNoteDialogOpen] = useState(false)
+    const [editingNote, setEditingNote] = useState<any | null>(null)
+    const [noteTitle, setNoteTitle] = useState('')
+    const [noteContent, setNoteContent] = useState('')
+    const [isSubmitting, setIsSubmitting] = useState(false)
+
+    // Reset form when dialog opens/closes
+    useEffect(() => {
+        if (!isNoteDialogOpen) {
+            setEditingNote(null)
+            setNoteTitle('')
+            setNoteContent('')
+        }
+    }, [isNoteDialogOpen])
+
+    // Função para calcular idade
+    const calculateAge = (birthDate?: string): string => {
+        if (!birthDate) return '--'
+        const today = new Date()
+        const birth = new Date(birthDate)
+        let age = today.getFullYear() - birth.getFullYear()
+        const monthDiff = today.getMonth() - birth.getMonth()
+        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+            age--
+        }
+        return String(age)
     }
 
-    const hasWeightHistory = patient?.initial_weight && patient?.weight && patient.initial_weight !== patient.weight
+    const hasWeightHistory = patient?.initial_weight && patient?.weight
     const weightDiff = (patient?.weight || 0) - (patient?.initial_weight || 0)
-    const isWeightLoss = weightDiff < 0
+    const isWeightLoss = weightDiff <= 0
 
     // Format Date Helper
     const formatDate = (dateStr: string) => {
         try {
-            return new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(dateStr))
+            return new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }).format(new Date(dateStr))
         } catch {
             return dateStr
         }
     }
+
+    const handleEditClick = (note: any) => {
+        setEditingNote(note)
+        setNoteTitle(note.title || '')
+        setNoteContent(note.content)
+        setIsNoteDialogOpen(true)
+    }
+
+    const handleSaveNote = async () => {
+        if (!noteContent.trim() || !patientId) return
+
+        setIsSubmitting(true)
+        try {
+            if (editingNote) {
+                await patientService.updateClinicalNote(editingNote.id, noteContent, noteTitle)
+                toast.success('Anotação atualizada com sucesso!')
+            } else {
+                await patientService.createClinicalNote(patientId, noteContent, noteTitle)
+                toast.success('Anotação adicionada com sucesso!')
+            }
+            await queryClient.invalidateQueries({ queryKey: ['patient', patientId] })
+            setIsNoteDialogOpen(false)
+        } catch (error: any) {
+            console.error('Error saving note:', error)
+            toast.error('Erro ao salvar anotação')
+        } finally {
+            setIsSubmitting(false)
+        }
+    }
+
+    const handleDeleteNote = async (noteId: number, e: React.MouseEvent) => {
+        e.stopPropagation()
+        if (!confirm('Tem certeza que deseja excluir esta anotação?')) return
+
+        try {
+            await patientService.deleteClinicalNote(noteId)
+            await queryClient.invalidateQueries({ queryKey: ['patient', patientId] })
+            toast.success('Anotação excluída.')
+        } catch (error) {
+            console.error('Error deleting note:', error)
+            toast.error('Erro ao excluir anotação.')
+        }
+    }
+
+    if (isLoading) {
+        return (
+            <div className="space-y-8 pb-10">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <Skeleton className="h-40 col-span-1 md:col-span-2 rounded-3xl" />
+                    <Skeleton className="h-40 rounded-3xl" />
+                    <Skeleton className="h-40 rounded-3xl" />
+                </div>
+                <div className="flex justify-center">
+                   <Skeleton className="w-32 h-32 rounded-full" />
+                </div>
+                <Skeleton className="h-64 rounded-3xl" />
+            </div>
+        )
+    }
+
+    if (!patient) return null
 
     return (
         <div className="space-y-8 pb-10">
             {/* Cards de Resumo */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
 
-                {/* Weight Evolution Card - Only show graph if we have history, otherwise show basic stats */}
+                {/* Weight Evolution Card */}
                 <Card variant="glass" className="col-span-1 md:col-span-2 border-none bg-background/40 shadow-xl overflow-hidden group">
                     <CardHeader className="flex flex-row items-center justify-between pb-6">
                         <div className="space-y-1">
@@ -51,7 +146,7 @@ export function PatientOverviewTab() {
                         <div className="flex items-end justify-between mb-8">
                             <div className="space-y-1">
                                 <p className="text-[10px] text-white uppercase tracking-widest font-normal">Peso Inicial</p>
-                                <div className="text-xl text-white tabular-nums font-normal">{patient?.initial_weight ? `${patient.initial_weight} kg` : '--'}</div>
+                                <div className="text-xl text-white tabular-nums font-normal">{patient.initial_weight ? `${patient.initial_weight} kg` : '--'}</div>
                             </div>
 
                             <div className="flex flex-col items-center">
@@ -70,19 +165,17 @@ export function PatientOverviewTab() {
 
                             <div className="text-right space-y-1">
                                 <p className="text-[10px] text-primary uppercase tracking-widest font-normal">Peso Atual</p>
-                                <div className="text-5xl tracking-tighter text-foreground tabular-nums font-normal">{patient?.weight || '--'}<span className="text-xl ml-1 text-white font-normal">kg</span></div>
+                                <div className="text-5xl tracking-tighter text-foreground tabular-nums font-normal">{patient.weight || '--'}<span className="text-xl ml-1 text-white font-normal">kg</span></div>
                             </div>
                         </div>
 
-                        {/* Visual Gauge - Only if history exists */}
-                        {hasWeightHistory && patient?.initial_weight ? (
+                        {/* Visual Gauge */}
+                        {hasWeightHistory ? (
                             <div className="relative pt-6 pb-2">
                                 <div className="h-2 w-full rounded-full bg-muted/30 overflow-hidden relative">
                                     <div className="absolute inset-0 bg-gradient-to-r from-red-500/60 via-amber-400/60 to-emerald-500/60 blur-[1px]" />
-                                    {/* Simple progress bar logic could be complex, for now visual placeholder */}
                                     <div className="absolute inset-y-0 left-0 bg-primary/20 w-full" />
                                 </div>
-
                                 <div className="flex justify-between mt-6">
                                     <div className="flex flex-col">
                                         <span className="text-[9px] text-white uppercase tracking-widest font-normal">Início</span>
@@ -96,7 +189,7 @@ export function PatientOverviewTab() {
                             </div>
                         ) : (
                             <div className="h-10 flex items-center justify-center border-t border-border/10">
-                                <p className="text-xs text-muted-foreground">Adicione uma avaliação física para gerar gráfico de evolução.</p>
+                                <p className="text-xs text-muted-foreground">Adicione uma avaliação física para gerar gráfico.</p>
                             </div>
                         )}
                     </CardContent>
@@ -104,15 +197,15 @@ export function PatientOverviewTab() {
 
                 <StatCard
                     title="Idade"
-                    value={`${patient?.age || '--'} anos`}
-                    subtitle={patient?.sex === 'M' ? 'Masculino' : patient?.sex === 'F' ? 'Feminino' : 'Gênero não especificado'}
+                    value={patient.age ? `${patient.age} anos` : calculateAge(patient.birth_date)}
+                    subtitle={patient.gender === 'M' ? 'Masculino' : patient.gender === 'F' ? 'Feminino' : 'Não especificado'}
                     icon={Calendar}
                     variant="blue"
                 />
 
                 <StatCard
                     title="IMC"
-                    value={patient?.weight && patient?.height ? (patient.weight / (patient.height * patient.height)).toFixed(1) : '--'}
+                    value={patient.weight && patient.height ? (patient.weight / (patient.height * patient.height)).toFixed(1) : '--'}
                     subtitle="Índice de Massa Corporal"
                     icon={Activity}
                     variant="green"
@@ -152,21 +245,85 @@ export function PatientOverviewTab() {
                             <CardTitle className="text-xl tracking-tight">Anotações</CardTitle>
                         </div>
                     </div>
-                    <Button variant="outline" size="sm" className="h-8 gap-2 bg-background/50 hover:bg-amber-500/10 hover:text-amber-500 hover:border-amber-500/50 transition-all border-dashed rounded-xl">
-                        <Plus className="h-3.5 w-3.5" />
-                        Adicionar
-                    </Button>
+                    <Dialog open={isNoteDialogOpen} onOpenChange={setIsNoteDialogOpen}>
+                        <DialogTrigger asChild>
+                            <Button variant="outline" size="sm" className="h-8 gap-2 bg-background/50 hover:bg-amber-500/10 hover:text-amber-500 hover:border-amber-500/50 transition-all border-dashed rounded-xl">
+                                <Plus className="h-3.5 w-3.5" />
+                                Adicionar
+                            </Button>
+                        </DialogTrigger>
+                        <DialogContent className="sm:max-w-[600px]">
+                            <DialogHeader>
+                                <DialogTitle>{editingNote ? 'Editar Anotação' : 'Nova Anotação Clínica'}</DialogTitle>
+                            </DialogHeader>
+                            <div className="space-y-4 py-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="note-title">Título (Opcional)</Label>
+                                    <Input
+                                        id="note-title"
+                                        value={noteTitle}
+                                        onChange={(e) => setNoteTitle(e.target.value)}
+                                        placeholder="Ex: Consulta de retorno, Observações iniciais..."
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="note-content">Conteúdo</Label>
+                                    <Textarea
+                                        id="note-content"
+                                        value={noteContent}
+                                        onChange={(e) => setNoteContent(e.target.value)}
+                                        placeholder="Digite a anotação clínica detalhada aqui..."
+                                        rows={10}
+                                        className="resize-none"
+                                    />
+                                </div>
+                                <Button
+                                    onClick={handleSaveNote}
+                                    disabled={isSubmitting || !noteContent.trim()}
+                                    className="w-full"
+                                >
+                                    {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                                    {isSubmitting ? 'Salvando...' : (editingNote ? 'Atualizar' : 'Salvar Anotação')}
+                                </Button>
+                            </div>
+                        </DialogContent>
+                    </Dialog>
                 </CardHeader>
                 <CardContent className="px-6 pb-8">
                     {patient?.notes && patient.notes.length > 0 ? (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="flex flex-col gap-4">
                             {patient.notes.map((note: any, idx: number) => (
-                                <div key={idx} className="group/note relative bg-muted/20 hover:bg-muted/40 p-5 rounded-3xl border border-border/5 transition-all hover:translate-x-1">
+                                <div 
+                                    key={idx} 
+                                    className="group/note relative bg-muted/20 hover:bg-muted/40 p-5 rounded-3xl border border-border/5 transition-all hover:translate-x-1 cursor-pointer"
+                                    onClick={() => handleEditClick(note)}
+                                >
                                     <div className="absolute left-0 top-6 bottom-6 w-1 bg-primary rounded-full shadow-[0_0_10px_rgba(var(--primary),0.5)]" />
-                                    <p className="text-sm text-foreground leading-relaxed font-normal">{note.content}</p>
+                                    
+                                    <div className="flex justify-between items-start mb-2">
+                                        {note.title ? (
+                                            <h4 className="font-semibold text-base text-foreground/90">{note.title}</h4>
+                                        ) : (
+                                            <span className="text-xs text-muted-foreground italic">Sem título</span>
+                                        )}
+                                        <Button 
+                                            variant="ghost" 
+                                            size="icon" 
+                                            className="h-6 w-6 text-muted-foreground hover:text-red-500 hover:bg-red-500/10 -mt-1 -mr-1 opacity-0 group-hover/note:opacity-100 transition-opacity"
+                                            onClick={(e) => handleDeleteNote(note.id, e)}
+                                        >
+                                            <Trash2 className="h-3.5 w-3.5" />
+                                        </Button>
+                                    </div>
+                                    
+                                    <p className="text-sm text-foreground leading-relaxed font-normal whitespace-pre-wrap">{note.content}</p>
+                                    
                                     <div className="flex items-center gap-2 mt-4 text-[10px] text-muted-foreground/40 uppercase tracking-widest">
                                         <Calendar className="h-3 w-3" />
                                         {formatDate(note.created_at)}
+                                        {note.updated_at && note.updated_at !== note.created_at && (
+                                            <span className="ml-2 italic">(Editado)</span>
+                                        )}
                                     </div>
                                 </div>
                             ))}

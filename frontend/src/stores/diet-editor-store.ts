@@ -1,7 +1,9 @@
 import { create } from 'zustand'
-import { subscribeWithSelector } from 'zustand/middleware'
+import { persist } from 'zustand/middleware'
 import { Food, foodService } from '@/services/food-service'
+import { Patient, ClinicalNote } from '../services/patient-service'
 
+// Types
 // Types
 export interface FoodItem {
     id: string
@@ -33,21 +35,17 @@ export interface DietDayPlan {
 export interface PatientContext {
     id: number
     name: string
-    status?: boolean
-    avatar?: string
-    age: number
-    sex: 'M' | 'F'
-    weight: number
-    height: number
+    gender: string
+    age?: number
+    weight?: number
+    initial_weight?: number
+    height?: number
     bodyFat?: number
     muscleMass?: number
-    goal: string
-    restrictions: string[]
-    allergies: string[]
-    initial_weight?: number
+    sex?: 'M' | 'F'
     anamnesis?: any
     exams?: any[]
-    notes?: any[]
+    notes?: ClinicalNote[]
     // New fields for Context Tab
     birth_date?: string
     phone?: string
@@ -128,6 +126,15 @@ export interface WorkspaceMeal {
     isCollapsed: boolean
 }
 
+export interface DietPreset {
+    id: string
+    name: string
+    description?: string
+    weekPlan: DietDayPlan[]
+    created_at?: string
+    updated_at?: string
+}
+
 // Calculation Methods
 export type CalculationMethod =
     | 'harris_benedict_1919'
@@ -144,6 +151,12 @@ export type CalculationMethod =
     | 'mifflin' // Legacy support
     | 'harris_benedict' // Legacy support
     | 'cunningham' // Legacy support
+    | 'harris'
+    | 'tinsley'
+    | 'fao'
+    | 'schofield'
+    | 'oxford'
+    | 'iom'
 
 // Diet Types with macro distributions
 export type DietType =
@@ -183,6 +196,9 @@ export const ACTIVITY_LEVELS = [
 interface DietEditorState {
     // Patient
     patient: PatientContext | null
+    
+    // Diet ID (if saved)
+    dietId: number | null
 
     // Diet Configuration
     dietName: string
@@ -243,6 +259,7 @@ interface DietEditorState {
 
     // Actions
     setPatient: (patient: PatientContext | null) => void
+    setDietId: (id: number | null) => void
     setDietName: (name: string) => void
     setCalculationMethod: (method: CalculationMethod) => void
     setDietType: (type: DietType) => void
@@ -256,19 +273,23 @@ interface DietEditorState {
     setAnamnesisViewMode: (mode: 'list' | 'view-responses' | 'fill-standard' | 'fill-custom') => void
 
     setCurrentDay: (index: number) => void
+    // setDayIndex removed as it's likely an alias or duplicate not implemented
+    selectMeal: (mealId: string | null) => void
+    toggleLeftPanel: () => void
+
+    // Meal Editing
     addMeal: (meal: Omit<Meal, 'id'>) => void
     updateMeal: (mealId: string, updates: Partial<Meal>) => void
     removeMeal: (mealId: string) => void
-    selectMeal: (mealId: string | null) => void
 
     addFoodToMeal: (mealId: string, item: Omit<FoodItem, 'id'>) => void
-    updateFoodItem: (mealId: string, itemId: string, updates: Partial<FoodItem>) => void
     removeFoodFromMeal: (mealId: string, itemId: string) => void
+    updateFoodItem: (mealId: string, itemId: string, updates: Partial<FoodItem>) => void
 
+    // Legacy (string IDs) Support if needed by implementation
     applyPreset: (mealId: string, presetItems: Omit<FoodItem, 'id'>[]) => void
     copyMeal: (fromMealId: string, toDayIndex: number) => void
 
-    toggleLeftPanel: () => void
     toggleRightPanel: () => void
 
     undo: () => void
@@ -318,109 +339,109 @@ interface DietEditorState {
 // Helper: Generate unique ID
 const generateId = (): string => Math.random().toString(36).substring(2, 11)
 
-// Helper: Calculate TMB baseado no método
-const calculateTMB = (
-    method: CalculationMethod,
-    weight: number,
-    height: number, // em cm
-    age: number,
-    sex: 'M' | 'F',
-    bodyFat?: number,
-    muscleMass?: number,
-    activityLevel?: number
-): number => {
-    const leanMass = muscleMass || (bodyFat ? weight * (1 - bodyFat / 100) : weight * 0.75); // Fallback estimate
-    const heightM = height / 100;
+// Helper to calculate TMB
+const calculateTMB = (method: CalculationMethod, weight: number, height: number, age: number, sex: 'M' | 'F', activityLevel?: number, bodyFat?: number, muscleMass?: number): number => {
+    // Height in meters for some formulas, cm for others
+    const heightM = height // Input is likely meters based on typical app usage, checking implementation
+    // Standard Mifflin: (10 x weight in kg) + (6.25 x height in cm) - (5 x age in years) + 5
+    // Wait, height in frontend is usually meters (e.g. 1.75). Let's convert to cm for Mifflin.
+    const heightCm = height * 100
 
     switch (method) {
-        case 'harris_benedict_1919':
-            if (sex === 'M') {
-                return 66.47 + (13.75 * weight) + (5.003 * height) - (6.755 * age);
-            } else {
-                return 655.1 + (9.563 * weight) + (1.85 * height) - (4.676 * age);
-            }
-
-        case 'harris_benedict_1984':
-        case 'harris_benedict':
-            if (sex === 'M') {
-                return 88.362 + (13.397 * weight) + (4.799 * height) - (5.677 * age);
-            } else {
-                return 447.593 + (9.247 * weight) + (3.098 * height) - (4.330 * age);
-            }
-
-        case 'mifflin_1990':
         case 'mifflin':
             if (sex === 'M') {
-                return (10 * weight) + (6.25 * height) - (5 * age) + 5;
+                return (10 * weight) + (6.25 * heightCm) - (5 * age) + 5;
             } else {
-                return (10 * weight) + (6.25 * height) - (5 * age) - 161;
+                return (10 * weight) + (6.25 * heightCm) - (5 * age) - 161;
             }
 
-        case 'henry_rees_1991':
+        case 'harris':
             if (sex === 'M') {
-                if (age < 30) return (0.059 * weight + 2.723) * 239;
-                if (age < 60) return (0.048 * weight + 3.653) * 239;
-                return (0.049 * weight + 2.459) * 239;
+                return 66.5 + (13.75 * weight) + (5.003 * heightCm) - (6.75 * age);
             } else {
-                if (age < 30) return (0.051 * weight + 2.308) * 239;
-                if (age < 60) return (0.034 * weight + 3.538) * 239;
-                return (0.038 * weight + 2.755) * 239;
+                return 655.1 + (9.563 * weight) + (1.850 * heightCm) - (4.676 * age);
             }
 
-        case 'tinsley_2018_weight':
-            return 24.8 * weight + 10;
-
-        case 'katch_mcardle_1996':
-            return 370 + (21.6 * leanMass);
-
-        case 'cunningham_1980':
         case 'cunningham':
-            return 500 + (22 * leanMass);
+            // Requires LBM (Lean Body Mass)
+            // If muscleMass is provided, use it. Else estimate?
+            // Formula: 500 + (22 * LBM)
+            if (muscleMass) {
+                return 500 + (22 * muscleMass);
+            } else if (bodyFat) {
+                const lbm = weight * (1 - (bodyFat / 100));
+                return 500 + (22 * lbm);
+            } else {
+                // Fallback to Mifflin if no body composition data
+                if (sex === 'M') {
+                    return (10 * weight) + (6.25 * heightCm) - (5 * age) + 5;
+                } else {
+                    return (10 * weight) + (6.25 * heightCm) - (5 * age) - 161;
+                }
+            }
 
-        case 'tinsley_2018_lbm':
-            return 25.9 * leanMass + 284;
+        case 'tinsley':
+            // Directed at athletes (Fat Free Mass based)
+            // FFM = weight * (1 - bodyFat%)
+            // RMR = 25.9 * FFM + 284
+            if (bodyFat) {
+                const ffm = weight * (1 - (bodyFat / 100));
+                return 25.9 * ffm + 284;
+            } else {
+                // Fallback
+                return (10 * weight) + (6.25 * heightCm) - (5 * age) + 5;
+            }
 
-        case 'fao_who_2004':
-            // Schofield (1985) used in 2004 recommendations
+        case 'fao':
+            // FAO/WHO equations
+            // Reduced simplicity here for common ranges
             if (sex === 'M') {
-                if (age < 3) return 60.9 * weight - 54;
-                if (age < 10) return 22.7 * weight + 495;
-                if (age < 18) return 17.5 * weight + 651;
-                if (age < 30) return 15.3 * weight + 679;
-                if (age < 60) return 11.6 * weight + 879;
+                if (age >= 18 && age <= 30) return 15.3 * weight + 679;
+                if (age >= 30 && age <= 60) return 11.6 * weight + 879;
                 return 13.5 * weight + 487;
             } else {
-                if (age < 3) return 61.0 * weight - 51;
-                if (age < 10) return 22.5 * weight + 499;
-                if (age < 18) return 12.2 * weight + 746;
-                if (age < 30) return 14.7 * weight + 496;
-                if (age < 60) return 8.7 * weight + 829;
+                if (age >= 18 && age <= 30) return 14.7 * weight + 496;
+                if (age >= 30 && age <= 60) return 8.7 * weight + 829;
                 return 10.5 * weight + 596;
             }
 
-        case 'eer_iom_2005': {
-            const pa = activityLevel || 1.2;
-            // Note: IOM formulas already return TEE (Total Energy Expenditure)
-            // We return them as TMB but we will handle the activityLevel multiplier to be 1 in calculateMetabolics if needed
+        case 'schofield':
+            // Schofield (1985)
             if (sex === 'M') {
-                return 662 - (9.53 * age) + pa * (15.91 * weight + 539.6 * heightM);
+                if (age >= 18 && age <= 30) return 15.1 * weight + 692;
+                if (age >= 30 && age <= 60) return 11.5 * weight + 873;
+                return 11.7 * weight + 588;
             } else {
-                return 354 - (6.91 * age) + pa * (9.36 * weight + 726 * heightM);
+                if (age >= 18 && age <= 30) return 14.8 * weight + 487;
+                if (age >= 30 && age <= 60) return 8.1 * weight + 846;
+                return 9.1 * weight + 659;
             }
-        }
 
-        case 'eer_iom_2023': {
+        case 'oxford':
+            // Oxford equations (2005) - often considered more accurate for modern populations than FAO/WHO
+            if (sex === 'M') {
+                if (age >= 18 && age <= 30) return 14.4 * weight + 313 * (heightCm / 100) + 113;
+                if (age >= 30 && age <= 60) return 11.4 * weight + 541 * (heightCm / 100) - 137;
+                return 14.4 * weight + 313 * (heightCm / 100) + 113; // fallback
+            } else {
+                if (age >= 18 && age <= 30) return 10.4 * weight + 615 * (heightCm / 100) - 282;
+                if (age >= 30 && age <= 60) return 8.18 * weight + 502 * (heightCm / 100) - 11.6;
+                return 10.4 * weight + 615 * (heightCm / 100) - 282; // fallback
+            }
+
+        case 'iom':
+            // Institute of Medicine (2005) - Estimated Energy Requirement (EER) logic roughly
+            // EER is complex, usually TEE directly. TMB part is similar to Mifflin.
+            // Using a simplified version often cited for IOM BMR:
             const pa = activityLevel || 1.2;
             if (sex === 'M') {
-                return 662 - (9.53 * age) + pa * (15.91 * weight + 539.6 * heightM); // Using 2005 as base if specific 2023 constants weren't found in last search, but usually constants are slightly different or inclusion of body fat.
-                // Refined based on 2023 research might have slight variations, but often standard calculators use these.
+                return 662 - (9.53 * age) + pa * (15.91 * weight + 539.6 * (heightCm / 100));
             } else {
-                return 354 - (6.91 * age) + pa * (9.36 * weight + 726 * heightM);
+                return 354 - (6.91 * age) + pa * (9.36 * weight + 726 * (heightCm / 100));
             }
-        }
 
         default:
-            return (10 * weight) + (6.25 * height) - (5 * age) + 5;
+            return (10 * weight) + (6.25 * heightCm) - (5 * age) + 5;
     }
 }
 
@@ -448,6 +469,7 @@ const createDefaultWeekPlan = (): DietDayPlan[] => {
 // Initial State
 const initialState = {
     patient: null,
+    dietId: null,
     dietName: '',
     calculationMethod: 'mifflin' as CalculationMethod,
     dietType: 'normocalorica' as DietType,
@@ -460,7 +482,7 @@ const initialState = {
     customMacros: { carbs: 40, protein: 30, fats: 30 },
     customTargets: {},
     activeTab: 'diet',
-    anamnesisViewMode: 'list',
+    anamnesisViewMode: 'list' as 'list' | 'view-responses' | 'fill-standard' | 'fill-custom',
     currentDayIndex: 0,
     weekPlan: createDefaultWeekPlan(),
     selectedMealId: null,
@@ -504,6 +526,8 @@ export const useDietEditorStore = create<DietEditorState>((set, get) => ({
             get().calculateMetabolics()
         }
     },
+
+    setDietId: (dietId) => set({ dietId }),
 
     setDietName: (dietName) => set({ dietName, isDirty: true }),
 

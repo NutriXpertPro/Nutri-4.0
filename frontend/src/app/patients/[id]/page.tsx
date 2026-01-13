@@ -33,16 +33,15 @@ function PatientDetailsContent() {
     const searchParams = useSearchParams()
     const tabParam = searchParams.get('tab')
 
-    // Atualizar aba no store se o parâmetro mudar ou se for a primeira carga sem parâmetro (garantir overview)
+    // Atualizar aba no store apenas na carga inicial se não houver parâmetro
     React.useEffect(() => {
         if (tabParam) {
-            if (tabParam !== activeTab) {
-                setActiveTab(tabParam)
-            }
-        } else if (activeTab === 'diet') { // 'diet' é o default do store, mas no dashboard queremos 'overview'
+            setActiveTab(tabParam)
+        } else if (!tabParam && activeTab === 'diet') { 
+            // Só forçar overview se estivermos vindo do nada e o store estiver no default 'diet'
             setActiveTab('overview')
         }
-    }, [tabParam, activeTab, setActiveTab])
+    }, []) // Array vazio para rodar apenas UMA VEZ no mount
 
     const { isAuthenticated, isLoading: isAuthLoading } = useAuth()
     const { patient, isLoading: isPatientLoading, error } = usePatient(patientId)
@@ -143,11 +142,11 @@ function PatientDetailsContent() {
 
                 <div className="mt-6 space-y-6">
                     <TabsContent value="overview">
-                        <PatientOverviewTab />
+                        <PatientOverviewTab patientId={patientId} />
                     </TabsContent>
 
                     <TabsContent value="context">
-                        <PatientContextTab />
+                        <PatientContextTab patientId={patientId} />
                     </TabsContent>
 
                     <TabsContent value="analysis">
@@ -155,7 +154,7 @@ function PatientDetailsContent() {
                     </TabsContent>
 
                     <TabsContent value="diet">
-                        <PatientDietTab />
+                        <PatientDietTab patientId={patientId} />
                     </TabsContent>
 
                     <TabsContent value="anamnesis">

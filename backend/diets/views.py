@@ -15,6 +15,7 @@ from .serializers import (
 from .models import FavoriteFood, MealPreset
 from .serializers import MealPresetSerializer, DefaultPresetSerializer
 from rest_framework.views import APIView
+from rest_framework.parsers import MultiPartParser, FormParser
 
 class ToggleFavoriteView(APIView):
     permission_classes = [IsAuthenticated]
@@ -647,6 +648,27 @@ class DietViewSet(viewsets.ModelViewSet):
     serializer_class = DietSerializer
     permission_classes = [IsAuthenticated]
     
+    @action(detail=True, methods=['POST'], parser_classes=[MultiPartParser, FormParser])
+    def upload_pdf(self, request, pk=None):
+        """
+        Upload de arquivo PDF para a dieta.
+        """
+        diet = self.get_object()
+        
+        if 'file' not in request.data:
+            return Response({'error': 'Nenhum arquivo enviado.'}, status=status.HTTP_400_BAD_REQUEST)
+            
+        file_obj = request.data['file']
+        
+        # Validar tipo de arquivo
+        if not file_obj.name.lower().endswith('.pdf'):
+            return Response({'error': 'O arquivo deve ser um PDF.'}, status=status.HTTP_400_BAD_REQUEST)
+            
+        diet.pdf_file = file_obj
+        diet.save()
+        
+        return Response({'status': 'PDF salvo com sucesso', 'pdf_url': diet.pdf_file.url})
+
     def get_queryset(self):
         queryset = Diet.objects.filter(patient__nutritionist=self.request.user)
         

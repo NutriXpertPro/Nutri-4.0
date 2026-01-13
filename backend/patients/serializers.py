@@ -1,8 +1,5 @@
-import secrets
-import string
-
 from rest_framework import serializers
-from .models import PatientProfile
+from .models import PatientProfile, ClinicalNote
 
 
 from django.db import transaction
@@ -21,6 +18,11 @@ def file_log(msg):
     except:
         pass
 
+class ClinicalNoteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ClinicalNote
+        fields = ['id', 'content', 'created_at']
+
 class PatientProfileSerializer(serializers.ModelSerializer):
     name = serializers.CharField(source='user.name')
     email = serializers.EmailField(source='user.email')
@@ -30,8 +32,11 @@ class PatientProfileSerializer(serializers.ModelSerializer):
     profile_picture = serializers.ImageField(source='user.profile.profile_picture', required=False, allow_null=True, write_only=True)
     age = serializers.IntegerField(source='get_age', read_only=True)
     weight = serializers.SerializerMethodField()
+    initial_weight = serializers.SerializerMethodField()
     height = serializers.SerializerMethodField()
     is_active = serializers.BooleanField(read_only=True)
+    
+    notes = ClinicalNoteSerializer(many=True, read_only=True)
 
     nutritionist_name = serializers.SerializerMethodField()
     nutritionist_title = serializers.SerializerMethodField()
@@ -45,31 +50,97 @@ class PatientProfileSerializer(serializers.ModelSerializer):
             'id', 'user_id', 'name', 'email', 'gender', 'status', 'is_active',
             'birth_date', 'phone', 'address', 'goal', 
             'service_type', 'start_date', 'created_at',
-            'target_weight', 'target_body_fat', 'avatar', 'profile_picture', 'age', 'weight', 'height',
+            'target_weight', 'target_body_fat', 'avatar', 'profile_picture', 'age', 
+            'weight', 'initial_weight', 'height',
             'nutritionist_name', 'nutritionist_title', 'nutritionist_gender', 'nutritionist_avatar',
-            'anamnesis'
+            'anamnesis', 'notes'
         ]
         read_only_fields = ['user_id', 'created_at']
 
     def get_anamnesis(self, obj):
-        """Retorna informações resumidas da anamnese para o dashboard."""
+        """
+        Retorna informações detalhadas da anamnese, FUNDINDO dados da Anamnese Padrão
+        e da Anamnese Personalizada (Respostas de questionários).
+        Prioridade: Dados preenchidos > Dados vazios.
+        """
         try:
-            # Tentar pegar a anamnese padrão (OneToOne)
+            final_answers = {}
+            filled_date = None
+            template_title = "Anamnese"
+
+            # 1. Coletar dados da Anamnese Padrão (Campos Fixos)
             if hasattr(obj, 'anamnesis'):
-                return {
-                    'template_title': 'Anamnese Padrão',
-                    'filled_date': obj.anamnesis.updated_at
-                }
-            
-            # Se não houver, tentar pegar a resposta de template mais recente
-            # Nota: responses é o related_name de AnamnesisResponse para PatientProfile
-            last_response = obj.responses.order_by('-filled_date').first()
+                a = obj.anamnesis
+                filled_date = a.updated_at
+                template_title = "Anamnese Padrão"
+                
+                # Mapeamento para Ficha Clinica
+                final_answers.update({
+                    'alergia_medicamento': a.alergia_medicamento if a.alergia_medicamento else "Nenhuma",
+                    'alimentos_restritos': a.alimentos_restritos if a.alimentos_restritos else "Nenhum",
+                    'intolerancias': a.intolerancia_detalhes,
+                    'doencas_familiares': a.doenca_familiar if a.doenca_familiar else "Nenhuma",
+                    'problema_saude_detalhes': a.problemas_saude_detalhes if a.problema_saude else "Não",
+                    'medicamentos': a.medicamentos_detalhes if a.uso_medicamentos and a.medicamentos_detalhes else "Não",
+                    'intestino': a.intestino if a.intestino else "Regular",
+                    
+                    'acorda': a.hora_acorda.strftime('%H:%M') if a.hora_acorda else None,
+                    'dorme': a.hora_dorme.strftime('%H:%M') if a.hora_dorme else None,
+                    'sono_dificuldade': "Sim" if a.dificuldade_dormir else "Não",
+                    
+                    'treino_horario': a.horario_treino,
+                    'treino_duracao': a.tempo_disponivel_treino,
+                    'treino_frequencia': str(a.dias_treino_semana) if a.dias_treino_semana else None,
+                })
+
+            # 2. Coletar dados da Anamnese Personalizada (JSON) e mesclar
+            last_response = obj.anamnesis_responses.order_by('-filled_date').first()
             if last_response:
-                return {
-                    'template_title': last_response.template.title,
-                    'filled_date': last_response.filled_date
+                if not filled_date or last_response.filled_date > filled_date.date():
+                    filled_date = last_response.filled_date
+                    template_title = last_response.template.title
+
+                # Dicionário de sinônimos para mapear chaves do JSON para nossas chaves padrão
+                synonyms = {
+                    'alergias': ['alergia', 'restrições', 'intolerância'],
+                    'patologias': ['patologia', 'doença', 'morbidade', 'problema de saúde'],
+                    'medicamentos': ['medicamento', 'remedio', 'fármaco'],
+                    'familia': ['familia', 'hereditário', 'histórico familiar'],
+                    'cirurgias': ['cirurgia', 'internação', 'operação'],
+                    'acorda': ['acorda', 'levantar', 'despertar'],
+                    'dorme': ['dorme', 'deita', 'sono'],
+                    'sono_dificuldade': ['dificuldade', 'insônia'],
+                    'treino_horario': ['horário de treino', 'hora do treino'],
+                    'treino_duracao': ['tempo', 'duração'],
+                    'treino_frequencia': ['frequência', 'vezes', 'semana']
                 }
-        except Exception:
+
+                # Iterar sobre as respostas do JSON
+                for question, answer in last_response.answers.items():
+                    if not answer: continue # Ignora respostas vazias
+                    
+                    q_lower = question.lower()
+                    
+                    # Tentar encaixar essa pergunta em uma das nossas categorias
+                    for standard_key, terms in synonyms.items():
+                        if any(term in q_lower for term in terms):
+                            # Se o campo padrão estiver vazio, usa esse.
+                            # Se já tiver valor, concatena (para não perder nada)
+                            current_val = final_answers.get(standard_key)
+                            if not current_val:
+                                final_answers[standard_key] = answer
+                            elif answer not in str(current_val): # Evita duplicatas exatas
+                                final_answers[standard_key] = f"{current_val}. {answer}"
+
+            return {
+                'type': 'merged',
+                'template_title': template_title,
+                'filled_date': filled_date,
+                'answers': final_answers
+            }
+
+        except Exception as e:
+            file_log(f"[SERIALIZER] Erro ao serializar anamnese merge: {e}")
             pass
         return None
 
@@ -116,6 +187,24 @@ class PatientProfileSerializer(serializers.ModelSerializer):
         # Fallback para anamnese padrão
         if hasattr(obj, 'anamnesis') and obj.anamnesis.peso:
             return obj.anamnesis.peso
+        return None
+
+    def get_initial_weight(self, obj):
+        """
+        Retorna o peso inicial do paciente.
+        Lógica:
+        1. Tenta pegar da PRIMEIRA avaliação física registrada.
+        2. Se não houver, tenta pegar da anamnese padrão.
+        """
+        # 1. Tentar pegar da primeira avaliação
+        first_evaluation = obj.evaluations.order_by('date', 'created_at').first()
+        if first_evaluation and first_evaluation.weight:
+            return first_evaluation.weight
+            
+        # 2. Fallback para anamnese padrão
+        if hasattr(obj, 'anamnesis') and obj.anamnesis.peso:
+            return obj.anamnesis.peso
+            
         return None
 
     def get_height(self, obj):

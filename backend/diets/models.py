@@ -303,6 +303,9 @@ class Diet(models.Model):
     # Configurações de dieta
     diet_type = models.CharField(max_length=50, default='balanced', help_text="Tipo de dieta (balanced, lowcarb, etc)")
     calculation_method = models.CharField(max_length=50, default='mifflin', help_text="Método de cálculo (mifflin, harris, etc)")
+    
+    # Arquivo PDF gerado
+    pdf_file = models.FileField(upload_to='diet_pdfs/%Y/%m/', null=True, blank=True, help_text="Arquivo PDF da dieta gerado")
 
     # Metas de macronutrientes (novos campos em decimal para precisão)
     target_protein = models.DecimalField(max_digits=6, decimal_places=2, null=True, blank=True, help_text="Meta de proteínas em gramas")

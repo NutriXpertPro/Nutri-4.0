@@ -1,5 +1,5 @@
 from rest_framework import viewsets, status
-from rest_framework.decorators import action
+from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import get_object_or_404
@@ -11,7 +11,8 @@ from .models_patient_data import (
     MealCheckIn,
     ProgressPhoto,
     BodyMeasurement,
-    AppointmentConfirmation
+    AppointmentConfirmation,
+    ClinicalNote
 )
 from .serializers_patient_data import (
     PatientMetricSerializer,
@@ -493,3 +494,95 @@ class PatientAppointmentsViewSet(viewsets.ViewSet):
                 {'error': 'Patient profile not found'},
                 status=status.HTTP_404_NOT_FOUND
             )
+
+
+class ClinicalNoteViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for clinical notes (read/create).
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get_serializer_class(self):
+        from .serializers_patient_data import ClinicalNoteSerializer
+        return ClinicalNoteSerializer
+
+    def get_queryset(self):
+        user = self.request.user
+
+        # Se for paciente, retorna apenas suas próprias anotações
+        if user.user_type == 'paciente':
+            return user.patient_profile.notes.all().order_by('-created_at')
+
+        # Se for nutricionista, permite ver anotações de seus pacientes
+        elif user.user_type == 'nutricionista':
+            # Retorna anotações de todos os pacientes gerenciados pelo nutricionista
+            patient_ids = PatientProfile.objects.filter(nutritionist=user).values_list('id', flat=True)
+            return ClinicalNote.objects.filter(patient_id__in=patient_ids).order_by('-created_at')
+
+        # Para outros tipos de usuário, retorna queryset vazio
+        return ClinicalNote.objects.none()
+
+    def perform_create(self, serializer):
+        user = self.request.user
+
+        # Se for paciente, associa à própria conta
+        if user.user_type == 'paciente':
+            serializer.save(patient=user.patient_profile)
+        # Se for nutricionista, verificar se está tentando criar para um de seus pacientes
+        elif user.user_type == 'nutricionista':
+            patient_id = self.request.data.get('patient_id')
+            if patient_id:
+                # Verificar se o paciente pertence ao nutricionista
+                try:
+                    patient = PatientProfile.objects.get(id=patient_id, nutritionist=user)
+                    serializer.save(patient=patient)
+                except PatientProfile.DoesNotExist:
+                    from rest_framework.exceptions import PermissionDenied
+                    raise PermissionDenied("Você não tem permissão para adicionar anotações para este paciente.")
+            else:
+                # Se não especificou patient_id, associa ao paciente do contexto (caso padrão)
+                from rest_framework.exceptions import ValidationError
+                raise ValidationError({"patient_id": "Este campo é obrigatório para nutricionistas."})
+        else:
+            from rest_framework.exceptions import PermissionDenied
+            raise PermissionDenied("Tipo de usuário não tem permissão para criar anotações clínicas.")
+
+
+# Adicionando uma view específica para nutricionistas gerenciarem anotações de pacientes específicos
+@api_view(['GET', 'POST'])
+@permission_classes([IsAuthenticated])
+def patient_notes_view(request, patient_pk):
+    """
+    View para nutricionistas gerenciarem anotações clínicas de pacientes específicos.
+    GET: Retorna todas as anotações para o paciente
+    POST: Cria uma nova anotação para o paciente
+    """
+    try:
+        patient = PatientProfile.objects.get(pk=patient_pk)
+    except PatientProfile.DoesNotExist:
+        return Response(
+            {'error': 'Paciente não encontrado'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+
+    # Verificar se o nutricionista tem permissão para acessar este paciente
+    if request.user.user_type != 'nutricionista' or patient.nutritionist != request.user:
+        return Response(
+            {'error': 'Acesso negado'},
+            status=status.HTTP_403_FORBIDDEN
+        )
+
+    if request.method == 'GET':
+        notes = ClinicalNote.objects.filter(patient=patient).order_by('-created_at')
+        from .serializers_patient_data import ClinicalNoteSerializer
+        serializer = ClinicalNoteSerializer(notes, many=True)
+        return Response(serializer.data)
+
+    elif request.method == 'POST':
+        from .serializers_patient_data import ClinicalNoteSerializer
+        serializer = ClinicalNoteSerializer(data=request.data)
+        if serializer.is_valid():
+            # Associar a anotação ao paciente especificado
+            serializer.save(patient=patient)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

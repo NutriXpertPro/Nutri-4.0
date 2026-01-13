@@ -12,13 +12,16 @@ Objetivo: Corrigir a desconexão de dados entre o Backend (Django/Serializer) e 
 
 ### Fase 2: Correção do Fluxo Principal
 
-- [ ] **Etapa 2: Unificação da Fonte de Dados (Lógica)**
-    - [ ] Refatorar `PatientAnamnesisTab.tsx` para usar os dados de `patient.anamnesis` (props) como fonte primária.
-    - *Objetivo:* Eliminar a dependência da chamada de API secundária e inconsistente.
+- [X] **Etapa 2: Unificação da Fonte de Dados (Lógica)**
+    - [X] Refatorar `PatientAnamnesisTab.tsx` para usar os dados de `patient.anamnesis` (props) como fonte primária.
+    - [X] Extrair visualização para `AnamnesisReportView.tsx` para reuso.
+    - *Status:* Concluído.
 
-- [ ] **Etapa 3: Mapeamento Visual dos Dados (UI)**
-    - [ ] Garantir que os campos visuais (`DataField`, etc.) em `PatientAnamnesisTab.tsx` sejam populados a partir de `patient.anamnesis.answers`.
-    - *Objetivo:* Fazer os dados da anamnese aparecerem na tela.
+- [X] **Etapa 3: Mapeamento Visual dos Dados (UI)**
+    - [X] Garantir que os campos visuais (`DataField`, etc.) sejam populados a partir de `patient.anamnesis.answers`.
+    - [X] Implementar Modal de Visualização na listagem geral de anamneses.
+    - [X] Corrigir contadores da Sidebar para refletir dados reais.
+    - *Status:* Concluído.
 
 ### Fase 3: Otimização e Verificação
 

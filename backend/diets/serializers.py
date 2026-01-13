@@ -108,7 +108,8 @@ class MealPresetSerializer(serializers.ModelSerializer):
 
 
 class DietSerializer(serializers.ModelSerializer):
-    meals_rel = MealSerializer(many=True, read_only=True)  # Atualizado para usar o novo related_name
+    meals_rel = MealSerializer(many=True, read_only=True)
+    meals_data = serializers.ListField(child=serializers.DictField(), write_only=True, required=False)
     total_refeicoes = serializers.ReadOnlyField()
     tem_substituicoes = serializers.ReadOnlyField()
 
@@ -118,11 +119,36 @@ class DietSerializer(serializers.ModelSerializer):
             'id', 'patient', 'name', 'goal', 'instructions',
             'tmb', 'gcdt', 'target_calories', 'diet_type', 'calculation_method',
             'target_protein', 'target_carbs', 'target_fats',
-            'meals', 'substitutions', 'notes',
+            'meals', 'meals_data', 'substitutions', 'notes',
             'is_active', 'created_at', 'updated_at',
-            'meals_rel', 'total_refeicoes', 'tem_substituicoes'
+            'meals_rel', 'total_refeicoes', 'tem_substituicoes',
+            'pdf_file'
         ]
-        read_only_fields = ['created_at', 'updated_at']
+        read_only_fields = ['created_at', 'updated_at', 'pdf_file']
+
+    def create(self, validated_data):
+        meals_data = validated_data.pop('meals_data', [])
+        
+        # Se não enviou meals_data específico, tenta usar o campo 'meals' se ele vier estruturado
+        # Isso serve para compatibilidade com o frontend atual que envia 'meals'
+        if not meals_data and 'meals' in validated_data and isinstance(validated_data['meals'], list):
+             # Verifica se é uma estrutura nova (com 'items') ou legada
+             sample = validated_data['meals'][0] if validated_data['meals'] else None
+             if sample and 'items' in sample:
+                 meals_data = validated_data['meals']
+        
+        diet = Diet.objects.create(**validated_data)
+
+        for meal_data in meals_data:
+            items_data = meal_data.pop('items', [])
+            # Map frontend fields to model fields if necessary
+            # Frontend sends: name, time, items
+            meal = Meal.objects.create(diet=diet, **meal_data)
+            
+            for item_data in items_data:
+                FoodItem.objects.create(meal=meal, **item_data)
+        
+        return diet
 
 
 class DefaultPresetSerializer(serializers.ModelSerializer):

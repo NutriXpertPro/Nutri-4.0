@@ -9,7 +9,9 @@ from .views_patient_data import (
     PatientMeasurementsViewSet,
     ProgressPhotoViewSet,
     PatientExamsViewSet,
-    PatientAppointmentsViewSet
+    PatientAppointmentsViewSet,
+    ClinicalNoteViewSet,
+    patient_notes_view
 )
 
 app_name = "patients"
@@ -29,6 +31,7 @@ patient_data_router.register(r'measurements', PatientMeasurementsViewSet, basena
 patient_data_router.register(r'photos', ProgressPhotoViewSet, basename='progress-photos')
 patient_data_router.register(r'exams', PatientExamsViewSet, basename='patient-exams')
 patient_data_router.register(r'appointments', PatientAppointmentsViewSet, basename='patient-appointments')
+patient_data_router.register(r'notes', ClinicalNoteViewSet, basename='clinical-notes')
 
 urlpatterns = [
     # URLs tradicionais de pacientes
@@ -44,4 +47,7 @@ urlpatterns = [
     # URLs de dados do paciente (/patients/me/*)
     path('me/profile/', views.PatientMeView.as_view(), name='patient-me'),
     path('me/', include(patient_data_router.urls)),
+
+    # URLs específicas para nutricionistas gerenciarem anotações de pacientes
+    path('<int:patient_pk>/notes/', patient_notes_view, name='patient-notes'),
 ]

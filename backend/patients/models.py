@@ -134,5 +134,6 @@ from .models_patient_data import (
     MealCheckIn,
     ProgressPhoto,
     BodyMeasurement,
-    AppointmentConfirmation
+    AppointmentConfirmation,
+    ClinicalNote
 )
