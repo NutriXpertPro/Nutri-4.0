@@ -129,7 +129,7 @@ export function PatientOverviewTab({ patientId }: { patientId: number }) {
     if (!patient) return null
 
     return (
-        <div className="space-y-8 pb-10">
+        <div className="space-y-8 pb-10 pt-[10px]">
             {/* Cards de Resumo */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
 

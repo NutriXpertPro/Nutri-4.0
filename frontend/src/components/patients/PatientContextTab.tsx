@@ -82,7 +82,7 @@ export function PatientContextTab({ patientId }: PatientContextTabProps) {
     if (!patient) return null
 
     return (
-        <div className="grid gap-6 md:grid-cols-7 pb-10">
+        <div className="grid gap-6 md:grid-cols-7 pb-10 pt-[10px]">
             {/* 1. DADOS PESSOAIS */}
             <Card variant="glass" className="col-span-3 border-none bg-background/50 h-fit">
                 <CardHeader className="flex flex-row items-center gap-4 pb-4">
