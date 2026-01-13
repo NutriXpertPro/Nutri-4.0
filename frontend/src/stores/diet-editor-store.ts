@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
+import { persist, createJSONStorage } from 'zustand/middleware'
 import { Food, foodService } from '@/services/food-service'
 import { Patient, ClinicalNote } from '../services/patient-service'
 
@@ -517,823 +517,834 @@ const initialState = {
 }
 
 // Zustand Store
-export const useDietEditorStore = create<DietEditorState>((set, get) => ({
-    ...initialState,
+export const useDietEditorStore = create<DietEditorState>()(
+    persist(
+        (set, get) => ({
+            ...initialState,
 
-    setPatient: (patient) => {
-        set({ patient, isDirty: true })
-        if (patient) {
-            get().calculateMetabolics()
-        }
-    },
-
-    setDietId: (dietId) => set({ dietId }),
-
-    setDietName: (dietName) => set({ dietName, isDirty: true }),
-
-    setCalculationMethod: (calculationMethod) => {
-        set({ calculationMethod, isDirty: true })
-        get().calculateMetabolics()
-    },
-
-    setDietType: (dietType) => {
-        set((state) => ({
-            dietType,
-            isDirty: true,
-            // Clear custom targets if not personalizada
-            customTargets: dietType === 'personalizada' ? state.customTargets : {}
-        }))
-        get().calculateMetabolics()
-
-        // Auto-apply default presets for this diet type
-        const state = get();
-        const { weekPlan, currentDayIndex, defaultPresets, mealPresets } = state;
-        const currentMeals = weekPlan[currentDayIndex].meals;
-        let hasUpdates = false;
-
-        // Mapeamento de nomes de refeição para IDs de meal_type (simplificado)
-        // Idealmente isso seria mais robusto, mas vamos usar uma heurística baseada no nome
-        const normalizeMealType = (name: string): string => {
-            const n = name.toLowerCase();
-            if (n.includes('café') || n.includes('manhã')) return 'cafe_da_manha';
-            if (n.includes('almoço')) return 'almoco';
-            if (n.includes('jantar')) return 'jantar';
-            if (n.includes('lanche')) return n.includes('manhã') ? 'lanche_manha' : 'lanche_tarde';
-            if (n.includes('ceia')) return 'ceia';
-            if (n.includes('suplemento')) return 'suplemento';
-            return 'outros';
-        };
-
-        const newWeekPlan = [...weekPlan];
-        const updatedMeals = [...currentMeals]; // Create a copy of meals
-
-        updatedMeals.forEach((meal, index) => {
-            // Find default preset for this meal type + new diet type
-            // Precisamos saber o 'meal_type' (id) da refeição atual. 
-            // Como Meal não tem 'type' explícito (só name), vamos inferir ou teria que ter.
-            // O ideal seria que Meal tivesse um campo meal_type herdado.
-            // Vamos tentar inferir pelo nome ou usar um mapeamento se disponível.
-
-            // Tentativa de mapear pelo nome padrão (que geralmente é confiável se não editado)
-            const typeId = normalizeMealType(meal.name);
-
-            const defaultPreset = defaultPresets.find(dp =>
-                dp.meal_type === typeId && dp.diet_type === dietType && dp.is_active
-            );
-
-            if (defaultPreset) {
-                const preset = mealPresets.find(p => p.id === defaultPreset.preset);
-                if (preset) {
-                    // Apply preset items to this meal
-                    // This replaces existing items or appends? Usually presets replace or append.
-                    // The user request implies "filling", potentially replacing empty ones or just adding.
-                    // Let's assume append for now to be safe, or replace if empty.
-                    // Or clearer: The user says "automatically filled". I will append for now.
-
-                    const newItems: FoodItem[] = preset.foods.map(food => ({
-                        id: generateId(),
-                        food: null,
-                        customName: food.food_name,
-                        quantity: food.quantity,
-                        unit: food.unit,
-                        calories: food.calories,
-                        protein: food.protein,
-                        carbs: food.carbs,
-                        fats: food.fats,
-                        fiber: food.fiber || 0
-                    }));
-
-                    updatedMeals[index] = {
-                        ...meal,
-                        items: newItems // Substitui os itens atuais pelos do preset (mais agressivo, mas parece ser o desejo para "troca de dieta")
-                        // Se quiser apenas adicionar: items: [...meal.items, ...newItems]
-                    };
-                    hasUpdates = true;
+            setPatient: (patient) => {
+                set({ patient, isDirty: true })
+                if (patient) {
+                    get().calculateMetabolics()
                 }
-            }
-        });
-
-        if (hasUpdates) {
-            newWeekPlan[currentDayIndex] = {
-                ...newWeekPlan[currentDayIndex],
-                meals: updatedMeals
-            };
-            set({ weekPlan: newWeekPlan, isDirty: true });
-        }
-    },
-
-    setActivityLevel: (activityLevel) => {
-        set({ activityLevel, isDirty: true })
-        get().calculateMetabolics()
-    },
-
-    setGoalAdjustment: (goalAdjustment) => {
-        set({ goalAdjustment, isDirty: true })
-        get().calculateMetabolics()
-    },
-
-    setCustomTarget: (target, value) => {
-        set((state) => ({
-            customTargets: { ...state.customTargets, [target]: value },
-            isDirty: true
-        }))
-        get().calculateMetabolics()
-    },
-
-    setCustomMacros: (macros) => {
-        set((state) => ({
-            customMacros: { ...state.customMacros, ...macros },
-            dietType: 'personalizada',
-            isDirty: true
-        }))
-        get().calculateMetabolics()
-    },
-
-    calculateMetabolics: () => {
-        const { patient, calculationMethod, activityLevel, goalAdjustment, dietType, customMacros, customTargets } = get()
-
-        // Use patient data or fallback to default standard profile
-        const weight = patient?.weight ?? 70
-        const height = patient?.height ?? 1.70
-        const age = patient?.age ?? 30
-        const sex = patient?.sex ?? 'M'
-        const bodyFat = patient?.bodyFat
-        const muscleMass = patient?.muscleMass
-
-        let tmb = calculateTMB(
-            calculationMethod,
-            weight,
-            height * 100, // Convert m to cm
-            age,
-            sex,
-            bodyFat,
-            muscleMass,
-            activityLevel
-        )
-
-        // EER methods already include activity level
-        // EER methods already include activity level
-        const isEER = calculationMethod.startsWith('eer_iom')
-        let getVal = isEER ? Math.round(tmb) : Math.round(tmb * activityLevel)
-
-        // Apply Custom Overrides (ONLY if Diet Type is Personalziada)
-        if (dietType === 'personalizada') {
-            if (customTargets.tmb) tmb = customTargets.tmb
-            if (customTargets.get) getVal = customTargets.get
-        }
-
-        let targetCalories = Math.round(getVal + goalAdjustment)
-
-        if (dietType === 'personalizada' && customTargets.calories) {
-            targetCalories = customTargets.calories
-        }
-
-        const macroDistribution = dietType === 'personalizada' ? customMacros : DIET_TYPE_MACROS[dietType]
-        const targetMacros = {
-            carbs: Math.round((targetCalories * macroDistribution.carbs / 100) / 4), // 4 kcal/g
-            protein: Math.round((targetCalories * macroDistribution.protein / 100) / 4), // 4 kcal/g
-            fats: Math.round((targetCalories * macroDistribution.fats / 100) / 9), // 9 kcal/g
-            fiber: 25, // Fixed target of 25g fiber per day
-        }
-
-        set({ tmb: Math.round(tmb), get: getVal, targetCalories, targetMacros })
-    },
-
-    setActiveTab: (activeTab) => set({ activeTab }),
-    setAnamnesisViewMode: (anamnesisViewMode) => set({ anamnesisViewMode }),
-
-    setCurrentDay: (currentDayIndex) => set({ currentDayIndex }),
-
-    addMeal: (meal) => {
-        const { weekPlan, currentDayIndex } = get()
-        const newMeal: Meal = { ...meal, id: generateId() }
-        const newWeekPlan = [...weekPlan]
-        newWeekPlan[currentDayIndex] = {
-            ...newWeekPlan[currentDayIndex],
-            meals: [...newWeekPlan[currentDayIndex].meals, newMeal]
-        }
-        get().saveSnapshot()
-        set({ weekPlan: newWeekPlan, isDirty: true })
-    },
-
-    updateMeal: (mealId, updates) => {
-        const { weekPlan, currentDayIndex } = get()
-        const newWeekPlan = [...weekPlan]
-
-        newWeekPlan[currentDayIndex] = {
-            ...newWeekPlan[currentDayIndex],
-            meals: newWeekPlan[currentDayIndex].meals.map(meal =>
-                meal.id === mealId ? { ...meal, ...updates } : meal
-            )
-        }
-
-        set({ weekPlan: newWeekPlan, isDirty: true })
-    },
-
-    removeMeal: (mealId) => {
-        const { weekPlan, currentDayIndex } = get()
-        get().saveSnapshot()
-
-        const newWeekPlan = [...weekPlan]
-        newWeekPlan[currentDayIndex] = {
-            ...newWeekPlan[currentDayIndex],
-            meals: newWeekPlan[currentDayIndex].meals.filter(m => m.id !== mealId)
-        }
-
-        set({ weekPlan: newWeekPlan, isDirty: true })
-    },
-
-    selectMeal: (selectedMealId) => set({ selectedMealId }),
-
-    addFoodToMeal: (mealId, item) => {
-        const { weekPlan, currentDayIndex } = get()
-        const newItem: FoodItem = { ...item, id: generateId() }
-
-        const newWeekPlan = [...weekPlan]
-        newWeekPlan[currentDayIndex] = {
-            ...newWeekPlan[currentDayIndex],
-            meals: newWeekPlan[currentDayIndex].meals.map(meal =>
-                meal.id === mealId
-                    ? { ...meal, items: [...meal.items, newItem] }
-                    : meal
-            )
-        }
-
-        get().saveSnapshot()
-        set({ weekPlan: newWeekPlan, isDirty: true })
-    },
-
-    updateFoodItem: (mealId, itemId, updates) => {
-        const { weekPlan, currentDayIndex } = get()
-
-        const newWeekPlan = [...weekPlan]
-        newWeekPlan[currentDayIndex] = {
-            ...newWeekPlan[currentDayIndex],
-            meals: newWeekPlan[currentDayIndex].meals.map(meal =>
-                meal.id === mealId
-                    ? {
-                        ...meal,
-                        items: meal.items.map(item =>
-                            item.id === itemId
-                                ? { ...item, ...updates }
-                                : item
-                        )
-                    }
-                    : meal
-            )
-        }
-
-        set({ weekPlan: newWeekPlan, isDirty: true })
-    },
-
-    removeFoodFromMeal: (mealId, itemId) => {
-        const { weekPlan, currentDayIndex } = get()
-        get().saveSnapshot()
-
-        const newWeekPlan = [...weekPlan]
-        newWeekPlan[currentDayIndex] = {
-            ...newWeekPlan[currentDayIndex],
-            meals: newWeekPlan[currentDayIndex].meals.map(meal =>
-                meal.id === mealId
-                    ? { ...meal, items: meal.items.filter(i => i.id !== itemId) }
-                    : meal
-            )
-        }
-
-        set({ weekPlan: newWeekPlan, isDirty: true })
-    },
-
-    applyPreset: (mealId, presetItems) => {
-        const { weekPlan, currentDayIndex } = get()
-        get().saveSnapshot()
-        const newItems: FoodItem[] = presetItems.map(item => ({ ...item, id: generateId() }))
-
-        const newWeekPlan = [...weekPlan]
-        newWeekPlan[currentDayIndex] = {
-            ...newWeekPlan[currentDayIndex],
-            meals: newWeekPlan[currentDayIndex].meals.map(meal =>
-                meal.id === mealId
-                    ? { ...meal, items: [...meal.items, ...newItems] }
-                    : meal
-            )
-        }
-
-        set({ weekPlan: newWeekPlan, isDirty: true })
-    },
-
-    copyMeal: (fromMealId, toDayIndex) => {
-        const { weekPlan, currentDayIndex } = get()
-        const meal = weekPlan[currentDayIndex].meals.find(m => m.id === fromMealId)
-        if (meal) {
-            get().saveSnapshot()
-            const copiedMeal: Meal = {
-                ...meal,
-                id: generateId(),
-                items: meal.items.map(item => ({ ...item, id: generateId() }))
-            }
-
-            const newWeekPlan = [...weekPlan]
-            newWeekPlan[toDayIndex] = {
-                ...newWeekPlan[toDayIndex],
-                meals: [...newWeekPlan[toDayIndex].meals, copiedMeal]
-            }
-
-            set({ weekPlan: newWeekPlan, isDirty: true })
-        }
-    },
-
-    toggleLeftPanel: () => set((state) => ({ leftPanelCollapsed: !state.leftPanelCollapsed })),
-    toggleRightPanel: () => set((state) => ({ rightPanelCollapsed: !state.rightPanelCollapsed })),
-
-    undo: () => {
-        // Implement undo logic
-    },
-    redo: () => {
-        // Implement redo logic
-    },
-    saveSnapshot: () => {
-        const { weekPlan, history, historyIndex } = get()
-        const newHistory = history.slice(0, historyIndex + 1)
-        newHistory.push(JSON.parse(JSON.stringify(weekPlan)))
-        set({ history: newHistory.slice(-50), historyIndex: newHistory.length - 1 }) // Keep last 50 snapshots
-    },
-
-    reset: () => set(initialState),
-
-    // Workspace Template Actions
-    setWorkspaceMeals: (workspaceMeals) => set({ workspaceMeals }),
-
-    addWorkspaceMeal: (meal) => {
-        const { workspaceMeals } = get()
-        set({ workspaceMeals: [...workspaceMeals, meal] })
-    },
-
-    updateWorkspaceMeal: (mealId, updates) => {
-        const { workspaceMeals } = get()
-        set({
-            workspaceMeals: workspaceMeals.map(m =>
-                m.id === mealId ? { ...m, ...updates } : m
-            )
-        })
-    },
-
-    deleteWorkspaceMeal: (mealId) => {
-        const { workspaceMeals } = get()
-        // Removed check for minimum 1 meal to allow empty state
-        set({
-            workspaceMeals: workspaceMeals.filter(m => m.id !== mealId)
-        })
-    },
-
-    copyWorkspaceMeal: (mealId) => {
-        const { workspaceMeals } = get()
-        const mealToCopy = workspaceMeals.find(m => m.id === mealId)
-        if (!mealToCopy) return
-        const newId = Math.max(...workspaceMeals.map(m => m.id)) + 1
-        const copiedMeal: WorkspaceMeal = {
-            ...mealToCopy,
-            id: newId,
-            foods: mealToCopy.foods.map((f, i) => ({ ...f, id: Date.now() + i }))
-        }
-        set({ workspaceMeals: [...workspaceMeals, copiedMeal] })
-    },
-
-    setActiveWorkspaceDay: (activeWorkspaceDay) => set({ activeWorkspaceDay }),
-
-    setValidityDates: (start, end) => set({ validityStartDate: start, validityEndDate: end }),
-
-    addFavorite: async (food) => {
-        const { favorites, loadFavorites } = get()
-        if (!favorites.some(f => f.id === food.id && f.source === food.source)) {
-            await foodService.toggleFavorite(food.source, food.id, food.nome)
-            await loadFavorites()
-        }
-    },
-
-    removeFavorite: async (foodId, source, foodName) => {
-        const { favorites, loadFavorites } = get()
-        const food = favorites.find(f => f.id === foodId && f.source === source)
-        const nameToUse = foodName || food?.nome
-
-        if (nameToUse) {
-            await foodService.toggleFavorite(source, foodId, nameToUse)
-            await loadFavorites()
-        }
-    },
-
-    loadFavorites: async () => {
-        try {
-            const data = await foodService.getFavorites()
-            set({ favorites: data.results })
-        } catch (error) {
-            console.error("Erro ao carregar favoritos:", error)
-        }
-    },
-
-    addFoodToWorkspaceMeal: (mealId, food) => {
-        const { workspaceMeals } = get()
-        set({
-            workspaceMeals: workspaceMeals.map(meal => {
-                if (meal.id !== mealId) return meal
-                const newFood: WorkspaceMealFood = {
-                    id: Date.now(),
-                    name: food.nome,
-                    qty: '', // Começa vazio conforme solicitado pelo usuário
-                    unit: 'g',
-                    measure: 'default', // Modo de medida padrão (automático)
-                    prep: '',
-                    ptn: food.proteina_g,
-                    cho: food.carboidrato_g,
-                    fat: food.lipidios_g,
-                    fib: food.fibra_g || 0,
-                    preferred: false,
-                    unidade_caseira: food.unidade_caseira ?? undefined,
-                    peso_unidade_caseira_g: food.peso_unidade_caseira_g ?? undefined,
-                    medidas: food.medidas,
-                    originalId: food.id,
-                    source: food.source
-                }
-                return { ...meal, foods: [...meal.foods, newFood] }
-            })
-        })
-    },
-
-    removeFoodFromWorkspaceMeal: (mealId, foodId) => {
-        const { workspaceMeals } = get()
-        set({
-            workspaceMeals: workspaceMeals.map(meal => {
-                if (meal.id !== mealId) return meal
-                return { ...meal, foods: meal.foods.filter(f => f.id !== foodId) }
-            })
-        })
-    },
-
-    addNote: (data) => {
-        const { patient } = get()
-        if (!patient) return
-
-        const newNote = {
-            id: Date.now(),
-            content: data.content,
-            title: data.title,
-            category: data.category,
-            date: data.date,
-            created_at: new Date().toISOString(),
-            nutritionist_name: 'Nutricionista' // Placeholder
-        }
-
-        const updatedNotes = [newNote, ...(patient.notes || [])]
-
-        set({
-            patient: {
-                ...patient,
-                notes: updatedNotes
             },
-            isDirty: true
-        })
-    },
 
-    // Meal Preset Actions
-    loadMealPresets: async () => {
-        set({ presetsLoading: true });
-        try {
-            // Tenta carregar do localStorage primeiro
-            if (typeof window !== 'undefined') {
-                const savedPresets = localStorage.getItem('meal_presets');
-                const savedFavorites = localStorage.getItem('favorite_preset_ids');
+            setDietId: (dietId) => set({ dietId }),
 
-                if (savedPresets) {
-                    const parsedPresets = JSON.parse(savedPresets);
-                    // Only return if we actually have presets
-                    if (Array.isArray(parsedPresets) && parsedPresets.length > 0) {
-                        const favorites = savedFavorites ? JSON.parse(savedFavorites) : [];
-                        set({
-                            mealPresets: parsedPresets,
-                            favoritePresetIds: favorites,
-                            presetsLoading: false
-                        });
-                        return;
+            setDietName: (dietName) => set({ dietName, isDirty: true }),
+
+            setCalculationMethod: (calculationMethod) => {
+                set({ calculationMethod, isDirty: true })
+                get().calculateMetabolics()
+            },
+
+            setDietType: (dietType) => {
+                set((state) => ({
+                    dietType,
+                    isDirty: true,
+                    // Clear custom targets if not personalizada
+                    customTargets: dietType === 'personalizada' ? state.customTargets : {}
+                }))
+                get().calculateMetabolics()
+
+                // Auto-apply default presets for this diet type
+                const state = get();
+                const { weekPlan, currentDayIndex, defaultPresets, mealPresets } = state;
+                const currentMeals = weekPlan[currentDayIndex].meals;
+                let hasUpdates = false;
+
+                const normalizeMealType = (name: string): string => {
+                    const n = name.toLowerCase();
+                    if (n.includes('café') || n.includes('manhã')) return 'cafe_da_manha';
+                    if (n.includes('almoço')) return 'almoco';
+                    if (n.includes('jantar')) return 'jantar';
+                    if (n.includes('lanche')) return n.includes('manhã') ? 'lanche_manha' : 'lanche_tarde';
+                    if (n.includes('ceia')) return 'ceia';
+                    if (n.includes('suplemento')) return 'suplemento';
+                    return 'outros';
+                };
+
+                const newWeekPlan = [...weekPlan];
+                const updatedMeals = [...currentMeals];
+
+                updatedMeals.forEach((meal, index) => {
+                    const typeId = normalizeMealType(meal.name);
+
+                    const defaultPreset = defaultPresets.find(dp =>
+                        dp.meal_type === typeId && dp.diet_type === dietType && dp.is_active
+                    );
+
+                    if (defaultPreset) {
+                        const preset = mealPresets.find(p => p.id === defaultPreset.preset);
+                        if (preset) {
+                            const newItems: FoodItem[] = preset.foods.map(food => ({
+                                id: generateId(),
+                                food: null,
+                                customName: food.food_name,
+                                quantity: food.quantity,
+                                unit: food.unit,
+                                calories: food.calories,
+                                protein: food.protein,
+                                carbs: food.carbs,
+                                fats: food.fats,
+                                fiber: food.fiber || 0
+                            }));
+
+                            updatedMeals[index] = {
+                                ...meal,
+                                items: newItems
+                            };
+                            hasUpdates = true;
+                        }
+                    }
+                });
+
+                if (hasUpdates) {
+                    newWeekPlan[currentDayIndex] = {
+                        ...newWeekPlan[currentDayIndex],
+                        meals: updatedMeals
+                    };
+                    set({ weekPlan: newWeekPlan, isDirty: true });
+                }
+            },
+
+            setActivityLevel: (activityLevel) => {
+                set({ activityLevel, isDirty: true })
+                get().calculateMetabolics()
+            },
+
+            setGoalAdjustment: (goalAdjustment) => {
+                set({ goalAdjustment, isDirty: true })
+                get().calculateMetabolics()
+            },
+
+            setCustomTarget: (target, value) => {
+                set((state) => ({
+                    customTargets: { ...state.customTargets, [target]: value },
+                    isDirty: true
+                }))
+                get().calculateMetabolics()
+            },
+
+            setCustomMacros: (macros) => {
+                set((state) => ({
+                    customMacros: { ...state.customMacros, ...macros },
+                    dietType: 'personalizada',
+                    isDirty: true
+                }))
+                get().calculateMetabolics()
+            },
+
+            calculateMetabolics: () => {
+                const { patient, calculationMethod, activityLevel, goalAdjustment, dietType, customMacros, customTargets } = get()
+
+                const weight = patient?.weight ?? 70
+                const height = patient?.height ?? 1.70
+                const age = patient?.age ?? 30
+                const sex = patient?.sex ?? 'M'
+                const bodyFat = patient?.bodyFat
+                const muscleMass = patient?.muscleMass
+
+                let tmb = calculateTMB(
+                    calculationMethod,
+                    weight,
+                    height * 100, // Convert m to cm
+                    age,
+                    sex,
+                    bodyFat,
+                    muscleMass,
+                    activityLevel
+                )
+
+                const isEER = calculationMethod.startsWith('eer_iom')
+                let getVal = isEER ? Math.round(tmb) : Math.round(tmb * activityLevel)
+
+                if (dietType === 'personalizada') {
+                    if (customTargets.tmb) tmb = customTargets.tmb
+                    if (customTargets.get) getVal = customTargets.get
+                }
+
+                let targetCalories = Math.round(getVal + goalAdjustment)
+
+                if (dietType === 'personalizada' && customTargets.calories) {
+                    targetCalories = customTargets.calories
+                }
+
+                const macroDistribution = dietType === 'personalizada' ? customMacros : DIET_TYPE_MACROS[dietType]
+                const targetMacros = {
+                    carbs: Math.round((targetCalories * macroDistribution.carbs / 100) / 4), // 4 kcal/g
+                    protein: Math.round((targetCalories * macroDistribution.protein / 100) / 4), // 4 kcal/g
+                    fats: Math.round((targetCalories * macroDistribution.fats / 100) / 9), // 9 kcal/g
+                    fiber: 25,
+                }
+
+                set({ tmb: Math.round(tmb), get: getVal, targetCalories, targetMacros })
+            },
+
+            setActiveTab: (activeTab) => set({ activeTab }),
+            setAnamnesisViewMode: (anamnesisViewMode) => set({ anamnesisViewMode }),
+
+            setCurrentDay: (currentDayIndex) => set({ currentDayIndex }),
+
+            addMeal: (meal) => {
+                const { weekPlan, currentDayIndex } = get()
+                const newMeal: Meal = { ...meal, id: generateId() }
+                const newWeekPlan = [...weekPlan]
+                newWeekPlan[currentDayIndex] = {
+                    ...newWeekPlan[currentDayIndex],
+                    meals: [...newWeekPlan[currentDayIndex].meals, newMeal]
+                }
+                get().saveSnapshot()
+                set({ weekPlan: newWeekPlan, isDirty: true })
+            },
+
+            updateMeal: (mealId, updates) => {
+                const { weekPlan, currentDayIndex } = get()
+                const newWeekPlan = [...weekPlan]
+
+                newWeekPlan[currentDayIndex] = {
+                    ...newWeekPlan[currentDayIndex],
+                    meals: newWeekPlan[currentDayIndex].meals.map(meal =>
+                        meal.id === mealId ? { ...meal, ...updates } : meal
+                    )
+                }
+
+                set({ weekPlan: newWeekPlan, isDirty: true })
+            },
+
+            removeMeal: (mealId) => {
+                const { weekPlan, currentDayIndex } = get()
+                get().saveSnapshot()
+
+                const newWeekPlan = [...weekPlan]
+                newWeekPlan[currentDayIndex] = {
+                    ...newWeekPlan[currentDayIndex],
+                    meals: newWeekPlan[currentDayIndex].meals.filter(m => m.id !== mealId)
+                }
+
+                set({ weekPlan: newWeekPlan, isDirty: true })
+            },
+
+            selectMeal: (selectedMealId) => set({ selectedMealId }),
+
+            addFoodToMeal: (mealId, item) => {
+                const { weekPlan, currentDayIndex } = get()
+                const newItem: FoodItem = { ...item, id: generateId() }
+
+                const newWeekPlan = [...weekPlan]
+                newWeekPlan[currentDayIndex] = {
+                    ...newWeekPlan[currentDayIndex],
+                    meals: newWeekPlan[currentDayIndex].meals.map(meal =>
+                        meal.id === mealId
+                            ? { ...meal, items: [...meal.items, newItem] }
+                            : meal
+                    )
+                }
+
+                get().saveSnapshot()
+                set({ weekPlan: newWeekPlan, isDirty: true })
+            },
+
+            updateFoodItem: (mealId, itemId, updates) => {
+                const { weekPlan, currentDayIndex } = get()
+
+                const newWeekPlan = [...weekPlan]
+                newWeekPlan[currentDayIndex] = {
+                    ...newWeekPlan[currentDayIndex],
+                    meals: newWeekPlan[currentDayIndex].meals.map(meal =>
+                        meal.id === mealId
+                            ? {
+                                ...meal,
+                                items: meal.items.map(item =>
+                                    item.id === itemId
+                                        ? { ...item, ...updates }
+                                        : item
+                                )
+                            }
+                            : meal
+                    )
+                }
+
+                set({ weekPlan: newWeekPlan, isDirty: true })
+            },
+
+            removeFoodFromMeal: (mealId, itemId) => {
+                const { weekPlan, currentDayIndex } = get()
+                get().saveSnapshot()
+
+                const newWeekPlan = [...weekPlan]
+                newWeekPlan[currentDayIndex] = {
+                    ...newWeekPlan[currentDayIndex],
+                    meals: newWeekPlan[currentDayIndex].meals.map(meal =>
+                        meal.id === mealId
+                            ? { ...meal, items: meal.items.filter(i => i.id !== itemId) }
+                            : meal
+                    )
+                }
+
+                set({ weekPlan: newWeekPlan, isDirty: true })
+            },
+
+            applyPreset: (mealId, presetItems) => {
+                const { weekPlan, currentDayIndex } = get()
+                get().saveSnapshot()
+                const newItems: FoodItem[] = presetItems.map(item => ({ ...item, id: generateId() }))
+
+                const newWeekPlan = [...weekPlan]
+                newWeekPlan[currentDayIndex] = {
+                    ...newWeekPlan[currentDayIndex],
+                    meals: newWeekPlan[currentDayIndex].meals.map(meal =>
+                        meal.id === mealId
+                            ? { ...meal, items: [...meal.items, ...newItems] }
+                            : meal
+                    )
+                }
+
+                set({ weekPlan: newWeekPlan, isDirty: true })
+            },
+
+            copyMeal: (fromMealId, toDayIndex) => {
+                const { weekPlan, currentDayIndex } = get()
+                const meal = weekPlan[currentDayIndex].meals.find(m => m.id === fromMealId)
+                if (meal) {
+                    get().saveSnapshot()
+                    const copiedMeal: Meal = {
+                        ...meal,
+                        id: generateId(),
+                        items: meal.items.map(item => ({ ...item, id: generateId() }))
+                    }
+
+                    const newWeekPlan = [...weekPlan]
+                    newWeekPlan[toDayIndex] = {
+                        ...newWeekPlan[toDayIndex],
+                        meals: [...newWeekPlan[toDayIndex].meals, copiedMeal]
+                    }
+
+                    set({ weekPlan: newWeekPlan, isDirty: true })
+                }
+            },
+
+            toggleLeftPanel: () => set((state) => ({ leftPanelCollapsed: !state.leftPanelCollapsed })),
+            toggleRightPanel: () => set((state) => ({ rightPanelCollapsed: !state.rightPanelCollapsed })),
+
+            undo: () => {
+                // Implement undo logic
+            },
+            redo: () => {
+                // Implement redo logic
+            },
+            saveSnapshot: () => {
+                const { weekPlan, history, historyIndex } = get()
+                const newHistory = history.slice(0, historyIndex + 1)
+                newHistory.push(JSON.parse(JSON.stringify(weekPlan)))
+                set({ history: newHistory.slice(-50), historyIndex: newHistory.length - 1 })
+            },
+
+            reset: () => set(initialState),
+
+            // Workspace Template Actions
+            setWorkspaceMeals: (workspaceMeals) => set({ workspaceMeals }),
+
+            addWorkspaceMeal: (meal) => {
+                const { workspaceMeals } = get()
+                set({ workspaceMeals: [...workspaceMeals, meal] })
+            },
+
+            updateWorkspaceMeal: (mealId, updates) => {
+                const { workspaceMeals } = get()
+                set({
+                    workspaceMeals: workspaceMeals.map(m =>
+                        m.id === mealId ? { ...m, ...updates } : m
+                    )
+                })
+            },
+
+            deleteWorkspaceMeal: (mealId) => {
+                const { workspaceMeals } = get()
+                set({
+                    workspaceMeals: workspaceMeals.filter(m => m.id !== mealId)
+                })
+            },
+
+            copyWorkspaceMeal: (mealId) => {
+                const { workspaceMeals } = get()
+                const mealToCopy = workspaceMeals.find(m => m.id === mealId)
+                if (!mealToCopy) return
+                const newId = Math.max(...workspaceMeals.map(m => m.id)) + 1
+                const copiedMeal: WorkspaceMeal = {
+                    ...mealToCopy,
+                    id: newId,
+                    foods: mealToCopy.foods.map((f, i) => ({ ...f, id: Date.now() + i }))
+                }
+                set({ workspaceMeals: [...workspaceMeals, copiedMeal] })
+            },
+
+            setActiveWorkspaceDay: (activeWorkspaceDay) => set({ activeWorkspaceDay }),
+
+            setValidityDates: (start, end) => set({ validityStartDate: start, validityEndDate: end }),
+
+            addFavorite: async (food) => {
+                const { favorites, loadFavorites } = get()
+                if (!favorites.some(f => f.id === food.id && f.source === food.source)) {
+                    await foodService.toggleFavorite(food.source, food.id, food.nome)
+                    await loadFavorites()
+                }
+            },
+
+            removeFavorite: async (foodId, source, foodName) => {
+                const { favorites, loadFavorites } = get()
+                const food = favorites.find(f => f.id === foodId && f.source === source)
+                const nameToUse = foodName || food?.nome
+
+                if (nameToUse) {
+                    await foodService.toggleFavorite(source, foodId, nameToUse)
+                    await loadFavorites()
+                }
+            },
+
+            loadFavorites: async () => {
+                try {
+                    const data = await foodService.getFavorites()
+                    set({ favorites: data.results })
+                } catch (error) {
+                    console.error("Erro ao carregar favoritos:", error)
+                }
+            },
+
+            addFoodToWorkspaceMeal: (mealId, food) => {
+                const { workspaceMeals } = get()
+                set({
+                    workspaceMeals: workspaceMeals.map(meal => {
+                        if (meal.id !== mealId) return meal
+                        const newFood: WorkspaceMealFood = {
+                            id: Date.now(),
+                            name: food.nome,
+                            qty: '',
+                            unit: 'g',
+                            measure: 'default',
+                            prep: '',
+                            ptn: food.proteina_g,
+                            cho: food.carboidrato_g,
+                            fat: food.lipidios_g,
+                            fib: food.fibra_g || 0,
+                            preferred: false,
+                            unidade_caseira: food.unidade_caseira ?? undefined,
+                            peso_unidade_caseira_g: food.peso_unidade_caseira_g ?? undefined,
+                            medidas: food.medidas,
+                            originalId: food.id,
+                            source: food.source
+                        }
+                        return { ...meal, foods: [...meal.foods, newFood] }
+                    })
+                })
+            },
+
+            removeFoodFromWorkspaceMeal: (mealId, foodId) => {
+                const { workspaceMeals } = get()
+                set({
+                    workspaceMeals: workspaceMeals.map(meal => {
+                        if (meal.id !== mealId) return meal
+                        return { ...meal, foods: meal.foods.filter(f => f.id !== foodId) }
+                    })
+                })
+            },
+
+            addNote: (data) => {
+                const { patient } = get()
+                if (!patient) return
+
+                const newNote = {
+                    id: Date.now(),
+                    content: data.content,
+                    title: data.title,
+                    category: data.category,
+                    date: data.date,
+                    created_at: new Date().toISOString(),
+                    nutritionist_name: 'Nutricionista' // Placeholder
+                }
+
+                const updatedNotes = [newNote, ...(patient.notes || [])]
+
+                set({
+                    patient: {
+                        ...patient,
+                        notes: updatedNotes
+                    },
+                    isDirty: true
+                })
+            },
+
+            // Meal Preset Actions
+            loadMealPresets: async () => {
+                set({ presetsLoading: true });
+                try {
+                    // Tenta carregar do localStorage primeiro
+                    if (typeof window !== 'undefined') {
+                        const savedPresets = localStorage.getItem('meal_presets');
+                        const savedFavorites = localStorage.getItem('favorite_preset_ids');
+
+                        if (savedPresets) {
+                            const parsedPresets = JSON.parse(savedPresets);
+                            // Only return if we actually have presets
+                            if (Array.isArray(parsedPresets) && parsedPresets.length > 0) {
+                                const favorites = savedFavorites ? JSON.parse(savedFavorites) : [];
+                                set({
+                                    mealPresets: parsedPresets,
+                                    favoritePresetIds: favorites,
+                                    presetsLoading: false
+                                });
+                                return;
+                            }
+                        }
+                    }
+
+                    // Simulação de presets com alimentos para demonstração
+                    // Only used if no local storage data found
+                    const mockPresets: MealPreset[] = [
+                        {
+                            id: 1,
+                            name: 'Café da Manhã',
+                            meal_type: 'cafe_da_manha',
+                            diet_type: 'normocalorica',
+                            description: '',
+                            foods: [
+                                { id: 1, food_name: 'Pão Integral', quantity: 60, unit: 'g', calories: 166, protein: 5, carbs: 29, fats: 2, fiber: 3 },
+                                { id: 2, food_name: 'Ovo Cozido', quantity: 70, unit: 'g', calories: 92, protein: 7, carbs: 0.6, fats: 6.3, fiber: 0 },
+                                { id: 3, food_name: 'Banana', quantity: 100, unit: 'g', calories: 89, protein: 1.1, carbs: 22.8, fats: 0.3, fiber: 2.6 },
+                                { id: 4, food_name: 'Café com Leite', quantity: 200, unit: 'ml', calories: 60, protein: 3.3, carbs: 6.8, fats: 2.5, fiber: 0 }
+                            ],
+                            total_calories: 407,
+                            total_protein: 16.5,
+                            total_carbs: 59.2,
+                            total_fats: 11.1,
+                            is_active: true,
+                            created_at: new Date().toISOString(),
+                            updated_at: new Date().toISOString(),
+                        },
+                        {
+                            id: 2,
+                            name: 'Almoço Low Carb',
+                            meal_type: 'almoco',
+                            diet_type: 'low_carb',
+                            description: '',
+                            foods: [
+                                { id: 1, food_name: 'Filé de Frango Grelhado', quantity: 150, unit: 'g', calories: 231, protein: 31, carbs: 0, fats: 12, fiber: 0 },
+                                { id: 2, food_name: 'Brócolis Cozido', quantity: 100, unit: 'g', calories: 34, protein: 2.8, carbs: 7, fats: 0.4, fiber: 2.6 },
+                                { id: 3, food_name: 'Abacate', quantity: 50, unit: 'g', calories: 80, protein: 1, carbs: 4, fats: 7, fiber: 3.4 }
+                            ],
+                            total_calories: 345,
+                            total_protein: 34.8,
+                            total_carbs: 11,
+                            total_fats: 19.4,
+                            is_active: true,
+                            created_at: new Date().toISOString(),
+                            updated_at: new Date().toISOString(),
+                        },
+                        {
+                            id: 3,
+                            name: 'Lanche da Tarde Proteico',
+                            meal_type: 'lanche_tarde',
+                            diet_type: 'hiperproteica',
+                            description: '',
+                            foods: [
+                                { id: 1, food_name: 'Iogurte Grego', quantity: 150, unit: 'g', calories: 100, protein: 10, carbs: 7, fats: 0, fiber: 0 },
+                                { id: 2, food_name: 'Castanha do Pará', quantity: 30, unit: 'g', calories: 187, protein: 4.3, carbs: 3.3, fats: 19.2, fiber: 2.4 }
+                            ],
+                            total_calories: 287,
+                            total_protein: 14.3,
+                            total_carbs: 10.3,
+                            total_fats: 19.2,
+                            is_active: true,
+                            created_at: new Date().toISOString(),
+                            updated_at: new Date().toISOString(),
+                        }
+                    ];
+                    set({ mealPresets: mockPresets });
+
+                    if (typeof window !== 'undefined') {
+                        localStorage.setItem('meal_presets', JSON.stringify(mockPresets));
+                    }
+                } catch (error) {
+                    console.error('Erro ao carregar presets:', error);
+                    // Fallback to empty array and STOP loading
+                    set({ mealPresets: [], presetsLoading: false });
+                } finally {
+                    // Ensure loading is set to false in all paths
+                    set((state) => ({ ...state, presetsLoading: false }));
+                }
+            },
+
+            createMealPreset: async (presetData) => {
+                set({ presetsLoading: true });
+                try {
+                    const newPreset: MealPreset = {
+                        ...presetData,
+                        id: Date.now(),
+                        created_at: new Date().toISOString(),
+                        updated_at: new Date().toISOString(),
+                        is_active: true,
+                        foods: presetData.foods.map((f, i) => ({ ...f, id: Date.now() + i }))
+                    };
+
+                    const updatedPresets = [...get().mealPresets, newPreset];
+                    set({ mealPresets: updatedPresets });
+
+                    if (typeof window !== 'undefined') {
+                        localStorage.setItem('meal_presets', JSON.stringify(updatedPresets));
+                    }
+
+                    return Promise.resolve();
+                } catch (error) {
+                    console.error('Erro ao criar preset:', error);
+                    throw error;
+                } finally {
+                    set({ presetsLoading: false });
+                }
+            },
+
+            updateMealPreset: async (id, updates) => {
+                try {
+                    const updatedPresets = get().mealPresets.map(p =>
+                        p.id === id ? { ...p, ...updates, updated_at: new Date().toISOString() } : p
+                    );
+                    set({ mealPresets: updatedPresets });
+
+                    if (typeof window !== 'undefined') {
+                        localStorage.setItem('meal_presets', JSON.stringify(updatedPresets));
+                    }
+                } catch (error) {
+                    console.error('Erro ao atualizar preset:', error);
+                    throw error;
+                }
+            },
+
+            deleteMealPreset: async (id) => {
+                try {
+                    const updatedPresets = get().mealPresets.filter(p => p.id !== id);
+                    set({ mealPresets: updatedPresets });
+
+                    if (typeof window !== 'undefined') {
+                        localStorage.setItem('meal_presets', JSON.stringify(updatedPresets));
+                    }
+                } catch (error) {
+                    console.error('Erro ao deletar preset:', error);
+                    throw error;
+                }
+            },
+
+            getPresetsByMealType: (mealType) => {
+                return get().mealPresets.filter(preset => preset.meal_type === mealType);
+            },
+
+            getPresetsByDietType: (dietType) => {
+                return get().mealPresets.filter(preset => preset.diet_type === dietType);
+            },
+
+            searchMealPresets: (query) => {
+                if (!query) return get().mealPresets;
+                const lowerQuery = query.toLowerCase();
+                return get().mealPresets.filter(preset =>
+                    preset.name.toLowerCase().includes(lowerQuery) ||
+                    preset.description?.toLowerCase().includes(lowerQuery)
+                );
+            },
+
+            toggleFavoritePreset: (presetId) => {
+                const { favoritePresetIds } = get();
+                const isFavorite = favoritePresetIds.includes(presetId);
+                const newFavoriteIds = isFavorite
+                    ? favoritePresetIds.filter(id => id !== presetId)
+                    : [...favoritePresetIds, presetId];
+
+                set({ favoritePresetIds: newFavoriteIds });
+
+                if (typeof window !== 'undefined') {
+                    localStorage.setItem('favorite_preset_ids', JSON.stringify(newFavoriteIds));
+                }
+            },
+
+            getFavoritePresets: () => {
+                const { mealPresets, favoritePresetIds } = get();
+                return mealPresets.filter(preset => favoritePresetIds.includes(preset.id));
+            },
+
+            isPresetFavorite: (presetId) => {
+                return get().favoritePresetIds.includes(presetId);
+            },
+
+            // Default Preset Actions
+            loadDefaultPresets: async () => {
+                set({ defaultPresetsLoading: true });
+                try {
+                    // Tenta carregar do localStorage
+                    if (typeof window !== 'undefined') {
+                        const savedDefaults = localStorage.getItem('default_presets');
+                        if (savedDefaults) {
+                            set({ defaultPresets: JSON.parse(savedDefaults), defaultPresetsLoading: false });
+                            return;
+                        }
+                    }
+
+                    const mockDefaultPresets: DefaultPreset[] = [];
+                    set({ defaultPresets: mockDefaultPresets });
+                } catch (error) {
+                    console.error('Erro ao carregar presets padrão:', error);
+                } finally {
+                    set({ defaultPresetsLoading: false });
+                }
+            },
+
+            setDefaultPreset: async (mealType, dietType, presetId) => {
+                try {
+                    // Em uma implementação real, isso faria uma chamada à API
+                    // const response = await api.post('/default-presets/', {
+                    //     meal_type: mealType,
+                    //     diet_type: dietType,
+                    //     preset: presetId
+                    // });
+
+                    // Atualizar localmente
+                    const existingPreset = get().defaultPresets.find(dp =>
+                        dp.meal_type === mealType && dp.diet_type === dietType
+                    );
+
+                    const newDefaultPreset: DefaultPreset = {
+                        id: existingPreset ? existingPreset.id : Date.now(),
+                        meal_type: mealType,
+                        diet_type: dietType,
+                        preset: presetId,
+                        is_active: true,
+                        created_at: existingPreset ? existingPreset.created_at : new Date().toISOString(),
+                        updated_at: new Date().toISOString()
+                    };
+
+                    let updatedDefaults;
+                    if (existingPreset) {
+                        updatedDefaults = get().defaultPresets.map(dp =>
+                            dp.meal_type === mealType && dp.diet_type === dietType
+                                ? newDefaultPreset
+                                : dp
+                        );
+                    } else {
+                        updatedDefaults = [...get().defaultPresets, newDefaultPreset];
+                    }
+
+                    set({ defaultPresets: updatedDefaults });
+
+                    if (typeof window !== 'undefined') {
+                        localStorage.setItem('default_presets', JSON.stringify(updatedDefaults));
+                    }
+                } catch (error) {
+                    console.error('Erro ao definir preset padrão:', error);
+                    throw error;
+                }
+            },
+
+            removeDefaultPreset: async (mealType, dietType) => {
+                try {
+                    const updatedDefaults = get().defaultPresets.filter(dp =>
+                        !(dp.meal_type === mealType && dp.diet_type === dietType)
+                    );
+                    set({ defaultPresets: updatedDefaults });
+
+                    if (typeof window !== 'undefined') {
+                        localStorage.setItem('default_presets', JSON.stringify(updatedDefaults));
+                    }
+                } catch (error) {
+                    console.error('Erro ao remover preset padrão:', error);
+                    throw error;
+                }
+            },
+
+            getDefaultPreset: (mealType, dietType) => {
+                return get().defaultPresets.find(dp =>
+                    dp.meal_type === mealType && dp.diet_type === dietType
+                );
+            },
+
+            applyDefaultPreset: (mealId, mealType, dietType) => {
+                const defaultPreset = get().getDefaultPreset(mealType, dietType);
+                if (defaultPreset) {
+                    const preset = get().mealPresets.find(p => p.id === defaultPreset.preset);
+                    if (preset) {
+                        // Verificar se a refeição está nos workspaceMeals (Contexto do Modal)
+                        const workspaceMeal = get().workspaceMeals.find(m => m.id.toString() === mealId);
+
+                        if (workspaceMeal) {
+                            const newFoods: WorkspaceMealFood[] = preset.foods.map(food => ({
+                                id: Date.now() + Math.random(),
+                                name: food.food_name,
+                                qty: food.quantity,
+                                unit: food.unit,
+                                measure: 'g',
+                                prep: '',
+                                ptn: food.protein,
+                                cho: food.carbs,
+                                fat: food.fats,
+                                fib: food.fiber || 0,
+                                preferred: false,
+                                originalId: undefined,
+                                source: 'CUSTOM'
+                            }));
+
+                            get().updateWorkspaceMeal(workspaceMeal.id, { foods: newFoods });
+                        } else {
+                            // Fallback para o weekPlan (7 dias)
+                            get().applyPreset(mealId, preset.foods.map(food => ({
+                                food: null,
+                                customName: food.food_name,
+                                quantity: food.quantity,
+                                unit: food.unit,
+                                calories: food.calories,
+                                protein: food.protein,
+                                carbs: food.carbs,
+                                fats: food.fats,
+                                fiber: food.fiber || 0
+                            })));
+                        }
                     }
                 }
-            }
+            },
 
-            // Simulação de presets com alimentos para demonstração
-            // Only used if no local storage data found
-            const mockPresets: MealPreset[] = [
-                {
-                    id: 1,
-                    name: 'Café da Manhã',
-                    meal_type: 'cafe_da_manha',
-                    diet_type: 'normocalorica',
-                    description: '',
-                    foods: [
-                        { id: 1, food_name: 'Pão Integral', quantity: 60, unit: 'g', calories: 166, protein: 5, carbs: 29, fats: 2, fiber: 3 },
-                        { id: 2, food_name: 'Ovo Cozido', quantity: 70, unit: 'g', calories: 92, protein: 7, carbs: 0.6, fats: 6.3, fiber: 0 },
-                        { id: 3, food_name: 'Banana', quantity: 100, unit: 'g', calories: 89, protein: 1.1, carbs: 22.8, fats: 0.3, fiber: 2.6 },
-                        { id: 4, food_name: 'Café com Leite', quantity: 200, unit: 'ml', calories: 60, protein: 3.3, carbs: 6.8, fats: 2.5, fiber: 0 }
-                    ],
-                    total_calories: 407,
-                    total_protein: 16.5,
-                    total_carbs: 59.2,
-                    total_fats: 11.1,
-                    is_active: true,
-                    created_at: new Date().toISOString(),
-                    updated_at: new Date().toISOString(),
-                },
-                {
-                    id: 2,
-                    name: 'Almoço Low Carb',
-                    meal_type: 'almoco',
-                    diet_type: 'low_carb',
-                    description: '',
-                    foods: [
-                        { id: 1, food_name: 'Filé de Frango Grelhado', quantity: 150, unit: 'g', calories: 231, protein: 31, carbs: 0, fats: 12, fiber: 0 },
-                        { id: 2, food_name: 'Brócolis Cozido', quantity: 100, unit: 'g', calories: 34, protein: 2.8, carbs: 7, fats: 0.4, fiber: 2.6 },
-                        { id: 3, food_name: 'Abacate', quantity: 50, unit: 'g', calories: 80, protein: 1, carbs: 4, fats: 7, fiber: 3.4 }
-                    ],
-                    total_calories: 345,
-                    total_protein: 34.8,
-                    total_carbs: 11,
-                    total_fats: 19.4,
-                    is_active: true,
-                    created_at: new Date().toISOString(),
-                    updated_at: new Date().toISOString(),
-                },
-                {
-                    id: 3,
-                    name: 'Lanche da Tarde Proteico',
-                    meal_type: 'lanche_tarde',
-                    diet_type: 'hiperproteica',
-                    description: '',
-                    foods: [
-                        { id: 1, food_name: 'Iogurte Grego', quantity: 150, unit: 'g', calories: 100, protein: 10, carbs: 7, fats: 0, fiber: 0 },
-                        { id: 2, food_name: 'Castanha do Pará', quantity: 30, unit: 'g', calories: 187, protein: 4.3, carbs: 3.3, fats: 19.2, fiber: 2.4 }
-                    ],
-                    total_calories: 287,
-                    total_protein: 14.3,
-                    total_carbs: 10.3,
-                    total_fats: 19.2,
-                    is_active: true,
-                    created_at: new Date().toISOString(),
-                    updated_at: new Date().toISOString(),
-                }
-            ];
-            set({ mealPresets: mockPresets });
-
-            if (typeof window !== 'undefined') {
-                localStorage.setItem('meal_presets', JSON.stringify(mockPresets));
-            }
-        } catch (error) {
-            console.error('Erro ao carregar presets:', error);
-            // Fallback to empty array and STOP loading
-            set({ mealPresets: [], presetsLoading: false });
-        } finally {
-            // Ensure loading is set to false in all paths
-            set((state) => ({ ...state, presetsLoading: false }));
-        }
-    },
-
-    createMealPreset: async (presetData) => {
-        set({ presetsLoading: true });
-        try {
-            const newPreset: MealPreset = {
-                ...presetData,
-                id: Date.now(),
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString(),
-                is_active: true,
-                foods: presetData.foods.map((f, i) => ({ ...f, id: Date.now() + i }))
-            };
-
-            const updatedPresets = [...get().mealPresets, newPreset];
-            set({ mealPresets: updatedPresets });
-
-            if (typeof window !== 'undefined') {
-                localStorage.setItem('meal_presets', JSON.stringify(updatedPresets));
-            }
-
-            return Promise.resolve();
-        } catch (error) {
-            console.error('Erro ao criar preset:', error);
-            throw error;
-        } finally {
-            set({ presetsLoading: false });
-        }
-    },
-
-    updateMealPreset: async (id, updates) => {
-        try {
-            const updatedPresets = get().mealPresets.map(p =>
-                p.id === id ? { ...p, ...updates, updated_at: new Date().toISOString() } : p
-            );
-            set({ mealPresets: updatedPresets });
-
-            if (typeof window !== 'undefined') {
-                localStorage.setItem('meal_presets', JSON.stringify(updatedPresets));
-            }
-        } catch (error) {
-            console.error('Erro ao atualizar preset:', error);
-            throw error;
-        }
-    },
-
-    deleteMealPreset: async (id) => {
-        try {
-            const updatedPresets = get().mealPresets.filter(p => p.id !== id);
-            set({ mealPresets: updatedPresets });
-
-            if (typeof window !== 'undefined') {
-                localStorage.setItem('meal_presets', JSON.stringify(updatedPresets));
-            }
-        } catch (error) {
-            console.error('Erro ao deletar preset:', error);
-            throw error;
-        }
-    },
-
-    getPresetsByMealType: (mealType) => {
-        return get().mealPresets.filter(preset => preset.meal_type === mealType);
-    },
-
-    getPresetsByDietType: (dietType) => {
-        return get().mealPresets.filter(preset => preset.diet_type === dietType);
-    },
-
-    searchMealPresets: (query) => {
-        if (!query) return get().mealPresets;
-        const lowerQuery = query.toLowerCase();
-        return get().mealPresets.filter(preset =>
-            preset.name.toLowerCase().includes(lowerQuery) ||
-            preset.description?.toLowerCase().includes(lowerQuery)
-        );
-    },
-
-    toggleFavoritePreset: (presetId) => {
-        const { favoritePresetIds } = get();
-        const isFavorite = favoritePresetIds.includes(presetId);
-        const newFavoriteIds = isFavorite
-            ? favoritePresetIds.filter(id => id !== presetId)
-            : [...favoritePresetIds, presetId];
-
-        set({ favoritePresetIds: newFavoriteIds });
-
-        if (typeof window !== 'undefined') {
-            localStorage.setItem('favorite_preset_ids', JSON.stringify(newFavoriteIds));
-        }
-    },
-
-    getFavoritePresets: () => {
-        const { mealPresets, favoritePresetIds } = get();
-        return mealPresets.filter(preset => favoritePresetIds.includes(preset.id));
-    },
-
-    isPresetFavorite: (presetId) => {
-        return get().favoritePresetIds.includes(presetId);
-    },
-
-    // Default Preset Actions
-    loadDefaultPresets: async () => {
-        set({ defaultPresetsLoading: true });
-        try {
-            // Tenta carregar do localStorage
-            if (typeof window !== 'undefined') {
-                const savedDefaults = localStorage.getItem('default_presets');
-                if (savedDefaults) {
-                    set({ defaultPresets: JSON.parse(savedDefaults), defaultPresetsLoading: false });
-                    return;
+            setPresetAsDefault: async (presetId, mealType, dietType) => {
+                try {
+                    await get().setDefaultPreset(mealType, dietType, presetId);
+                } catch (error) {
+                    console.error('Erro ao definir preset como padrão:', error);
+                    throw error;
                 }
             }
-
-            const mockDefaultPresets: DefaultPreset[] = [];
-            set({ defaultPresets: mockDefaultPresets });
-        } catch (error) {
-            console.error('Erro ao carregar presets padrão:', error);
-        } finally {
-            set({ defaultPresetsLoading: false });
+        }),
+        {
+            name: 'diet-editor-storage',
+            storage: createJSONStorage(() => localStorage),
+            partialize: (state) => ({
+                patient: state.patient,
+                dietId: state.dietId,
+                dietName: state.dietName,
+                calculationMethod: state.calculationMethod,
+                dietType: state.dietType,
+                activityLevel: state.activityLevel,
+                goalAdjustment: state.goalAdjustment,
+                customTargets: state.customTargets,
+                tmb: state.tmb,
+                get: state.get,
+                targetCalories: state.targetCalories,
+                targetMacros: state.targetMacros,
+                customMacros: state.customMacros,
+                weekPlan: state.weekPlan,
+                workspaceMeals: state.workspaceMeals,
+                activeWorkspaceDay: state.activeWorkspaceDay,
+                validityStartDate: state.validityStartDate,
+                validityEndDate: state.validityEndDate,
+                favorites: state.favorites,
+                mealPresets: state.mealPresets,
+                favoritePresetIds: state.favoritePresetIds,
+                defaultPresets: state.defaultPresets,
+            })
         }
-    },
-
-    setDefaultPreset: async (mealType, dietType, presetId) => {
-        try {
-            // Em uma implementação real, isso faria uma chamada à API
-            // const response = await api.post('/default-presets/', {
-            //     meal_type: mealType,
-            //     diet_type: dietType,
-            //     preset: presetId
-            // });
-
-            // Atualizar localmente
-            const existingPreset = get().defaultPresets.find(dp =>
-                dp.meal_type === mealType && dp.diet_type === dietType
-            );
-
-            const newDefaultPreset: DefaultPreset = {
-                id: existingPreset ? existingPreset.id : Date.now(),
-                meal_type: mealType,
-                diet_type: dietType,
-                preset: presetId,
-                is_active: true,
-                created_at: existingPreset ? existingPreset.created_at : new Date().toISOString(),
-                updated_at: new Date().toISOString()
-            };
-
-            let updatedDefaults;
-            if (existingPreset) {
-                updatedDefaults = get().defaultPresets.map(dp =>
-                    dp.meal_type === mealType && dp.diet_type === dietType
-                        ? newDefaultPreset
-                        : dp
-                );
-            } else {
-                updatedDefaults = [...get().defaultPresets, newDefaultPreset];
-            }
-
-            set({ defaultPresets: updatedDefaults });
-
-            if (typeof window !== 'undefined') {
-                localStorage.setItem('default_presets', JSON.stringify(updatedDefaults));
-            }
-        } catch (error) {
-            console.error('Erro ao definir preset padrão:', error);
-            throw error;
-        }
-    },
-
-    removeDefaultPreset: async (mealType, dietType) => {
-        try {
-            const updatedDefaults = get().defaultPresets.filter(dp =>
-                !(dp.meal_type === mealType && dp.diet_type === dietType)
-            );
-            set({ defaultPresets: updatedDefaults });
-
-            if (typeof window !== 'undefined') {
-                localStorage.setItem('default_presets', JSON.stringify(updatedDefaults));
-            }
-        } catch (error) {
-            console.error('Erro ao remover preset padrão:', error);
-            throw error;
-        }
-    },
-
-    getDefaultPreset: (mealType, dietType) => {
-        return get().defaultPresets.find(dp =>
-            dp.meal_type === mealType && dp.diet_type === dietType
-        );
-    },
-
-    applyDefaultPreset: (mealId, mealType, dietType) => {
-        const defaultPreset = get().getDefaultPreset(mealType, dietType);
-        if (defaultPreset) {
-            const preset = get().mealPresets.find(p => p.id === defaultPreset.preset);
-            if (preset) {
-                // Verificar se a refeição está nos workspaceMeals (Contexto do Modal)
-                const workspaceMeal = get().workspaceMeals.find(m => m.id.toString() === mealId);
-
-                if (workspaceMeal) {
-                    const newFoods: WorkspaceMealFood[] = preset.foods.map(food => ({
-                        id: Date.now() + Math.random(),
-                        name: food.food_name,
-                        qty: food.quantity,
-                        unit: food.unit,
-                        measure: 'g',
-                        prep: '',
-                        ptn: food.protein,
-                        cho: food.carbs,
-                        fat: food.fats,
-                        fib: food.fiber || 0,
-                        preferred: false,
-                        originalId: undefined,
-                        source: 'CUSTOM'
-                    }));
-
-                    get().updateWorkspaceMeal(workspaceMeal.id, { foods: newFoods });
-                } else {
-                    // Fallback para o weekPlan (7 dias)
-                    get().applyPreset(mealId, preset.foods.map(food => ({
-                        food: null,
-                        customName: food.food_name,
-                        quantity: food.quantity,
-                        unit: food.unit,
-                        calories: food.calories,
-                        protein: food.protein,
-                        carbs: food.carbs,
-                        fats: food.fats,
-                        fiber: food.fiber || 0
-                    })));
-                }
-            }
-        }
-    },
-
-    setPresetAsDefault: async (presetId, mealType, dietType) => {
-        try {
-            await get().setDefaultPreset(mealType, dietType, presetId);
-        } catch (error) {
-            console.error('Erro ao definir preset como padrão:', error);
-            throw error;
-        }
-    }
-}))
+    )
+)
 
 export const useDietEditorPatient = () => useDietEditorStore((state) => state.patient)
 export const useDietEditorMeals = () => {
