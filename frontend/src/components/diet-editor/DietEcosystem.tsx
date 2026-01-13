@@ -189,10 +189,10 @@ export function DietEcosystem() {
         let content = null;
         switch (activeTab) {
             case 'overview':
-                content = <PatientOverviewTab />
+                content = <PatientOverviewTab patientId={Number(patientId)} />
                 break;
             case 'context':
-                content = <PatientContextTab patient={patientContext as PatientContext} />
+                content = <PatientContextTab patientId={Number(patientId)} />
                 break;
             case 'analysis':
                 content = <PatientAnalysisTab patientId={Number(patientId)} />
