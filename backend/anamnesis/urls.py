@@ -8,6 +8,7 @@ urlpatterns = [
     path('', AnamnesisGeneralViewSet.as_view({'get': 'list'}), name='anamnesis-list'),
     # Standard Anamnesis
     path('standard/', AnamnesisViewSet.as_view({'get': 'list', 'post': 'create'}), name='anamnesis-standard-list'),
+    path('standard/evolution/', AnamnesisViewSet.as_view({'get': 'evolution'}), name='anamnesis-standard-evolution'),
     path('standard/<int:pk>/', AnamnesisViewSet.as_view({'get': 'retrieve', 'patch': 'partial_update', 'delete': 'destroy'}), name='anamnesis-standard-detail'),
     # Templates
     path('templates/', AnamnesisTemplateViewSet.as_view({'get': 'list', 'post': 'create'}), name='anamnesis-template-list'),

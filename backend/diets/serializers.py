@@ -129,14 +129,18 @@ class DietSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         meals_data = validated_data.pop('meals_data', [])
         
-        # Se não enviou meals_data específico, tenta usar o campo 'meals' se ele vier estruturado
-        # Isso serve para compatibilidade com o frontend atual que envia 'meals'
-        if not meals_data and 'meals' in validated_data and isinstance(validated_data['meals'], list):
-             # Verifica se é uma estrutura nova (com 'items') ou legada
-             sample = validated_data['meals'][0] if validated_data['meals'] else None
-             if sample and 'items' in sample:
-                 meals_data = validated_data['meals']
-        
+        # Se houver meals_data, removemos o campo 'meals' do validated_data 
+        # para evitar que o Django tente salvar os dados novos no JSONField legado
+        # que possui um validador de esquema rígido (validate_meals_schema)
+        if meals_data:
+            validated_data.pop('meals', None)
+        elif 'meals' in validated_data and isinstance(validated_data['meals'], list):
+            # Fallback: se 'meals' veio com a estrutura nova (com 'items'), movemos para meals_data
+            sample = validated_data['meals'][0] if validated_data['meals'] else None
+            if sample and isinstance(sample, dict) and 'items' in sample:
+                meals_data = validated_data.pop('meals')
+
+        # Criar a dieta com os dados sanitizados
         diet = Diet.objects.create(**validated_data)
 
         for meal_data in meals_data:

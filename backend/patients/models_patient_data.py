@@ -166,3 +166,26 @@ class ClinicalNote(models.Model):
 
     def __str__(self):
         return f"Nota para {self.patient} em {self.created_at.date()}"
+class MealPhoto(models.Model):
+    """
+    Fotos de refeições registradas pelos pacientes.
+    """
+    patient = models.ForeignKey(
+        PatientProfile,
+        on_delete=models.CASCADE,
+        related_name='meal_photos'
+    )
+    meal = models.ForeignKey(
+        'diets.Meal',
+        on_delete=models.CASCADE,
+        related_name='photos'
+    )
+    photo = models.ImageField(upload_to='meal_photos/%Y/%m/')
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        db_table = 'meal_photos'
+        ordering = ['-uploaded_at']
+    
+    def __str__(self):
+        return f"Foto de {self.meal.name} - {self.patient.user.name} - {self.uploaded_at.date()}"

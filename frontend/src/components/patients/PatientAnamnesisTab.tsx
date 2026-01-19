@@ -37,14 +37,14 @@ import { Badge } from "@/components/ui/badge"
 import { useDietEditorStore } from "@/stores/diet-editor-store"
 import { cn } from "@/lib/utils"
 
-interface PatientAnamnesisTabProps {
-    patientId: number
-    patient?: Patient
-}
+import { usePatientStore } from "@/stores/use-patient-store"
 
 type ViewState = 'LIST' | 'CREATE_TEMPLATE' | 'FILL_STANDARD' | 'FILL_CUSTOM' | 'VIEW_RESPONSES'
 
-export function PatientAnamnesisTab({ patientId, patient }: PatientAnamnesisTabProps) {
+export function PatientAnamnesisTab() {
+    const { activePatient: patient } = usePatientStore()
+    const patientId = patient?.id || 0
+
     const calculateAge = (birthDate?: string): number => {
         if (!birthDate) return 0
         const today = new Date()
@@ -576,8 +576,8 @@ export function PatientAnamnesisTab({ patientId, patient }: PatientAnamnesisTabP
                                 Exportar PDF
                             </Button>
                         </footer>
-                    </div >
-                </div >
+                    </div>
+                </div>
             )
             }
 
@@ -591,7 +591,7 @@ export function PatientAnamnesisTab({ patientId, patient }: PatientAnamnesisTabP
                     </div>
                 </div>
             )}
-        </div >
+        </div>
     )
 }
 
@@ -669,6 +669,14 @@ function LogoInFrame() {
 }
 
 function EvolutionAngle({ title, firstPhoto, lastPhoto, dates, setZoomPhoto }: { title: string, firstPhoto?: string, lastPhoto?: string, dates?: string[], setZoomPhoto: (url: string | null) => void }) {
+    // Se a foto final for igual a inicial, significa que só temos uma foto.
+    // Usamos uma comparação de URL e também de nome de arquivo para ser robusto.
+    const isSinglePhoto = firstPhoto && lastPhoto && (
+        firstPhoto === lastPhoto ||
+        firstPhoto.split('/').pop()?.split('?')[0] === lastPhoto.split('/').pop()?.split('?')[0]
+    );
+    const rightPhoto = isSinglePhoto ? null : lastPhoto;
+
     return (
         <div className="group/angle animate-in zoom-in duration-1000 mb-20">
             {/* Título da Seção */}
@@ -690,14 +698,32 @@ function EvolutionAngle({ title, firstPhoto, lastPhoto, dates, setZoomPhoto }: {
                     <div className="h-[2px] w-12 bg-gradient-to-r from-transparent via-primary/50 to-transparent mt-2" />
                 </div>
 
-                <div className="grid grid-cols-2 gap-1 relative z-10 pt-20">
+                {/* LEGENDA SUPERIOR ESQUERDA (ABSOLUTA) */}
+                <div className="absolute top-6 left-10 z-30">
+                    <div className="bg-zinc-200/50 dark:bg-white/5 backdrop-blur-md rounded-xl p-3 border border-zinc-300/30 dark:border-white/5 inline-flex flex-col min-w-[120px] animate-in slide-in-from-top duration-700">
+                        <p className="text-[8px] text-zinc-500 dark:text-white/40 font-medium tracking-[0.3em] mb-0.5 uppercase">Início</p>
+                        <p className="text-[11px] font-medium text-zinc-900 dark:text-white tracking-widest leading-none">{dates?.[0] || '--/--/----'}</p>
+                    </div>
+                </div>
+
+                {/* LEGENDA SUPERIOR DIREITA (ABSOLUTA) */}
+                <div className="absolute top-6 right-10 z-30 text-right">
+                    {rightPhoto && (
+                        <div className="bg-primary/10 dark:bg-primary/5 backdrop-blur-md rounded-xl p-3 border border-primary/20 dark:border-primary/10 inline-flex flex-col text-right min-w-[120px] animate-in slide-in-from-top duration-700">
+                            <p className="text-[8px] text-primary dark:text-primary/60 font-medium tracking-[0.3em] mb-0.5 uppercase">Atual</p>
+                            <p className="text-[11px] font-medium text-zinc-900 dark:text-primary tracking-widest leading-none">{dates?.[1] || '--/--/----'}</p>
+                        </div>
+                    )}
+                </div>
+
+                <div className="grid grid-cols-2 gap-1 relative z-10 pt-28">
                     {/* FOTO INICIAL (ESQUERDA) */}
-                    <div className="relative aspect-[4/4.25] bg-zinc-100 dark:bg-[#111] group/photo overflow-hidden rounded-bl-[1.5rem] border-r border-black/5 dark:border-white/5">
+                    <div className="relative aspect-[3/4] bg-zinc-100 dark:bg-[#111] group/photo overflow-hidden rounded-bl-[1.5rem] border-r border-black/5 dark:border-white/5 flex items-center justify-center">
                         {firstPhoto ? (
                             <img
                                 src={firstPhoto}
                                 alt="Inicial"
-                                className="w-full h-full object-cover transition-all duration-1000 group-hover/photo:scale-110 cursor-zoom-in"
+                                className="w-full h-full object-contain transition-all duration-1000 group-hover/photo:scale-110 cursor-zoom-in"
                                 onClick={() => setZoomPhoto(firstPhoto)}
                             />
                         ) : (
@@ -711,23 +737,16 @@ function EvolutionAngle({ title, firstPhoto, lastPhoto, dates, setZoomPhoto }: {
 
                         {/* Overlay Premium */}
                         <div className="absolute inset-0 ring-inset ring-1 ring-black/5 dark:ring-white/5 pointer-events-none" />
-                        <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-zinc-50/90 via-zinc-50/40 to-transparent dark:from-black/90 dark:via-black/40 dark:to-transparent pointer-events-none" />
-
-                        <div className="absolute bottom-6 left-8 z-20">
-                            <p className="text-[9px] text-zinc-500 dark:text-white/40 font-normal tracking-[0.3em] mb-1">INÍCIO</p>
-                            <p className="text-sm font-normal text-zinc-900 dark:text-white tracking-widest">{dates?.[0] || '--/--/----'}</p>
-                        </div>
                     </div>
 
                     {/* FOTO ATUAL (DIREITA) */}
-                    <div className="relative aspect-[4/4.25] bg-zinc-100 dark:bg-[#111] group/photo overflow-hidden rounded-br-[1.5rem]">
-                        {/* Só mostrar a foto 'atual' se ela for diferente da inicial. */}
-                        {lastPhoto && lastPhoto !== firstPhoto ? (
+                    <div className="relative aspect-[3/4] bg-zinc-100 dark:bg-[#111] group/photo overflow-hidden rounded-br-[1.5rem] flex items-center justify-center">
+                        {rightPhoto ? (
                             <img
-                                src={lastPhoto}
+                                src={rightPhoto}
                                 alt="Atual"
-                                className="w-full h-full object-cover transition-all duration-1000 group-hover/photo:scale-110 cursor-zoom-in"
-                                onClick={() => setZoomPhoto(lastPhoto)}
+                                className="w-full h-full object-contain transition-all duration-1000 group-hover/photo:scale-110 cursor-zoom-in"
+                                onClick={() => setZoomPhoto(rightPhoto)}
                             />
                         ) : (
                             <div className="w-full h-full flex flex-col items-center justify-center text-primary/30">
@@ -740,12 +759,6 @@ function EvolutionAngle({ title, firstPhoto, lastPhoto, dates, setZoomPhoto }: {
 
                         {/* Overlay Premium */}
                         <div className="absolute inset-0 ring-inset ring-1 ring-black/5 dark:ring-white/5 pointer-events-none" />
-                        <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-zinc-50/90 via-zinc-50/40 to-transparent dark:from-black/90 dark:via-black/40 dark:to-transparent pointer-events-none" />
-
-                        <div className="absolute bottom-6 right-8 z-20 text-right">
-                            <p className="text-[9px] text-primary dark:text-primary/60 font-normal tracking-[0.3em] mb-1">RESULTADO</p>
-                            <p className="text-sm font-normal text-zinc-900 dark:text-white tracking-widest">{dates?.[1] || '--/--/----'}</p>
-                        </div>
                     </div>
                 </div>
 

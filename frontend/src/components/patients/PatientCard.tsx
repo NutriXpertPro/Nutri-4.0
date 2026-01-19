@@ -34,6 +34,7 @@ import {
 } from "lucide-react"
 import api from "@/services/api"
 import { usePatients } from "@/hooks/usePatients"
+import { Patient } from "@/services/patient-service"
 import {
     Dialog,
     DialogContent,
@@ -43,22 +44,6 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog"
 import { toast } from "@/components/ui/use-toast"
-
-interface Patient {
-    id: string
-    name: string
-    email: string
-    phone: string
-    avatar?: string
-    createdAt: string
-    lastVisit?: string
-    status: "active" | "inactive"
-    goal?: string
-    progress?: {
-        value: number
-        isPositive: boolean
-    }
-}
 
 interface PatientCardProps {
     patient: Patient
@@ -94,7 +79,7 @@ export function PatientCard({ patient, className }: PatientCardProps) {
     const handleDelete = async () => {
         setIsDeleting(true);
         try {
-            await deletePatient.mutateAsync({ id: parseInt(patient.id) });
+            await deletePatient.mutateAsync({ id: patient.id });
             toast({
                 title: "Paciente excluído",
                 description: "O paciente foi removido com sucesso.",
@@ -153,7 +138,7 @@ export function PatientCard({ patient, className }: PatientCardProps) {
                         </Avatar>
                         <div className={cn(
                             "absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-4 border-background shadow-sm",
-                            patient.status === "active" ? "bg-emerald-500" : "bg-slate-300"
+                            patient.status ? "bg-emerald-500" : "bg-slate-300"
                         )} />
                     </div>
 
@@ -238,12 +223,12 @@ export function PatientCard({ patient, className }: PatientCardProps) {
                                     "flex items-center gap-1 px-2 py-0.5 rounded-lg text-[11px] tabular-nums",
                                     patient.progress.isPositive ? "bg-emerald-500/10 text-emerald-600" : "bg-amber-500/10 text-amber-600"
                                 )}>
-                                    {patient.progress.isPositive ? (
+                                    {patient.progress.value <= 0 ? (
                                         <TrendingDown className="h-3.5 w-3.5" />
                                     ) : (
                                         <TrendingUp className="h-3.5 w-3.5" />
                                     )}
-                                    {patient.progress.value > 0 ? "-" : "+"}{Math.abs(patient.progress.value)}kg
+                                    {patient.progress.value > 0 ? "+" : ""}{patient.progress.value.toFixed(1)}kg
                                 </div>
                             </div>
                         ) : (

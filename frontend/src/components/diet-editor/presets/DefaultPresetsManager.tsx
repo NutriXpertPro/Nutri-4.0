@@ -90,11 +90,15 @@ export function DefaultPresetsManager({ onBack, targetMealId, onPresetApplied }:
   const handleSetDefaultPreset = async (presetId: number) => {
     if (selectedMealType && selectedDietType) {
       try {
+        const { toast } = await import('sonner');
         await setDefaultPreset(selectedMealType, selectedDietType, presetId);
-        // Atualizar a lista de presets padrão
+        // Atualizar a lista de presets padro
         loadDefaultPresets();
+        toast.success('Tipo de refeição definido como padrão para esta dieta!');
       } catch (error) {
         console.error('Erro ao definir preset padrão:', error);
+        const { toast } = await import('sonner');
+        toast.error('Erro ao definir preset padrão');
       }
     }
   };
@@ -102,11 +106,15 @@ export function DefaultPresetsManager({ onBack, targetMealId, onPresetApplied }:
   const handleRemoveDefaultPreset = async () => {
     if (selectedMealType && selectedDietType) {
       try {
+        const { toast } = await import('sonner');
         await removeDefaultPreset(selectedMealType, selectedDietType);
-        // Atualizar a lista de presets padrão
+        // Atualizar a lista de presets padro
         loadDefaultPresets();
+        toast.success('Padrão removido com sucesso!');
       } catch (error) {
         console.error('Erro ao remover preset padrão:', error);
+        const { toast } = await import('sonner');
+        toast.error('Erro ao remover padrão');
       }
     }
   };
@@ -145,15 +153,15 @@ export function DefaultPresetsManager({ onBack, targetMealId, onPresetApplied }:
           <div>
             {/* Seletores de tipo de refeição e dieta */}
             <div className="mb-8">
-              <h3 className="text-sm font-medium text-foreground mb-3">Selecione o tipo de refeição e dieta</h3>
+              <h3 className="text-sm font-normal text-foreground mb-3">Selecione o tipo de refeição e dieta</h3>
 
               <div className="mb-6">
-                <h4 className="text-sm font-medium text-foreground mb-2">Tipo de Refeição</h4>
+                <h4 className="text-sm font-normal text-foreground mb-2">Tipo de Refeição</h4>
                 <div className="flex flex-wrap gap-2">
                   {MEAL_TYPES.map(meal => (
                     <button
                       key={meal.id}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${selectedMealType === meal.id
+                      className={`px-3 py-1.5 rounded-lg text-xs font-normal transition-colors ${selectedMealType === meal.id
                         ? 'bg-primary text-primary-foreground'
                         : 'bg-muted hover:bg-muted/80 text-foreground'
                         }`}
@@ -166,12 +174,12 @@ export function DefaultPresetsManager({ onBack, targetMealId, onPresetApplied }:
               </div>
 
               <div>
-                <h4 className="text-sm font-medium text-foreground mb-2">Tipo de Dieta</h4>
+                <h4 className="text-sm font-normal text-foreground mb-2">Tipo de Dieta</h4>
                 <div className="flex flex-wrap gap-2">
                   {DIET_TYPES.map(diet => (
                     <button
                       key={diet.id}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${selectedDietType === diet.id
+                      className={`px-3 py-1.5 rounded-lg text-xs font-normal transition-colors ${selectedDietType === diet.id
                         ? 'bg-primary text-primary-foreground'
                         : 'bg-muted hover:bg-muted/80 text-foreground'
                         }`}
@@ -210,10 +218,10 @@ export function DefaultPresetsManager({ onBack, targetMealId, onPresetApplied }:
                                       <IconComponent className="w-6 h-6" />
                                     </div>
                                     <div className="flex-1 min-w-0">
-                                      <h4 className="font-bold text-lg text-foreground truncate">
+                                      <h4 className="font-normal text-lg text-foreground truncate">
                                         {mealLabel}
                                         <span className="text-muted-foreground/40 mx-2 font-normal">-</span>
-                                        <span className={`font-semibold ${selectedDietType === 'low_carb' ? 'text-amber-500' :
+                                        <span className={`font-normal ${selectedDietType === 'low_carb' ? 'text-amber-500' :
                                           selectedDietType === 'cetogenica' ? 'text-purple-500' :
                                             selectedDietType === 'hiperproteica' ? 'text-rose-500' :
                                               selectedDietType === 'high_carb' ? 'text-blue-500' :
@@ -224,7 +232,7 @@ export function DefaultPresetsManager({ onBack, targetMealId, onPresetApplied }:
                                           {dietLabel}
                                         </span>
                                       </h4>
-                                      <p className="text-xs text-muted-foreground mt-1 font-medium">{preset.name}</p>
+                                      <p className="text-xs text-muted-foreground mt-1 font-normal">{preset.name}</p>
                                     </div>
                                   </div>
                                   <div className="flex gap-2">
@@ -247,35 +255,35 @@ export function DefaultPresetsManager({ onBack, targetMealId, onPresetApplied }:
                                 <div className="mb-6 pb-6 border-b border-border/10">
                                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                                     <div className="flex flex-col items-center justify-center p-3 bg-zinc-500/5 rounded-xl border border-zinc-500/10">
-                                      <div className="text-lg font-black text-zinc-600">
+                                      <div className="text-lg font-normal text-zinc-600">
                                         {preset.total_calories}
                                       </div>
-                                      <div className="text-[10px] uppercase font-bold text-muted-foreground mt-0.5 tracking-tighter">kcal</div>
+                                      <div className="text-[10px] uppercase font-normal text-muted-foreground mt-0.5 tracking-tighter">kcal</div>
                                     </div>
                                     <div className="flex flex-col items-center justify-center p-3 bg-emerald-500/5 rounded-xl border border-emerald-500/10">
-                                      <div className="text-lg font-black text-emerald-600">
+                                      <div className="text-lg font-normal text-emerald-600">
                                         {preset.total_protein}
                                       </div>
-                                      <div className="text-[10px] uppercase font-bold text-muted-foreground mt-0.5 tracking-tighter">g PTN</div>
+                                      <div className="text-[10px] uppercase font-normal text-muted-foreground mt-0.5 tracking-tighter">g PTN</div>
                                     </div>
                                     <div className="flex flex-col items-center justify-center p-3 bg-blue-500/5 rounded-xl border border-blue-500/10">
-                                      <div className="text-lg font-black text-blue-600">
+                                      <div className="text-lg font-normal text-blue-600">
                                         {preset.total_carbs}
                                       </div>
-                                      <div className="text-[10px] uppercase font-bold text-muted-foreground mt-0.5 tracking-tighter">g CHO</div>
+                                      <div className="text-[10px] uppercase font-normal text-muted-foreground mt-0.5 tracking-tighter">g CHO</div>
                                     </div>
                                     <div className="flex flex-col items-center justify-center p-3 bg-orange-500/5 rounded-xl border border-orange-500/10">
-                                      <div className="text-lg font-black text-orange-600">
+                                      <div className="text-lg font-normal text-orange-600">
                                         {preset.total_fats}
                                       </div>
-                                      <div className="text-[10px] uppercase font-bold text-muted-foreground mt-0.5 tracking-tighter">g FAT</div>
+                                      <div className="text-[10px] uppercase font-normal text-muted-foreground mt-0.5 tracking-tighter">g FAT</div>
                                     </div>
                                   </div>
                                 </div>
 
                                 {/* Lista de Alimentos sincronizada */}
                                 <div className="mb-6">
-                                  <h5 className="text-[11px] font-bold text-foreground uppercase tracking-[0.2em] mb-4 opacity-70">Lista de Alimentos</h5>
+                                  <h5 className="text-[11px] font-normal text-foreground uppercase tracking-[0.2em] mb-4 opacity-70">Lista de Alimentos</h5>
                                   <div className="space-y-2">
                                     {preset.foods.map((food, idx) => (
                                       <PresetFoodItem key={idx} food={food} className="py-2.5 px-4 bg-muted/20" />
@@ -288,9 +296,14 @@ export function DefaultPresetsManager({ onBack, targetMealId, onPresetApplied }:
                                   <Button
                                     variant="default"
                                     size="lg"
-                                    onClick={() => {
-                                      alert('Preferência padrão salva com sucesso! Agora você pode usá-la selecionando no card da dieta.');
-                                      if (onPresetApplied) onPresetApplied();
+                                    onClick={async () => {
+                                      try {
+                                        const { toast } = await import('sonner');
+                                        toast.success('Preferência padrão confirmada!');
+                                        if (onPresetApplied) onPresetApplied();
+                                      } catch (error) {
+                                        console.error(error);
+                                      }
                                     }}
                                     className="gap-2 px-8 bg-primary hover:bg-primary/90 h-11"
                                   >
@@ -304,14 +317,63 @@ export function DefaultPresetsManager({ onBack, targetMealId, onPresetApplied }:
                         })()}
                       </div>
                     ) : (
-                      <div className="mb-6 p-12 flex flex-col items-center justify-center text-center bg-muted/20 rounded-xl border border-dashed border-border/50">
-                        <div className="p-4 bg-muted/30 rounded-full mb-4">
-                          <Star className="w-8 h-8 text-muted-foreground/40" />
+                      <div className="flex flex-col gap-6">
+                        {/* List available presets to set as default if none exists */}
+                        <div className="flex items-center justify-between">
+                          <h4 className="text-sm font-medium text-foreground">Presets Disponíveis para esta Categoria</h4>
+                          <Badge variant="outline">{availablePresets.length} encontrados</Badge>
                         </div>
-                        <p className="text-base font-medium text-foreground mb-1">Nenhum preset padrão definido</p>
-                        <p className="text-sm text-muted-foreground">
-                          Vá em "Meus Presets" e clique na estrela "Padrão" para definir um.
-                        </p>
+
+                        {availablePresets.length > 0 ? (
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {availablePresets.map(preset => (
+                              <Card key={preset.id} className="group border border-border/40 hover:border-primary/40 transition-all overflow-hidden flex flex-col bg-card/40">
+                                <div className="p-4 border-b border-border/10 flex justify-between items-center">
+                                  <h5 className="font-medium text-sm truncate">{preset.name}</h5>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    className="h-8 gap-2 text-xs hover:text-primary hover:bg-primary/10"
+                                    onClick={() => handleSetDefaultPreset(preset.id)}
+                                  >
+                                    <Star className="w-4 h-4" />
+                                    Tornar Padrão
+                                  </Button>
+                                </div>
+                                <div className="p-3 bg-muted/5 flex-1">
+                                  <div className="grid grid-cols-4 gap-2 text-center">
+                                    <div className="flex flex-col">
+                                      <span className="text-[10px] text-muted-foreground uppercase">kcal</span>
+                                      <span className="text-xs font-semibold">{preset.total_calories}</span>
+                                    </div>
+                                    <div className="flex flex-col border-l border-border/10">
+                                      <span className="text-[10px] text-muted-foreground uppercase">ptn</span>
+                                      <span className="text-xs font-semibold">{preset.total_protein}g</span>
+                                    </div>
+                                    <div className="flex flex-col border-l border-border/10">
+                                      <span className="text-[10px] text-muted-foreground uppercase">cho</span>
+                                      <span className="text-xs font-semibold">{preset.total_carbs}g</span>
+                                    </div>
+                                    <div className="flex flex-col border-l border-border/10">
+                                      <span className="text-[10px] text-muted-foreground uppercase">fat</span>
+                                      <span className="text-xs font-semibold">{preset.total_fats}g</span>
+                                    </div>
+                                  </div>
+                                </div>
+                              </Card>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="mb-6 p-12 flex flex-col items-center justify-center text-center bg-muted/20 rounded-xl border border-dashed border-border/50">
+                            <div className="p-4 bg-muted/30 rounded-full mb-4">
+                              <Star className="w-8 h-8 text-muted-foreground/40" />
+                            </div>
+                            <p className="text-base font-medium text-foreground mb-1">Nenhum preset disponível</p>
+                            <p className="text-sm text-muted-foreground">
+                              Crie um preset em "Meus Presets" para esta categoria primeiro.
+                            </p>
+                          </div>
+                        )}
                       </div>
                     )}
                   </CardContent>
@@ -332,7 +394,7 @@ export function DefaultPresetsManager({ onBack, targetMealId, onPresetApplied }:
                 {defaultPresets.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-12 text-center bg-muted/20 rounded-xl border border-dashed border-border/50">
                     <Settings className="w-12 h-12 text-muted-foreground/50 mb-4" />
-                    <h4 className="text-lg font-semibold text-foreground mb-2">Nenhum padrão configurado</h4>
+                    <h4 className="text-lg font-normal text-foreground mb-2">Nenhum padrão configurado</h4>
                     <p className="text-sm text-muted-foreground max-w-md">
                       Use os filtros acima para definir presets padrão ou clique na estrela "Padrão" nos seus presets.
                     </p>
@@ -358,10 +420,10 @@ export function DefaultPresetsManager({ onBack, targetMealId, onPresetApplied }:
                                     <IconComponent className="w-5 h-5" />
                                   </div>
                                   <div className="flex-1 min-w-0">
-                                    <h4 className="font-semibold text-sm text-foreground truncate">
+                                    <h4 className="font-normal text-sm text-foreground truncate">
                                       {mealLabel}
                                       <span className="text-muted-foreground/40 mx-1.5 font-normal">-</span>
-                                      <span className={`font-medium ${def.diet_type === 'low_carb' ? 'text-amber-500' :
+                                      <span className={`font-normal ${def.diet_type === 'low_carb' ? 'text-amber-500' :
                                         def.diet_type === 'cetogenica' ? 'text-purple-500' :
                                           def.diet_type === 'hiperproteica' ? 'text-rose-500' :
                                             def.diet_type === 'high_carb' ? 'text-blue-500' :
@@ -396,22 +458,22 @@ export function DefaultPresetsManager({ onBack, targetMealId, onPresetApplied }:
                               <div className="mb-4 pb-3 border-b border-border/10">
                                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
                                   <div className="flex items-center justify-center p-1.5 bg-zinc-500/5 rounded-md border border-zinc-500/10">
-                                    <div className="text-sm font-bold text-zinc-600">
+                                    <div className="text-sm font-normal text-zinc-600">
                                       {preset.total_calories} <span className="text-[10px] font-normal text-muted-foreground ml-0.5">kcal</span>
                                     </div>
                                   </div>
                                   <div className="flex items-center justify-center p-1.5 bg-emerald-500/5 rounded-md border border-emerald-500/10">
-                                    <div className="text-sm font-bold text-emerald-600">
+                                    <div className="text-sm font-normal text-emerald-600">
                                       {preset.total_protein} <span className="text-[10px] font-normal text-muted-foreground ml-0.5">g PTN</span>
                                     </div>
                                   </div>
                                   <div className="flex items-center justify-center p-1.5 bg-blue-500/5 rounded-md border border-blue-500/10">
-                                    <div className="text-sm font-bold text-blue-600">
+                                    <div className="text-sm font-normal text-blue-600">
                                       {preset.total_carbs} <span className="text-[10px] font-normal text-muted-foreground ml-0.5">g CHO</span>
                                     </div>
                                   </div>
                                   <div className="flex items-center justify-center p-1.5 bg-orange-500/5 rounded-md border border-orange-500/10">
-                                    <div className="text-sm font-bold text-orange-600">
+                                    <div className="text-sm font-normal text-orange-600">
                                       {preset.total_fats} <span className="text-[10px] font-normal text-muted-foreground ml-0.5">g FAT</span>
                                     </div>
                                   </div>
@@ -420,7 +482,7 @@ export function DefaultPresetsManager({ onBack, targetMealId, onPresetApplied }:
 
                               {/* Lista de Alimentos sincronizada */}
                               <div className="flex-1 min-h-0">
-                                <h5 className="text-[10px] font-semibold text-foreground uppercase tracking-widest mb-2 opacity-50">Alimentos</h5>
+                                <h5 className="text-[10px] font-normal text-foreground uppercase tracking-widest mb-2 opacity-50">Alimentos</h5>
                                 <div className="space-y-1">
                                   {preset.foods.map((food, idx) => (
                                     <PresetFoodItem key={idx} food={food} />
@@ -436,9 +498,14 @@ export function DefaultPresetsManager({ onBack, targetMealId, onPresetApplied }:
                                   variant="default"
                                   size="sm"
                                   className="gap-1.5 px-4 py-1 text-xs h-8 bg-primary hover:bg-primary/90"
-                                  onClick={() => {
-                                    alert('Preferência padrão confirmada!');
-                                    if (onPresetApplied) onPresetApplied();
+                                  onClick={async () => {
+                                    try {
+                                      const { toast } = await import('sonner');
+                                      toast.success('Preferência padrão confirmada!');
+                                      if (onPresetApplied) onPresetApplied();
+                                    } catch (error) {
+                                      console.error(error);
+                                    }
                                   }}
                                 >
                                   <Save className="w-3.5 h-3.5" />
@@ -459,7 +526,7 @@ export function DefaultPresetsManager({ onBack, targetMealId, onPresetApplied }:
             {selectedMealType && selectedDietType && availablePresets.length === 0 && (
               <div className="flex flex-col items-center justify-center py-12 text-center">
                 <UtensilsCrossed className="w-12 h-12 text-muted-foreground/50 mb-4" />
-                <h4 className="text-lg font-semibold text-foreground mb-2">Nenhum preset disponível</h4>
+                <h4 className="text-lg font-normal text-foreground mb-2">Nenhum preset disponível</h4>
                 <p className="text-sm text-muted-foreground max-w-md">
                   Não há presets criados para esta combinação. Crie um preset na aba "Meus Presets" primeiro.
                 </p>

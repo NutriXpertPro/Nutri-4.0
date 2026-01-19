@@ -7,13 +7,15 @@ from django.db.models import Q
 from itertools import chain
 import hashlib
 
-from .models import AlimentoTACO, AlimentoTBCA, AlimentoUSDA, Diet, Meal, FoodItem, AlimentoMedidaIBGE, MedidaCaseira
+from .models import (
+    AlimentoTACO, AlimentoTBCA, AlimentoUSDA, Diet, Meal, FoodItem, 
+    AlimentoMedidaIBGE, MedidaCaseira, FavoriteFood, MealPreset, DefaultPreset
+)
 from .serializers import (
     AlimentoTACOSerializer, AlimentoTBCASerializer, AlimentoUSDASerializer,
-    UnifiedFoodSerializer, DietSerializer, MealSerializer, FoodItemSerializer
+    UnifiedFoodSerializer, DietSerializer, MealSerializer, FoodItemSerializer,
+    MealPresetSerializer, DefaultPresetSerializer
 )
-from .models import FavoriteFood, MealPreset
-from .serializers import MealPresetSerializer, DefaultPresetSerializer
 from rest_framework.views import APIView
 from rest_framework.parsers import MultiPartParser, FormParser
 
@@ -293,7 +295,7 @@ class FoodSearchViewSet(viewsets.ViewSet):
             return queryset
 
         # Limite de resultados por fonte para evitar sobrecarga e lentidão na busca de medidas
-        MAX_RESULTS_PER_SOURCE = 100
+        MAX_RESULTS_PER_SOURCE = 500
 
         # Search TACO
         if not source_filter or source_filter == 'TACO':
@@ -413,8 +415,8 @@ class FoodSearchViewSet(viewsets.ViewSet):
                 if mc_list: measures_list = mc_list
                 if mc_nome: uc, peso_uc = mc_nome, mc_peso
                 
-                if item.porcao_padrao_descricao and item.porcao_padrao_g:
-                     measures_list.insert(0, {'label': item.porcao_padrao_descricao, 'weight': item.porcao_padrao_g})
+                # USDA doesn't have porcao_padrao_descricao, it only has porcao_padrao_g
+                # so we don't need to insert a custom measure here as 100g is implied or handled by IBGE lookup
 
                 is_fav = f"USDA_{item.id}" in user_fav_keys
 
@@ -647,6 +649,16 @@ class DietViewSet(viewsets.ModelViewSet):
     """ViewSet para gerenciamento de dietas."""
     serializer_class = DietSerializer
     permission_classes = [IsAuthenticated]
+
+    def perform_create(self, serializer):
+        # Se a nova dieta for ativa, desative as outras do mesmo paciente
+        is_active = self.request.data.get('is_active', True)
+        patient_id = self.request.data.get('patient')
+        
+        if is_active and patient_id:
+            Diet.objects.filter(patient_id=patient_id, is_active=True).update(is_active=False)
+            
+        serializer.save()
     
     @action(detail=True, methods=['POST'], parser_classes=[MultiPartParser, FormParser])
     def upload_pdf(self, request, pk=None):

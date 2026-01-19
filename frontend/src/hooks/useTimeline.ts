@@ -1,6 +1,21 @@
 import { useState, useEffect } from 'react'
 import { mealsAPI } from '@/services/api'
 
+interface FoodItem {
+    name: string
+    quantity: number
+    unit: string
+    kcal: number
+    protein: number
+    carbs: number
+    fats: number
+    substitutions: Array<{
+        name: string
+        quantity: number
+        unit: string
+    }>
+}
+
 interface TimelineEvent {
     id: number
     time: string
@@ -14,6 +29,7 @@ interface TimelineEvent {
     duration?: string
     description: string
     status: 'completed' | 'current' | 'upcoming'
+    items?: FoodItem[]
 }
 
 export function useTimeline() {
@@ -31,14 +47,15 @@ export function useTimeline() {
                 id: meal.id,
                 time: meal.time,
                 title: meal.name,
-                subtitle: meal.foods?.slice(0, 2).join(' + ') || '',
+                subtitle: meal.items?.slice(0, 2).map((i: any) => i.name).join(' + ') || '',
                 type: 'meal' as const,
                 kcal: meal.calories,
-                protein: `${Math.round(meal.calories * 0.25 / 4)}g`,
-                carbs: `${Math.round(meal.calories * 0.40 / 4)}g`,
-                fat: `${Math.round(meal.calories * 0.35 / 9)}g`,
-                description: meal.foods?.join(', ') || '',
-                status: meal.status
+                protein: `${meal.protein}g`,
+                carbs: `${meal.carbs}g`,
+                fat: `${meal.fats}g`,
+                description: meal.items?.map((i: any) => `${i.name} (${i.quantity}${i.unit})`).join(', ') || '',
+                status: meal.status,
+                items: meal.items
             }))
 
             setEvents(mealEvents)
@@ -64,9 +81,33 @@ export function useTimeline() {
         }
     }
 
+    const uploadMealPhoto = async (mealId: number, photo: File) => {
+        try {
+            const formData = new FormData()
+            formData.append('photo', photo)
+            await mealsAPI.uploadMealPhoto(mealId, formData)
+        } catch (err: any) {
+            setError(err?.response?.data?.message || 'Erro ao enviar foto')
+            throw err
+        }
+    }
+
+    const checkInAll = async () => {
+        try {
+            await mealsAPI.checkInAll()
+            // Update all local meal events to completed
+            setEvents(prev => prev.map(event =>
+                event.type === 'meal' ? { ...event, status: 'completed' as const } : event
+            ))
+        } catch (err: any) {
+            setError(err?.response?.data?.message || 'Erro ao registrar todas as refeições')
+            throw err
+        }
+    }
+
     useEffect(() => {
         fetchTimeline()
     }, [])
 
-    return { events, loading, error, refetch: fetchTimeline, checkIn }
+    return { events, loading, error, refetch: fetchTimeline, checkIn, uploadMealPhoto, checkInAll }
 }

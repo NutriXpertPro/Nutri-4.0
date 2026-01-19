@@ -14,49 +14,47 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent } from "@/components/ui/card"
 import { Loader2, LayoutDashboard, ClipboardList, BarChart3, Utensils, Stethoscope, Calendar } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { usePatient } from "@/hooks/usePatients"
 import { useAuth } from "@/contexts/auth-context"
 import { useDietEditorStore } from "@/stores/diet-editor-store"
+import { usePatientStore } from "@/stores/use-patient-store"
+import { usePatient } from "@/hooks/usePatients" // Importar usePatient hook
 
 function PatientDetailsContent() {
-    // Usar useParams hook - mais confiável para client components
     const params = useParams()
-
-    // Proteção robusta: params.id pode ser string, string[] ou undefined
     const rawId = params?.id
     const patientId = typeof rawId === 'string' ? parseInt(rawId, 10) : 0
 
-    // Seleção de aba via store global
+    // --- 2. Usar React Query como Fonte de Verdade ---
+    const { patient, isLoading: isPatientLoading, error } = usePatient(patientId)
+    const { setActivePatient } = usePatientStore()
+
     const activeTab = useDietEditorStore(state => state.activeTab)
     const setActiveTab = useDietEditorStore(state => state.setActiveTab)
-    const setPatientStore = useDietEditorStore(state => state.setPatient)
     const searchParams = useSearchParams()
     const tabParam = searchParams.get('tab')
 
-    // Atualizar aba no store apenas na carga inicial se não houver parâmetro
     React.useEffect(() => {
         if (tabParam) {
             setActiveTab(tabParam)
-        } else if (!tabParam && activeTab === 'diet') { 
-            // Só forçar overview se estivermos vindo do nada e o store estiver no default 'diet'
+        } else if (!tabParam && activeTab === 'diet') {
             setActiveTab('overview')
         }
-    }, []) // Array vazio para rodar apenas UMA VEZ no mount
+    }, [])
 
-    const { isAuthenticated, isLoading: isAuthLoading } = useAuth()
-    const { patient, isLoading: isPatientLoading, error } = usePatient(patientId)
-
-    // Sincronizar com o store do editor de dieta
+    // --- 3. Sincronizar dados do React Query com o Store (para compatibilidade) ---
     React.useEffect(() => {
         if (patient) {
-            setPatientStore(patient as any)
+            setActivePatient(patient)
         }
-    }, [patient, setPatientStore])
+        return () => {
+            setActivePatient(null)
+        }
+    }, [patient, setActivePatient])
 
-    // Loading combinado: auth + patient + validação do ID
+
+    const { isAuthenticated, isLoading: isAuthLoading } = useAuth()
     const isLoading = isAuthLoading || isPatientLoading || patientId === 0
 
-    // Calcular idade a partir da data de nascimento
     const calculateAge = (birthDate?: string): number => {
         if (!birthDate) return 0
         const today = new Date()
@@ -69,14 +67,13 @@ function PatientDetailsContent() {
         return age
     }
 
-    // Montar objeto do paciente para o header
     const patientData = patient ? {
         name: patient.name,
         email: patient.email,
         phone: patient.phone || "",
         age: patient.age || calculateAge(patient.birth_date),
         occupation: patient.goal || "Não informado",
-        status: patient.status ? "active" as const : "inactive" as const,
+        status: patient.status, // Booleano direto do backend
         avatar: patient.avatar,
         adesao: 85 // TODO: buscar da API
     } : undefined
@@ -92,7 +89,6 @@ function PatientDetailsContent() {
         )
     }
 
-    // Erro real: apenas quando autenticado, não está loading, e houve erro ou não encontrou
     if (!isLoading && isAuthenticated && (error || !patient)) {
         return (
             <div className="flex items-center justify-center min-h-[60vh]">
@@ -158,7 +154,7 @@ function PatientDetailsContent() {
                     </TabsContent>
 
                     <TabsContent value="anamnesis">
-                        <PatientAnamnesisTab patientId={patientId} patient={patient} />
+                        <PatientAnamnesisTab />
                     </TabsContent>
 
                     <TabsContent value="timeline">

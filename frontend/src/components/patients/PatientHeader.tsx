@@ -5,10 +5,11 @@ import { cn } from "@/lib/utils"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { MessageSquare, Calendar, Edit, Phone, Mail, Loader2 } from "lucide-react"
+import { MessageSquare, Calendar, Edit, Phone, Mail, Loader2, ArrowLeft } from "lucide-react"
 import { useRouter } from "next/navigation"
 import api from "@/services/api"
 import { useAuth } from "@/contexts/auth-context"
+import { Patient } from "@/services/patient-service"
 
 import { EditPatientDialog } from "./EditPatientDialog"
 
@@ -20,10 +21,10 @@ interface PatientHeaderProps {
         phone: string
         age: number
         occupation: string
-        status: "active" | "inactive"
+        status: boolean
         adesao?: number
     }
-    fullData?: any // Pass the full API object here
+    fullData?: Patient
     className?: string
 }
 
@@ -47,57 +48,12 @@ export function PatientHeader({ patient = defaultPatient, fullData, className }:
         if (!fullData) return;
 
         try {
-            // Primeiro, tentamos encontrar uma conversa existente com o paciente
-            const response = await api.get('/messages/conversations/');
-            const conversations = response.data;
+            // Usar o endpoint otimizado que encontra ou cria a conversa automaticamente
+            const response = await api.post('/messages/conversations/find-or-create-by-patient/', {
+                patient_id: fullData.id
+            });
 
-            // Procurar uma conversa que contenha o paciente como participante
-            let conversation = conversations.find((conv: any) =>
-                conv.participants.some((p: any) => p.id === (isNaN(Number(fullData.id)) ? fullData.id : parseInt(fullData.id)))
-            );
-
-            // Se não encontrar uma conversa existente, criamos uma nova
-            if (!conversation) {
-                // Criamos uma conversa com o paciente como participante
-                // O backend automaticamente adiciona o usuário autenticado como participante
-                const patientId = isNaN(Number(fullData.id)) ? fullData.id : parseInt(fullData.id);
-
-                try {
-                    // Enviar o ID do paciente como participante
-                    const newConversationResponse = await api.post('/messages/conversations/', {
-                        participants: [patientId]
-                    });
-                    conversation = newConversationResponse.data;
-                } catch (createError: any) {
-                    console.error('Erro ao criar conversa:', createError);
-                    // Verificar se é um erro 400 e tentar uma abordagem alternativa
-                    if (createError.response?.status === 400) {
-                        // Se o erro for 400, pode ser um problema com a validação do ManyToManyField
-                        // Tentar criar uma conversa vazia e deixar o backend adicionar os participantes
-                        try {
-                            // Primeiro, vamos tentar encontrar o ID do usuário autenticado
-                            const currentUserId = user?.id || JSON.parse(localStorage.getItem('user') || '{}')?.id;
-
-                            if (currentUserId) {
-                                // Tentar criar uma conversa vazia e adicionar participantes separadamente
-                                // Mas como não temos um endpoint para isso, vamos tentar uma abordagem diferente
-                                // Vamos tentar criar a conversa com ambos os participantes explicitamente
-                                const newConversationResponse = await api.post('/messages/conversations/', {
-                                    participants: [currentUserId, patientId]
-                                });
-                                conversation = newConversationResponse.data;
-                            } else {
-                                throw createError; // Se não tivermos o ID do usuário, lançar o erro original
-                            }
-                        } catch (fallbackError: any) {
-                            console.error('Erro ao criar conversa com abordagem alternativa:', fallbackError);
-                            throw fallbackError;
-                        }
-                    } else {
-                        throw createError; // Para outros tipos de erro, lançar o erro original
-                    }
-                }
-            }
+            const conversation = response.data;
 
             // Navegar para a página de mensagens com o ID da conversa
             router.push(`/messages?conversation=${conversation.id}`);
@@ -136,6 +92,17 @@ export function PatientHeader({ patient = defaultPatient, fullData, className }:
             </div>
 
             <div className="px-6 md:px-10 pb-8 -mt-12 flex flex-col md:flex-row items-end md:items-center gap-6 relative z-10">
+                {/* Back Button */}
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    className="mb-2 md:mb-0 h-10 w-10 rounded-full bg-background/50 hover:bg-background border border-border/50 shadow-sm backdrop-blur-md text-muted-foreground hover:text-foreground transition-all"
+                    onClick={() => router.push('/patients')}
+                    title="Voltar para Pacientes"
+                >
+                    <ArrowLeft className="h-5 w-5" />
+                </Button>
+
                 {/* Avatar Grande */}
                 <div className="relative group">
                     <Avatar className="h-32 w-32 border-4 border-background shadow-2xl transition-transform group-hover:scale-105 overflow-hidden">
@@ -147,10 +114,10 @@ export function PatientHeader({ patient = defaultPatient, fullData, className }:
                     <Badge
                         className={cn(
                             "absolute bottom-2 right-2 border-2 border-background px-2 py-0.5 shadow-lg",
-                            patient.status === "active" ? "bg-green-500 text-white" : "bg-gray-500 text-white"
+                            patient.status ? "bg-green-500 text-white" : "bg-gray-500 text-white"
                         )}
                     >
-                        {patient.status === "active" ? "Ativo" : "Inativo"}
+                        {patient.status ? "Ativo" : "Inativo"}
                     </Badge>
                 </div>
 

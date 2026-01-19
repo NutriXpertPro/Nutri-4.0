@@ -346,11 +346,11 @@ export function DietMealCard({
                     <Button
                         variant="ghost"
                         size="sm"
-                        className="h-8 w-8 bg-muted/40 text-foreground hover:bg-primary/20 transition-all border border-border/30 rounded-xl flex items-center justify-center shadow-sm"
-                        title="Gerenciar Templates"
+                        className="h-8 px-3 bg-muted/40 text-foreground hover:bg-primary/20 transition-all border border-border/30 rounded-xl flex items-center justify-center shadow-sm text-[10px] uppercase tracking-wider"
+                        title="Presets"
                         onClick={() => setIsTemplateModalOpen(true)}
                     >
-                        <Settings className="w-3.5 h-3.5" />
+                        Presets
                     </Button>
                 </div>
 

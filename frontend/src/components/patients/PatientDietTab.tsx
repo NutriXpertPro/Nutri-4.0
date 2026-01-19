@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useState } from "react"
+import Link from "next/link"
 import { IconWrapper } from "@/components/ui/IconWrapper"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -47,9 +48,11 @@ export function PatientDietTab({ patientId }: PatientDietTabProps) {
                 <p className="text-sm text-muted-foreground max-w-sm mt-1 mb-8 font-normal">
                     Este paciente ainda não possui uma dieta cadastrada ou ativa no sistema.
                 </p>
-                <Button className="gap-2 h-11 px-6 rounded-2xl text-xs font-normal uppercase tracking-widest shadow-xl shadow-primary/20">
-                    <Plus className="w-4 h-4" />
-                    Criar Plano Alimentar
+                <Button className="gap-2 h-11 px-6 rounded-2xl text-xs font-normal uppercase tracking-widest shadow-xl shadow-primary/20" asChild>
+                    <Link href={`/diets/create?patientId=${patientId}`}>
+                        <Plus className="w-4 h-4" />
+                        Criar Plano Alimentar
+                    </Link>
                 </Button>
             </Card>
         )

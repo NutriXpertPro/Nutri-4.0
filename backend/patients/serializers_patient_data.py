@@ -5,7 +5,8 @@ from .models_patient_data import (
     ProgressPhoto,
     BodyMeasurement,
     AppointmentConfirmation,
-    ClinicalNote
+    ClinicalNote,
+    MealPhoto
 )
 
 
@@ -50,3 +51,9 @@ class ClinicalNoteSerializer(serializers.ModelSerializer):
         model = ClinicalNote
         fields = ['id', 'title', 'content', 'created_at', 'updated_at']
         read_only_fields = ['id', 'created_at', 'updated_at']
+
+class MealPhotoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MealPhoto
+        fields = ['id', 'meal', 'photo', 'uploaded_at']
+        read_only_fields = ['id', 'uploaded_at']

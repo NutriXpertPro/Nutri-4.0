@@ -28,6 +28,9 @@ const MEAL_TYPES = [
     { id: 'lanche_tarde', label: 'Lanche da Tarde', icon: Cookie },
     { id: 'jantar', label: 'Jantar', icon: UtensilsCrossed },
     { id: 'ceia', label: 'Ceia', icon: Moon },
+    { id: 'pre_treino', label: 'Pré-treino', icon: Flame },
+    { id: 'pos_treino', label: 'Pós-treino', icon: Pill },
+    { id: 'suplemento', label: 'Suplemento', icon: Pill },
 ];
 
 // Tipos de dieta - Sincronizado com diet-editor-store.ts
@@ -109,7 +112,7 @@ export function ExpressSelectorModal({ isOpen, onClose, onApplyTemplate, mealTit
                             {/* Standard Templates Grid */}
                             <div className="space-y-6">
                                 <div>
-                                    <h4 className="text-sm font-semibold text-foreground mb-4">Padrões Dietéticos</h4>
+                                    <h4 className="text-sm font-normal text-foreground mb-4">Padrões Dietéticos</h4>
                                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
                                         {STANDARD_TEMPLATES.map((tmpl) => (
                                             <button
@@ -126,7 +129,7 @@ export function ExpressSelectorModal({ isOpen, onClose, onApplyTemplate, mealTit
                                                 )}
                                                 onClick={() => onApplyTemplate(tmpl.label, [])}
                                             >
-                                                <span className="text-xs font-semibold uppercase tracking-tight">{tmpl.label}</span>
+                                                <span className="text-xs font-normal uppercase tracking-tight">{tmpl.label}</span>
                                             </button>
                                         ))}
                                     </div>
@@ -137,7 +140,7 @@ export function ExpressSelectorModal({ isOpen, onClose, onApplyTemplate, mealTit
                                 {/* Saved Templates List */}
                                 <div>
                                     <div className="flex justify-between items-center mb-4">
-                                        <h4 className="text-sm font-semibold text-foreground">Templates Salvos pelo Nutricionista</h4>
+                                        <h4 className="text-sm font-normal text-foreground">Templates Salvos pelo Nutricionista</h4>
                                         <Button variant="outline" size="sm" className="h-9 text-sm text-primary hover:bg-primary/10 rounded-lg">Gerenciar</Button>
                                     </div>
                                     <div className="max-h-[50vh] overflow-y-auto">
@@ -153,16 +156,16 @@ export function ExpressSelectorModal({ isOpen, onClose, onApplyTemplate, mealTit
                                                             🥞
                                                         </div>
                                                         <div className="flex flex-col gap-1">
-                                                            <span className="text-sm font-medium text-foreground group-hover:text-primary transition-colors">{tmpl.name}</span>
+                                                            <span className="text-sm font-normal text-foreground group-hover:text-primary transition-colors">{tmpl.name}</span>
                                                             <span className="text-sm text-muted-foreground">Frequente no plano alimentar</span>
                                                         </div>
                                                     </div>
                                                     <div className="flex items-center gap-5">
                                                         <div className="flex flex-col items-end">
-                                                            <span className="text-lg font-black text-foreground">{tmpl.kcal}</span>
+                                                            <span className="text-lg font-normal text-foreground">{tmpl.kcal}</span>
                                                             <span className="text-xs text-muted-foreground">kcal total</span>
                                                         </div>
-                                                        <Badge variant="default" className="h-10 px-4 rounded-lg text-sm font-bold bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70">
+                                                        <Badge variant="default" className="h-10 px-4 rounded-lg text-sm font-normal bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70">
                                                             Aplicar
                                                         </Badge>
                                                     </div>

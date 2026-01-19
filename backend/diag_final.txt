@@ -1,0 +1,13 @@
+--- Diagnóstico Paciente 14: anderson carlos pereira soares ---
+Anamnese ID: 14
+Criada em: 2026-01-18 12:18:46.299642+00:00
+Atualizada em: 2026-01-18 12:28:29.864704+00:00
+Fotos Anamnese: Frente=True, Lado=True, Costas=True
+
+--- ProgressPhotos ---
+ID: 1 | Ângulo: front | Data: 2025-10-15 03:00:00+00:00 | Foto Path: progress_photos/2026/01/FB_20140627_03_32_42_Saved_Picture.jpg
+ID: 2 | Ângulo: side | Data: 2025-10-15 03:00:00+00:00 | Foto Path: progress_photos/2026/01/FB_20140627_03_32_48_Saved_Picture.jpg
+ID: 3 | Ângulo: back | Data: 2025-10-15 03:00:00+00:00 | Foto Path: progress_photos/2026/01/Foto.jpg
+ID: 4 | Ângulo: front | Data: 2026-01-18 12:28:29.917288+00:00 | Foto Path: progress_photos/2026/01/FB_20140627_03_32_42_Saved_Picture_oG6gCZM.jpg
+ID: 5 | Ângulo: side | Data: 2026-01-18 12:28:29.933341+00:00 | Foto Path: progress_photos/2026/01/FB_20140627_03_32_48_Saved_Picture_7RrxnSX.jpg
+ID: 6 | Ângulo: back | Data: 2026-01-18 12:28:29.951635+00:00 | Foto Path: progress_photos/2026/01/Foto_gHHY4yL.jpg

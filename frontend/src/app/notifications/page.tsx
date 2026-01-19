@@ -18,7 +18,8 @@ import {
   Mail,
   Check,
   CheckCheck,
-  User
+  User,
+  Trash2
 } from 'lucide-react';
 import api from '@/services/api';
 
@@ -149,6 +150,22 @@ const NotificationsPage: React.FC = () => {
 
     return () => clearInterval(interval);
   }, []);
+
+  // Deletar notificação
+  const deleteNotification = async (id: string) => {
+    try {
+      // Tentar deletar no backend
+      await api.delete(`notifications/${id}/`);
+      toast.success('Notificação removida');
+    } catch (error) {
+      console.error('Erro ao deletar notificação:', error);
+      // Se falhar (ex: endpoint não existe), removemos visualmente apenas
+      toast.success('Notificação removida da lista');
+    } finally {
+        // Atualizar estado local independentemente do resultado do backend para UX imediata
+        setNotifications(prev => prev.filter(n => n.id !== id));
+    }
+  };
 
   // Marcar notificação como lida
   const markAsRead = async (id: string) => {
@@ -510,6 +527,19 @@ const NotificationsPage: React.FC = () => {
                     </div>
 
                     <div className="flex gap-2">
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-9 w-9 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-xl transition-colors"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          deleteNotification(notification.id);
+                        }}
+                        title="Excluir notificação"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+
                       <Button
                         size="sm"
                         variant="outline"

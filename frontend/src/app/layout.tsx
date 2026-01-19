@@ -8,6 +8,7 @@ import { AuthProvider } from "@/contexts/auth-context"
 import { PatientProvider } from "@/contexts/patient-context";
 import { ColorThemeProvider } from "@/contexts/color-theme-context";
 import QueryProvider from "@/components/query-provider"
+import { Toaster } from "sonner";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -59,6 +60,7 @@ export default function RootLayout({
                 <PatientProvider>
                   <QueryProvider>
                     {children}
+                    <Toaster position="top-right" richColors closeButton />
                   </QueryProvider>
                 </PatientProvider>
               </AuthProvider>

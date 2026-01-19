@@ -71,51 +71,55 @@ export const anamnesisService = {
     },
 
     saveStandardAnamnesis: async (patientId: number, data: any) => {
+        if (!patientId) throw new Error("Patient ID is required for saving anamnesis.");
+
         // Check if exists first
-        const existing = await anamnesisService.getStandardAnamnesis(patientId)
+        let existing = null;
+        try {
+            existing = await anamnesisService.getStandardAnamnesis(patientId);
+        } catch (e) {
+            console.log("No existing anamnesis found, creating new.");
+        }
 
         const formData = new FormData()
         // Lista de campos de foto que precisam de tratamento especial
         const photoFields = ['foto_frente', 'foto_lado', 'foto_costas']
 
-
         Object.keys(data).forEach(key => {
             // Skip the 'patient' key if it exists in data, we append it explicitly below
             if (key === 'patient') return;
 
-            if (data[key] !== null && data[key] !== undefined) {
-                // Para campos de foto, apenas aceitar arquivos File - ignorar qualquer string
-                // (URLs http://, /media/, blob:, etc.) para evitar enviar dados inválidos
-                if (photoFields.includes(key)) {
-                    if (data[key] instanceof File) {
-                        formData.append(key, data[key])
-                    }
-                    // Se não for um File, pular este campo (URL existente, blob URL, etc.)
-                    return;
+            const value = data[key];
+
+            // Ignore null or undefined
+            if (value === null || value === undefined) return;
+
+            // Para campos de foto, apenas aceitar arquivos File
+            if (photoFields.includes(key)) {
+                if (value instanceof File) {
+                    formData.append(key, value)
                 }
+                return;
+            }
 
+            // Skip URLs/blobs for non-file fields (prevent sending strings for file fields)
+            if (typeof value === 'string' && (value.startsWith('http') || value.startsWith('/media/') || value.startsWith('blob:'))) {
+                return;
+            }
 
+            // Convert booleans to string explicitly
+            if (typeof value === 'boolean') {
+                formData.append(key, value ? 'true' : 'false');
+                return;
+            }
 
-                // Skip base64 strings if we have files, or handle them specifically
-                // If it's a URL (already saved), we don't need to send it back as a file.
-                // Works for absolute (http), relative (/media), and blob paths.
-                if (typeof data[key] === 'string' && (data[key].startsWith('http') || data[key].startsWith('/media/') || data[key].startsWith('blob:'))) {
-                    return;
-                }
-
-                // If it's an empty string, we should generally skip it to allow backend defaults/nulls
-                // especially for Date/Time fields where "" is invalid
-                if (typeof data[key] === 'string' && data[key] === "") {
-                    return;
-                }
-
-                if (data[key] instanceof File) {
-                    formData.append(key, data[key])
-                } else {
-                    formData.append(key, data[key].toString())
-                }
+            if (value instanceof File) {
+                formData.append(key, value)
+            } else {
+                formData.append(key, value.toString())
             }
         })
+
         formData.append('patient', patientId.toString())
 
         // Configuração de headers para FormData (multipart/form-data)
@@ -125,10 +129,12 @@ export const anamnesisService = {
             },
         }
 
-        if (existing) {
-            const response = await api.patch(`/anamnesis/standard/${existing.patient}/`, formData, config)
+        if (existing && existing.id) {
+            console.log(`[AnamnesisService] Found existing anamnesis (${existing.id}) for patient ${patientId}. Updating via PATCH.`);
+            const response = await api.patch(`/anamnesis/standard/${patientId}/`, formData, config)
             return response.data
         } else {
+            console.log(`[AnamnesisService] No existing anamnesis for patient ${patientId}. Creating new via POST.`);
             const response = await api.post("/anamnesis/standard/", formData, config)
             return response.data
         }

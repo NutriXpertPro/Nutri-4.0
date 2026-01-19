@@ -21,6 +21,7 @@ interface SmartQuantitySelectorProps {
 }
 
 // Standard fallback if no specific checks exist
+// Standard fallback if no specific checks exist
 const STANDARD_MEASURES: Record<string, { label: string, weight: number }> = {
     'g': { label: 'g', weight: 1 },
     'ml': { label: 'ml', weight: 1 },
@@ -30,11 +31,13 @@ const STANDARD_MEASURES: Record<string, { label: string, weight: number }> = {
     'copo': { label: 'Copo', weight: 200 },
     'fatia': { label: 'Fatia', weight: 30 },
     'unidade': { label: 'Unidade', weight: 100 },
+    'concha': { label: 'Concha', weight: 140 }, // Feijão/Sopa média
+    'escumadeira': { label: 'Escumadeira', weight: 90 }, // Arroz
 }
 
 export function SmartQuantitySelector({ food, onChange, inputRef, onEnter }: SmartQuantitySelectorProps) {
 
-    // Simple heuristic to check if food is liquid (based on name or group if available)
+    // Simple heuristic to check if food is liquid
     const isLiquid = useMemo(() => {
         const name = food.name.toLowerCase()
         const prep = food.prep?.toLowerCase() || ''
@@ -42,17 +45,12 @@ export function SmartQuantitySelector({ food, onChange, inputRef, onEnter }: Sma
         return keywords.some(k => name.includes(k) || prep.includes(k))
     }, [food.name, food.prep])
 
-    // Current measure used for display logic
-    // We try to deduce if the current grams match a specific measure cleanly, otherwise default to grams
-    // But we also need to respect what was last selected by user if stored.
-    // For now, let's treat 'food.measure' as the persistent selected unit.
-
-    // We default to 'g' if no measure is set
     const currentUnit = food.measure && food.measure !== 'default' ? food.measure : (isLiquid ? 'ml' : 'g')
 
     // Compute available options
     const options = useMemo(() => {
         const opts = []
+        const nameLower = food.name.toLowerCase()
 
         // Base unit: g or ml
         if (isLiquid) {
@@ -67,7 +65,6 @@ export function SmartQuantitySelector({ food, onChange, inputRef, onEnter }: Sma
         if (food.medidas && food.medidas.length > 0) {
             food.medidas.forEach((m, idx) => {
                 const label = m.label
-                // Avoid redundant 'ml' or 'g' entries from DB if they match base
                 if (label.toLowerCase() === 'ml' || label.toLowerCase() === 'g') return
 
                 if (!addedLabels.has(label.toLowerCase())) {
@@ -87,7 +84,7 @@ export function SmartQuantitySelector({ food, onChange, inputRef, onEnter }: Sma
             const label = food.unidade_caseira
             if (!addedLabels.has(label.toLowerCase()) && label.toLowerCase() !== 'g' && label.toLowerCase() !== 'ml') {
                 opts.push({
-                    value: 'db_measure', // generic ID for the main measure
+                    value: 'db_measure',
                     label: label,
                     weight: food.peso_unidade_caseira_g,
                     fullLabel: label
@@ -96,19 +93,32 @@ export function SmartQuantitySelector({ food, onChange, inputRef, onEnter }: Sma
             }
         }
 
-        // 3. Fallbacks (Standard Measures)
-        // Only add if relevant. E.g., 'Fatia' for liquids makes no sense.
-        const commonKeys = ['col_sopa', 'col_cha', 'xicara', 'copo']
-        if (!isLiquid) commonKeys.push('fatia', 'unidade')
+        // 3. Smart Fallbacks (Context Aware)
+        const isBeansOrSoup = ['feij', 'sopa', 'caldo', 'lentilha', 'creme', 'ensopado'].some(k => nameLower.includes(k))
+        const isRice = ['arroz', 'risoto', 'paella'].some(k => nameLower.includes(k))
+        const isPowder = ['farinha', 'po', 'pó', 'whey', 'leite em', 'aveia', 'farelo'].some(k => nameLower.includes(k))
+
+        let commonKeys = ['col_sopa', 'col_cha', 'xicara', 'copo']
+
+        // Contextual Adds
+        if (isBeansOrSoup) commonKeys.push('concha')
+        if (isRice) commonKeys.push('escumadeira')
+        if (!isLiquid) commonKeys.push('unidade') // Always allow Unidade as generic fallback (User request)
+
+        // Contextual Restricts (Only add 'fatia' if it makes sense)
+        // 'Fatia' makes sense for: Pão, Bolo, Queijo, Torta, Pizza, Melancia, Abacaxi...
+        // 'Fatia' does NOT make sense for: Arroz, Feijão, Pó, Grãos pequenos, Frutas inteiras (Maça)
+        const likelySliceable = !isLiquid && !isBeansOrSoup && !isRice && !isPowder && !['noz', 'castanha', 'amendoim', 'uva', 'ovo'].some(k => nameLower.includes(k))
+
+        if (likelySliceable) {
+            commonKeys.push('fatia')
+        }
 
         commonKeys.forEach(k => {
             const std = STANDARD_MEASURES[k]
             if (!addedLabels.has(std.label.toLowerCase())) {
-                // For standard 'unidade', ONLY show if we have a specific weight from DB, otherwise it's a guess (100g) which is bad professionaly
-                if (k === 'unidade' && !food.peso_unidade_caseira_g) return
-
-                // For liquids, ensure Copo/Xicara use standard liquid weights or DB weights
-                // We rely on standard weights if no specific override
+                // If it's a specific context match (like concha for beans), ALWAYS add
+                // If it's generic (like unidade), add if not already covered (we removed the strict weight check per user feedback, accepting 100g default)
 
                 opts.push({
                     value: k,

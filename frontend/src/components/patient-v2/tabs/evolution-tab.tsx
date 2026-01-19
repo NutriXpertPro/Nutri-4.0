@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useEvolution } from "@/hooks/useEvolution"
+import { useComparisonPhotos } from "@/hooks/useComparisonPhotos"
 import { evolutionAPI } from "@/services/api"
 
 export function EvolutionTab() {
@@ -31,8 +32,9 @@ export function EvolutionTab() {
     const { data: weightData, loading: weightLoading } = useEvolution('weight')
     const { data: fatData, loading: fatLoading } = useEvolution('fat')
     const { data: muscleData, loading: muscleLoading } = useEvolution('muscle')
+    const { comparison, loading: comparisonLoading, refetch: refetchComparison } = useComparisonPhotos()
 
-    const loading = weightLoading || fatLoading || muscleLoading
+    const loading = weightLoading || fatLoading || muscleLoading || comparisonLoading
 
     const getActiveData = () => {
         switch (activeChart) {
@@ -223,25 +225,92 @@ export function EvolutionTab() {
                 </div>
 
                 <div className="space-y-4">
-                    {['Frente', 'Lado', 'Costas'].map((angle) => (
-                        <div key={angle}>
-                            <p className="text-xs text-muted-foreground uppercase tracking-wider mb-2">{angle}</p>
-                            <div className="grid grid-cols-2 gap-3">
-                                <div>
-                                    <p className="text-xs text-muted-foreground mb-1">Inicial</p>
-                                    <div className="aspect-[3/4] bg-muted/30 rounded-xl border border-dashed border-border/40 flex flex-col items-center justify-center">
-                                        <Camera className="w-8 h-8 text-muted-foreground/40" />
-                                    </div>
+                    {[
+                        { label: 'Frente', key: 'front' },
+                        { label: 'Lado', key: 'side' },
+                        { label: 'Costas', key: 'back' }
+                    ].map((angle) => {
+                        const initialUrl = comparison?.initial[angle.key as keyof typeof comparison.initial] as string | null
+                        const initialDate = comparison?.initial.date
+                        const currentData = (comparison?.current as any)?.[angle.key]
+
+                        const hasInitial = !!initialUrl
+                        const hasCurrent = !!currentData
+
+                        const formatDate = (dateStr: string) => {
+                            if (!dateStr) return null
+                            return new Date(dateStr + 'T12:00:00').toLocaleDateString('pt-BR')
+                        }
+
+                        return (
+                            <div key={angle.key} className="space-y-4">
+                                {/* Angle Header - Angle Name on Left */}
+                                <div className="border-b border-border/10 pb-2">
+                                    <h4 className="text-sm font-medium text-foreground uppercase tracking-[0.2em]">{angle.label}</h4>
                                 </div>
-                                <div>
-                                    <p className="text-xs text-muted-foreground mb-1">Atual</p>
-                                    <div className="aspect-[3/4] bg-muted/30 rounded-xl border border-dashed border-border/40 flex flex-col items-center justify-center">
-                                        <Camera className="w-8 h-8 text-muted-foreground/40" />
+
+                                {/* Side-by-Side Comparison Layout - Always Active */}
+                                <div className="grid grid-cols-2 gap-4">
+                                    {/* Initial Column */}
+                                    <div className="flex flex-col">
+                                        <div className="text-center mb-3">
+                                            <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-widest leading-tight">Inicial</p>
+                                            {hasInitial && initialDate && (
+                                                <p className="text-[9px] text-zinc-500 font-medium mt-0.5">{formatDate(initialDate)}</p>
+                                            )}
+                                        </div>
+                                        <div className="aspect-[3/4] bg-muted/20 rounded-2xl border border-border/10 flex items-center justify-center overflow-hidden shadow-sm group relative">
+                                            {hasInitial ? (
+                                                <img
+                                                    src={initialUrl}
+                                                    alt={`Inicial ${angle.label}`}
+                                                    className="w-full h-full object-cover grayscale-[20%]"
+                                                />
+                                            ) : (
+                                                <div className="flex flex-col items-center gap-2 opacity-30">
+                                                    <Camera className="w-6 h-6 text-muted-foreground" />
+                                                    <span className="text-[8px] uppercase font-bold tracking-widest">Vazio</span>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {/* Current Column */}
+                                    <div className="flex flex-col">
+                                        <div className="text-center mb-3">
+                                            <p className="text-[10px] font-medium text-emerald-500 uppercase tracking-widest leading-tight">Atual</p>
+                                            <p className="text-[9px] text-emerald-600/60 font-medium mt-0.5">
+                                                {hasCurrent ? formatDate(currentData.date) : 'Aguardando'}
+                                            </p>
+                                        </div>
+                                        <div className={`aspect-[3/4] rounded-2xl border flex items-center justify-center overflow-hidden transition-all
+                                            ${hasCurrent
+                                                ? 'bg-emerald-950/10 border-emerald-500/20 shadow-emerald-500/10 shadow-xl'
+                                                : 'bg-muted/10 border-dashed border-border/30'
+                                            }
+                                        `}>
+                                            {hasCurrent ? (
+                                                <img
+                                                    src={currentData.url}
+                                                    alt={`Atual ${angle.label}`}
+                                                    className="w-full h-full object-cover"
+                                                />
+                                            ) : (
+                                                <div className="flex flex-col items-center gap-2 opacity-40">
+                                                    <div className="w-10 h-10 rounded-full bg-muted/30 flex items-center justify-center mb-1">
+                                                        <Camera className="w-5 h-5 text-muted-foreground" />
+                                                    </div>
+                                                    <span className="text-[9px] font-medium text-muted-foreground uppercase tracking-widest text-center px-2">
+                                                        Próxima<br />Avaliação
+                                                    </span>
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                    ))}
+                        )
+                    })}
                 </div>
             </div>
 
@@ -332,6 +401,7 @@ export function EvolutionTab() {
                                     if (photos.costas) formData.append('costas', photos.costas);
 
                                     await evolutionAPI.uploadPhotos(formData);
+                                    refetchComparison();
                                     alert('Fotos enviadas com sucesso! ✅');
                                     setIsPhotoDialogOpen(false);
                                     setPhotos({ frente: null, lado: null, costas: null });
@@ -352,7 +422,7 @@ export function EvolutionTab() {
 
             {/* Evaluation Form Dialog */}
             <Dialog open={isEvaluationDialogOpen} onOpenChange={setIsEvaluationDialogOpen}>
-                <DialogContent className="sm:max-w-2xl bg-card border-border/20 max-h-[80vh] overflow-y-auto">
+                <DialogContent className="sm:max-w-md bg-card border-border/20 max-h-[85vh] overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle className="flex items-center gap-2">
                             <FilePlus className="w-5 h-5 text-primary" />

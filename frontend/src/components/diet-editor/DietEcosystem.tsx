@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useEffect } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { EcoHeader } from './ecosystem/hud/EcoHeader'
 import { useDietEditorStore, useDietEditorPatient, PatientContext } from '@/stores/diet-editor-store'
@@ -21,21 +22,25 @@ import { PatientAnamnesisTab } from "@/components/patients/PatientAnamnesisTab"
 const MOCK_PATIENT = { id: 1, name: 'Paciente Exemplo' }
 
 export function DietEcosystem() {
+    const searchParams = useSearchParams()
+    const urlPatientId = searchParams.get('patientId')
+
     const activeTab = useDietEditorStore(state => state.activeTab)
     const setActiveTab = useDietEditorStore(state => state.setActiveTab)
     const patient = useDietEditorPatient()
     const setPatient = useDietEditorStore(state => state.setPatient)
     const calculateMetabolics = useDietEditorStore(state => state.calculateMetabolics)
 
-    // Ensure we have a patient context or ID for the tabs
-    const patientContext = patient || MOCK_PATIENT
-    const patientId = String(patientContext.id)
+    // ONLY use URL Patient ID - ignore localStorage to prevent stale ID issues
+    // If no URL param, user must select a patient (no auto-load from store)
+    const patientId = urlPatientId || null
 
-    // Fetch complete patient data from API
+    // Fetch complete patient data from API - only if URL param provided
     const { data: completePatient, isLoading, error } = useQuery({
         queryKey: ['patient', patientId],
         queryFn: () => patientService.getById(Number(patientId)),
-        enabled: !!patientId && patientId !== '1' // Only fetch if not using mock patient
+        enabled: !!patientId, // Only fetch if patientId is explicitly in URL
+        retry: false // Don't retry on 404
     })
 
     // Update the store patient with complete data when available
@@ -94,6 +99,7 @@ export function DietEcosystem() {
                         avatar: completePatient.avatar,
                         age: completePatient.birth_date ?
                             new Date().getFullYear() - new Date(completePatient.birth_date).getFullYear() : 0,
+                        gender: completePatient.gender as 'M' | 'F',
                         sex: (completePatient.gender === 'M' || completePatient.gender === 'F') ? completePatient.gender : 'M',
                         weight: latestEvaluation?.weight ? Number(latestEvaluation.weight) : 70,
                         height: latestEvaluation?.height ? Number(latestEvaluation.height) / 100 : 1.70,
@@ -134,6 +140,7 @@ export function DietEcosystem() {
                         avatar: completePatient.avatar,
                         age: completePatient.birth_date ?
                             new Date().getFullYear() - new Date(completePatient.birth_date).getFullYear() : 0,
+                        gender: completePatient.gender as 'M' | 'F',
                         sex: (completePatient.gender === 'M' || completePatient.gender === 'F') ? completePatient.gender : 'M',
                         weight: 70,
                         height: 1.70,
@@ -198,7 +205,7 @@ export function DietEcosystem() {
                 content = <PatientAnalysisTab patientId={Number(patientId)} />
                 break;
             case 'anamnesis':
-                content = <PatientAnamnesisTab patientId={Number(patientId)} patient={completePatient as any} />
+                content = <PatientAnamnesisTab />
                 break;
             default:
                 return null
@@ -229,9 +236,25 @@ export function DietEcosystem() {
     if (error) {
         return (
             <div className="w-full min-h-screen flex items-center justify-center bg-background text-foreground">
-                <div className="text-center">
-                    <h2 className="text-xl font-semibold">Erro ao carregar dados do paciente</h2>
-                    <p className="text-muted-foreground mt-2">{(error as Error).message}</p>
+                <div className="text-center p-8 max-w-md bg-card border rounded-xl shadow-lg">
+                    <h2 className="text-xl font-semibold mb-2">Erro ao carregar dados do paciente</h2>
+                    <div className="p-3 bg-destructive/10 text-destructive text-sm rounded-lg mb-6 font-mono break-all">
+                        {(error as Error).message}
+                    </div>
+                    <button
+                        onClick={() => {
+                            // Explicitly clear persistence
+                            localStorage.removeItem('diet-editor-storage');
+                            setPatient(null as any);
+                            window.location.href = '/diets/create';
+                        }}
+                        className="bg-primary text-primary-foreground hover:bg-primary/90 px-6 py-2.5 rounded-lg text-sm font-medium transition-colors"
+                    >
+                        Resetar e Tentar Novamente
+                    </button>
+                    <p className="mt-4 text-xs text-muted-foreground">
+                        Isso limpará os dados salvos localmente e recarregará a página.
+                    </p>
                 </div>
             </div>
         )

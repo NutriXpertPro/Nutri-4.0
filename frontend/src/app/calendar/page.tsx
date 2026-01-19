@@ -195,11 +195,13 @@ export default function CalendarPage() {
         const fetchPatients = async () => {
             try {
                 const response = await api.get('/patients/');
-                const patientsData = response.data.map((pat: any) => ({
-                    id: pat.id,
-                    name: pat.user.name,
-                    email: pat.user.email
-                }));
+                const patientsData = response.data
+                    .filter((pat: any) => pat && (pat.user?.name || pat.name)) // Filtrar pacientes válidos
+                    .map((pat: any) => ({
+                        id: pat.id,
+                        name: pat.user?.name || pat.name || 'Paciente sem nome',
+                        email: pat.user?.email || pat.email || ''
+                    }));
                 setPatients(patientsData);
             } catch (error) {
                 console.error('Erro ao carregar pacientes:', error);

@@ -2,10 +2,18 @@ from rest_framework import serializers
 from .models import Evaluation, EvaluationPhoto, ExternalExam
 
 class EvaluationPhotoSerializer(serializers.ModelSerializer):
+    image = serializers.SerializerMethodField()
+
     class Meta:
         model = EvaluationPhoto
         fields = ['id', 'image', 'label', 'uploaded_at']
         read_only_fields = ['uploaded_at']
+
+    def get_image(self, obj):
+        request = self.context.get('request')
+        if obj.image and request:
+            return request.build_absolute_uri(obj.image.url)
+        return obj.image.url if obj.image else None
 
 class EvaluationSerializer(serializers.ModelSerializer):
     photos = EvaluationPhotoSerializer(many=True, read_only=True)

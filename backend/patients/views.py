@@ -156,6 +156,7 @@ def patient_search_view(request):
 
     patients = PatientProfile.objects.filter(
         nutritionist=request.user,
+        is_active=True,
         user__name__icontains=query
     ).select_related('user')[:10] # Limit to 10 results
 

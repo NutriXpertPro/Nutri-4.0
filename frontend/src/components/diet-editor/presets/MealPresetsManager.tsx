@@ -42,6 +42,9 @@ const MEAL_TYPES = [
   { id: 'lanche_tarde', label: 'Lanche da Tarde', icon: Cookie },
   { id: 'jantar', label: 'Jantar', icon: UtensilsCrossed },
   { id: 'ceia', label: 'Ceia', icon: Moon },
+  { id: 'pre_treino', label: 'Pré-treino', icon: Flame },
+  { id: 'pos_treino', label: 'Pós-treino', icon: Pill },
+  { id: 'suplemento', label: 'Suplemento', icon: Pill },
 ];
 
 // Tipos de dieta - Sincronizado com diet-editor-store.ts
@@ -73,7 +76,7 @@ export function MealPresetsManager({ onApplyPreset, onBack, showDefaultsTab = tr
   const [newPreset, setNewPreset] = useState<Omit<MealPreset, 'id' | 'created_at' | 'updated_at'>>({
     name: '',
     meal_type: 'cafe_da_manha',
-    diet_type: 'normocalorica',
+    diet_type: 'balanced',
     description: '',
     foods: [],
     total_calories: 0,
@@ -146,7 +149,7 @@ export function MealPresetsManager({ onApplyPreset, onBack, showDefaultsTab = tr
     setNewPreset({
       name: '',
       meal_type: selectedMealType || 'cafe_da_manha',
-      diet_type: selectedDietType || 'normocalorica',
+      diet_type: selectedDietType || 'balanced',
       description: '',
       foods: [],
       total_calories: 0,
@@ -195,8 +198,29 @@ export function MealPresetsManager({ onApplyPreset, onBack, showDefaultsTab = tr
       }
       setIsCreating(false);
       setEditingPreset(null);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erro ao salvar preset:', error);
+      const { toast } = await import('sonner');
+
+      let errorMessage = "Verifique os dados e tente novamente.";
+      if (error?.response?.data) {
+        if (typeof error.response.data === 'string') {
+          errorMessage = error.response.data;
+        } else if (error.response.data.detail) {
+          errorMessage = error.response.data.detail;
+        } else if (typeof error.response.data === 'object') {
+          const fieldErrors = Object.entries(error.response.data)
+            .map(([field, errors]) => `${field}: ${Array.isArray(errors) ? errors.join(', ') : errors}`)
+            .join(' | ');
+          if (fieldErrors) errorMessage = fieldErrors;
+        }
+      } else if (error?.message) {
+        errorMessage = error.message;
+      }
+
+      toast.error("Erro ao salvar preset", {
+        description: errorMessage
+      });
     }
   };
 
@@ -215,7 +239,7 @@ export function MealPresetsManager({ onApplyPreset, onBack, showDefaultsTab = tr
     }
   };
 
-  const handleApplyPresetClick = (preset: MealPreset) => {
+  const handlePresetSelect = (preset: MealPreset) => {
     if (onApplyPreset) {
       onApplyPreset(preset);
     }
@@ -302,7 +326,7 @@ export function MealPresetsManager({ onApplyPreset, onBack, showDefaultsTab = tr
             </Button>
           )}
           <div>
-            <h2 className="text-base font-semibold text-foreground tracking-tight">Gerenciador de Presets</h2>
+            <h2 className="text-base font-normal text-foreground tracking-tight">Gerenciador de Presets</h2>
             <p className="text-xs text-muted-foreground mt-0.5">Configure seus modelos de refeição</p>
           </div>
         </div>
@@ -354,12 +378,12 @@ export function MealPresetsManager({ onApplyPreset, onBack, showDefaultsTab = tr
           {/* Seletores por tipo de refeição e dieta */}
           <div className="mb-4">
             <div className="mb-3">
-              <h4 className="text-sm font-medium text-foreground mb-2">Tipo de Refeição</h4>
+              <h4 className="text-sm font-normal text-foreground mb-2">Tipo de Refeição</h4>
               <div className="flex flex-wrap gap-2">
                 {MEAL_TYPES.map(meal => (
                   <button
                     key={meal.id}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${selectedMealType === meal.id
+                    className={`px-3 py-1.5 rounded-lg text-xs font-normal transition-colors ${selectedMealType === meal.id
                       ? 'bg-primary text-primary-foreground'
                       : 'bg-muted hover:bg-muted/80 text-foreground'
                       }`}
@@ -372,12 +396,12 @@ export function MealPresetsManager({ onApplyPreset, onBack, showDefaultsTab = tr
             </div>
 
             <div>
-              <h4 className="text-sm font-medium text-foreground mb-2">Tipo de Dieta</h4>
+              <h4 className="text-sm font-normal text-foreground mb-2">Tipo de Dieta</h4>
               <div className="flex flex-wrap gap-2">
                 {DIET_TYPES.map(diet => (
                   <button
                     key={diet.id}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${selectedDietType === diet.id
+                    className={`px-3 py-1.5 rounded-lg text-xs font-normal transition-colors ${selectedDietType === diet.id
                       ? 'bg-primary text-primary-foreground'
                       : 'bg-muted hover:bg-muted/80 text-foreground'
                       }`}
@@ -499,7 +523,7 @@ export function MealPresetsManager({ onApplyPreset, onBack, showDefaultsTab = tr
 
                   {/* Seção de seleção de alimentos */}
                   <div className="pt-4 border-t border-border/20">
-                    <h4 className="text-sm font-semibold text-foreground mb-3">Alimentos do Preset</h4>
+                    <h4 className="text-sm font-normal text-foreground mb-3">Alimentos do Preset</h4>
 
                     {/* Filtros por fonte de dados */}
                     <div className="flex flex-wrap gap-2 mb-4">
@@ -602,7 +626,7 @@ export function MealPresetsManager({ onApplyPreset, onBack, showDefaultsTab = tr
 
                     {/* Lista de alimentos selecionados */}
                     <div className="mt-4">
-                      <h5 className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-2">Alimentos Adicionados</h5>
+                      <h5 className="text-xs font-normal text-muted-foreground uppercase tracking-widest mb-2">Alimentos Adicionados</h5>
                       {((isCreating && newPreset.foods.length > 0) || (editingPreset && editingPreset.foods.length > 0)) ? (
                         <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
                           {(isCreating ? newPreset.foods : editingPreset!.foods).map((food, index) => (
@@ -681,7 +705,7 @@ export function MealPresetsManager({ onApplyPreset, onBack, showDefaultsTab = tr
                 <div className="p-4 bg-muted/30 rounded-full mb-4">
                   <UtensilsCrossed className="w-10 h-10 text-muted-foreground" />
                 </div>
-                <h4 className="text-lg font-semibold text-foreground mb-2">Nenhum preset encontrado</h4>
+                <h4 className="text-lg font-normal text-foreground mb-2">Nenhum preset encontrado</h4>
                 <p className="text-sm text-muted-foreground mb-6 max-w-md">
                   Crie um novo preset usando o botão "Novo Preset" ou ajuste os filtros de busca
                 </p>
@@ -711,11 +735,10 @@ export function MealPresetsManager({ onApplyPreset, onBack, showDefaultsTab = tr
                               <IconComponent className="w-6 h-6" />
                             </div>
                             <div className="flex-1 min-w-0">
-                              <h4 className="font-semibold text-sm text-foreground truncate">{preset.name}</h4>
-                              <div className="flex items-center gap-2 mt-1.5">
-                                <span className="inline-flex items-center gap-1 text-xs font-medium px-2.5 py-0.5 rounded-full bg-primary/10 text-primary">
-                                  {getMealTypeLabel(preset.meal_type)}
-                                </span>
+                              <h4 className="font-normal text-sm text-foreground truncate">{preset.name}</h4>
+                              <div className="flex items-center gap-2 mt-1.5">                                <span className="inline-flex items-center gap-1 text-xs font-medium px-2.5 py-0.5 rounded-full bg-primary/10 text-primary">
+                                {getMealTypeLabel(preset.meal_type)}
+                              </span>
                                 <span className="text-xs text-muted-foreground">•</span>
                                 <span className="inline-flex items-center gap-1 text-xs font-medium px-2.5 py-0.5 rounded-full bg-secondary text-secondary-foreground">
                                   {getDietTypeLabel(preset.diet_type)}
@@ -753,7 +776,7 @@ export function MealPresetsManager({ onApplyPreset, onBack, showDefaultsTab = tr
                           {/* Lista de alimentos do preset */}
                           {preset.foods && preset.foods.length > 0 && (
                             <div className="mt-4 border-t border-border/20 pt-3">
-                              <h5 className="text-xs font-semibold text-foreground uppercase tracking-widest mb-2">Alimentos</h5>
+                              <h5 className="text-xs font-normal text-foreground uppercase tracking-widest mb-2">Alimentos</h5>
                               <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
                                 {preset.foods.slice(0, 5).map((food, index) => (
                                   <PresetFoodItem key={index} food={food} />

@@ -34,6 +34,9 @@ const MEAL_TYPES = [
   { id: 'lanche_tarde', label: 'Lanche da Tarde', icon: Cookie },
   { id: 'jantar', label: 'Jantar', icon: UtensilsCrossed },
   { id: 'ceia', label: 'Ceia', icon: Moon },
+  { id: 'pre_treino', label: 'Pré-treino', icon: Flame },
+  { id: 'pos_treino', label: 'Pós-treino', icon: Pill },
+  { id: 'suplemento', label: 'Suplemento', icon: Pill },
 ];
 
 // Tipos de dieta - Sincronizado com diet-editor-store.ts
@@ -157,7 +160,7 @@ export function MealPresetSelector({ mealType, dietType, onPresetSelect, current
                 variant="outline"
                 size="sm"
                 onClick={() => setShowManager(true)}
-                className="gap-2 ml-2 h-8 text-xs font-semibold"
+                className="gap-2 ml-2 h-8 text-xs font-normal"
               >
                 <Settings className="w-3.5 h-3.5" />
                 Gerenciar
@@ -183,12 +186,12 @@ export function MealPresetSelector({ mealType, dietType, onPresetSelect, current
               {/* Seletores por tipo de refeição e dieta */}
               <div className="mb-6">
                 <div className="mb-4">
-                  <h4 className="text-sm font-medium text-foreground mb-2">Tipo de Refeição</h4>
+                  <h4 className="text-sm font-normal text-foreground mb-2">Tipo de Refeição</h4>
                   <div className="flex flex-wrap gap-2">
                     {MEAL_TYPES.map(meal => (
                       <button
                         key={meal.id}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${selectedMealType === meal.id
+                        className={`px-3 py-1.5 rounded-lg text-xs font-normal transition-colors ${selectedMealType === meal.id
                           ? 'bg-primary text-primary-foreground'
                           : 'bg-muted hover:bg-muted/80 text-foreground'
                           }`}
@@ -201,12 +204,12 @@ export function MealPresetSelector({ mealType, dietType, onPresetSelect, current
                 </div>
 
                 <div>
-                  <h4 className="text-sm font-medium text-foreground mb-2">Tipo de Dieta</h4>
+                  <h4 className="text-sm font-normal text-foreground mb-2">Tipo de Dieta</h4>
                   <div className="flex flex-wrap gap-2">
                     {DIET_TYPES.map(diet => (
                       <button
                         key={diet.id}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${selectedDietType === diet.id
+                        className={`px-3 py-1.5 rounded-lg text-xs font-normal transition-colors ${selectedDietType === diet.id
                           ? 'bg-primary text-primary-foreground'
                           : 'bg-muted hover:bg-muted/80 text-foreground'
                           }`}
@@ -218,7 +221,6 @@ export function MealPresetSelector({ mealType, dietType, onPresetSelect, current
                   </div>
                 </div>
               </div>
-
               {/* Filtro de busca */}
               <div className="mb-6">
                 <div className="relative">
@@ -237,7 +239,7 @@ export function MealPresetSelector({ mealType, dietType, onPresetSelect, current
                   <div className="p-4 bg-muted/30 rounded-full mb-4">
                     <UtensilsCrossed className="w-10 h-10 text-muted-foreground" />
                   </div>
-                  <h4 className="text-lg font-semibold text-foreground mb-2">Nenhum preset encontrado</h4>
+                  <h4 className="text-lg font-normal text-foreground mb-2">Nenhum preset encontrado</h4>
                   <p className="text-sm text-muted-foreground mb-6 max-w-md">
                     Não encontramos presets para {currentMealName} do tipo {getDietTypeLabel(dietType)}.
                     Crie um novo preset usando o botão "Gerenciar" ou ajuste os filtros de busca.
@@ -274,13 +276,13 @@ export function MealPresetSelector({ mealType, dietType, onPresetSelect, current
                                 <IconComponent className="w-5 h-5" />
                               </div>
                               <div className="flex-1 min-w-0">
-                                <h4 className="text-sm font-medium text-foreground truncate">{preset.name}</h4>
+                                <h4 className="text-sm font-normal text-foreground truncate">{preset.name}</h4>
                                 <div className="flex items-center gap-2 mt-1.5">
-                                  <span className="inline-flex items-center gap-1 text-xs font-medium px-2.5 py-0.5 rounded-full bg-primary/10 text-primary">
+                                  <span className="inline-flex items-center gap-1 text-xs font-normal px-2.5 py-0.5 rounded-full bg-primary/10 text-primary">
                                     {getMealTypeLabel(preset.meal_type)}
                                   </span>
                                   <span className="text-xs text-muted-foreground">•</span>
-                                  <span className="inline-flex items-center gap-1 text-xs font-medium px-2.5 py-0.5 rounded-full bg-secondary text-secondary-foreground">
+                                  <span className="inline-flex items-center gap-1 text-xs font-normal px-2.5 py-0.5 rounded-full bg-secondary text-secondary-foreground">
                                     {getDietTypeLabel(preset.diet_type)}
                                   </span>
                                 </div>
@@ -294,7 +296,7 @@ export function MealPresetSelector({ mealType, dietType, onPresetSelect, current
                                 {/* Lista de alimentos do preset */}
                                 {preset.foods && preset.foods.length > 0 && (
                                   <div className="mt-4 border-t border-border/20 pt-3">
-                                    <h5 className="text-xs font-semibold text-foreground uppercase tracking-widest mb-2">Alimentos</h5>
+                                    <h5 className="text-xs font-normal text-foreground uppercase tracking-widest mb-2">Alimentos</h5>
                                     <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
                                       {preset.foods.slice(0, 5).map((food, index) => (
                                         <PresetFoodItem key={index} food={food} />
@@ -317,7 +319,7 @@ export function MealPresetSelector({ mealType, dietType, onPresetSelect, current
                                 <Flame className="w-4 h-4 text-blue-500" />
                               </div>
                               <div>
-                                <div className="text-sm font-medium text-foreground">{preset.total_calories}</div>
+                                <div className="text-sm font-normal text-foreground">{preset.total_calories}</div>
                                 <div className="text-xs text-muted-foreground">kcal</div>
                               </div>
                             </div>
@@ -327,7 +329,7 @@ export function MealPresetSelector({ mealType, dietType, onPresetSelect, current
                                 <Apple className="w-4 h-4 text-emerald-500" />
                               </div>
                               <div>
-                                <div className="text-sm font-medium text-foreground">{preset.total_protein}g</div>
+                                <div className="text-sm font-normal text-foreground">{preset.total_protein}g</div>
                                 <div className="text-xs text-muted-foreground">prot</div>
                               </div>
                             </div>
@@ -337,7 +339,7 @@ export function MealPresetSelector({ mealType, dietType, onPresetSelect, current
                                 <Wheat className="w-4 h-4 text-orange-500" />
                               </div>
                               <div>
-                                <div className="text-sm font-medium text-foreground">{preset.total_carbs}g</div>
+                                <div className="text-sm font-normal text-foreground">{preset.total_carbs}g</div>
                                 <div className="text-xs text-muted-foreground">carb</div>
                               </div>
                             </div>
@@ -347,7 +349,7 @@ export function MealPresetSelector({ mealType, dietType, onPresetSelect, current
                                 <Droplets className="w-4 h-4 text-amber-500" />
                               </div>
                               <div>
-                                <div className="text-sm font-medium text-foreground">{preset.total_fats}g</div>
+                                <div className="text-sm font-normal text-foreground">{preset.total_fats}g</div>
                                 <div className="text-xs text-muted-foreground">gord</div>
                               </div>
                             </div>
@@ -357,7 +359,7 @@ export function MealPresetSelector({ mealType, dietType, onPresetSelect, current
                             <div className="flex items-center gap-2">
                               <Badge
                                 variant={preset.is_active ? "default" : "outline"}
-                                className="text-xs px-3 py-1.5 font-medium"
+                                className="text-xs px-3 py-1.5 font-normal"
                               >
                                 <div className={`w-2 h-2 rounded-full mr-2 ${preset.is_active ? 'bg-green-500' : 'bg-gray-400'}`}></div>
                                 {preset.is_active ? 'Ativo' : 'Inativo'}
@@ -379,7 +381,7 @@ export function MealPresetSelector({ mealType, dietType, onPresetSelect, current
                               </Button>
                               <Button
                                 size="sm"
-                                className="gap-2 px-4 font-medium text-sm"
+                                className="gap-2 px-4 font-normal text-sm"
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   handlePresetSelect(preset);

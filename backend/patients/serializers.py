@@ -8,6 +8,8 @@ from users.models import UserProfile
 
 User = get_user_model()
 import html
+import string
+import secrets
 from utils.sanitization import sanitize_string
 
 def file_log(msg):
@@ -43,6 +45,9 @@ class PatientProfileSerializer(serializers.ModelSerializer):
     nutritionist_gender = serializers.SerializerMethodField()
     nutritionist_avatar = serializers.SerializerMethodField()
     anamnesis = serializers.SerializerMethodField()
+    last_visit = serializers.SerializerMethodField()
+    progress = serializers.SerializerMethodField()
+    exams = serializers.SerializerMethodField()
 
     class Meta:
         model = PatientProfile
@@ -53,9 +58,72 @@ class PatientProfileSerializer(serializers.ModelSerializer):
             'target_weight', 'target_body_fat', 'avatar', 'profile_picture', 'age', 
             'weight', 'initial_weight', 'height',
             'nutritionist_name', 'nutritionist_title', 'nutritionist_gender', 'nutritionist_avatar',
-            'anamnesis', 'notes'
+            'anamnesis', 'notes', 'last_visit', 'progress', 'exams'
         ]
         read_only_fields = ['user_id', 'created_at']
+
+    def get_last_visit(self, obj):
+        """
+        Retorna a data da última interação (Consulta realizada ou Avaliação).
+        """
+        from django.utils import timezone
+        now = timezone.now()
+        
+        last_appointment = obj.appointments.filter(
+            date__lte=now
+        ).order_by('-date').first()
+        
+        last_evaluation = obj.evaluations.order_by('-date').first()
+        
+        dt_appointment = last_appointment.date if last_appointment else None
+        dt_evaluation = last_evaluation.date if last_evaluation else None
+        
+        if dt_appointment and dt_evaluation:
+            return dt_appointment if dt_appointment > dt_evaluation else dt_evaluation
+        return dt_appointment or dt_evaluation
+
+    def get_progress(self, obj):
+        """
+        Calcula o progresso de peso com base nas duas últimas avaliações.
+        Retorna: { value: number, isPositive: boolean }
+        """
+        evals = obj.evaluations.filter(weight__isnull=False).order_by('-date')[:2]
+        if len(evals) >= 2:
+            current = evals[0].weight
+            previous = evals[1].weight
+            diff = current - previous
+            # isPositive true se PERDEU peso (para emagrecimento) ou GANHOU (para hipertrofia)?
+            # Simplificação: isPositive = True se o objetivo for perda e diff < 0 OU objetivo ganho e diff > 0.
+            # Como não sabemos o objetivo aqui facilmente sem lógica complexa, vamos retornar:
+            # isPositive = True (verde) se diff <= 0 (perdeu peso) - assumindo emagrecimento como padrão
+            # Mas o PatientCard espera 'isPositive' para colorir. 
+            # Vamos alinhar com o PatientCard: isPositive=True -> Verde.
+            # Geralmente perda de peso é verde.
+            return {
+                "value": float(diff),
+                "isPositive": diff <= 0
+            }
+        elif len(evals) == 1:
+             # Só tem uma avaliação. Comparar com peso inicial se existir?
+             # Vamos comparar com initial_weight do perfil se disponível?
+             pass
+             
+        return None
+
+    def get_exams(self, obj):
+        """
+        Retorna os 3 últimos exames externos.
+        """
+        exams = obj.external_exams.order_by('-uploaded_at')[:3]
+        return [
+            {
+                "id": ex.id,
+                "file_name": ex.file_name,
+                "uploaded_at": ex.uploaded_at,
+                "file_type": ex.file_type
+            }
+            for ex in exams
+        ]
 
     def get_anamnesis(self, obj):
         """
@@ -253,8 +321,30 @@ class PatientProfileSerializer(serializers.ModelSerializer):
                 if hasattr(user, 'patient_profile'):
                     profile = user.patient_profile
                     if not profile.is_active:
+                        # PURGE OLD DATA BEFORE REACTIVATION
+                        # Como estamos "recriando" o paciente, dados antigos não devem persistir
+                        profile.evaluations.all().delete()
+                        if hasattr(profile, 'anamnesis'):
+                            profile.anamnesis.delete()
+                        profile.anamnesis_responses.all().delete()
+                        if hasattr(profile, 'meal_plans'):
+                            profile.meal_plans.all().delete()
+                        if hasattr(profile, 'appointments'):
+                            profile.appointments.all().delete()
+                        profile.notes.all().delete()
+                        if hasattr(profile, 'external_exams'):
+                            profile.external_exams.all().delete()
+                        if hasattr(profile, 'diary_entries'):
+                            profile.diary_entries.all().delete()
+
                         profile.is_active = True
                         profile.nutritionist = nutritionist
+                        
+                        # Atualizar dados do usuário (nome, genero) ao reativar
+                        user.name = name if name else user.name
+                        user.gender = user_data.get('gender', user.gender)
+                        user.save()
+
                         for attr, value in validated_data.items():
                             setattr(profile, attr, value)
                         profile.save()
