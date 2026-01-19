@@ -1,6 +1,6 @@
 "use client"
 
-import { Search, Send, ArrowLeft, Mic, Phone, Video, MoreVertical, Paperclip, Camera, Loader2, AlertCircle } from "lucide-react"
+import { Search, Send, ArrowLeft, Mic, Phone, Video, MoreVertical, Paperclip, Camera, Loader2, AlertCircle, Smile, Image as ImageIcon, FileText, ClipboardList } from "lucide-react"
 import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -8,11 +8,60 @@ import { createPortal } from "react-dom"
 import { useMessages } from "@/hooks/useMessages"
 import { Button } from "@/components/ui/button"
 import { useAuth } from "@/contexts/auth-context"
+import { cn } from "@/lib/utils"
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from "@/components/ui/popover"
+import EmojiPicker, { EmojiClickData, Theme } from 'emoji-picker-react'
+import { useTheme } from "next-themes"
+
+import { useRef } from "react"
+
+// Helper to check if string contains only emojis
+const isOnlyEmoji = (text: string) => {
+    if (!text) return false;
+    const emojiRegex = /^(\u00a9|\u00ae|[\u2000-\u3300]|\ud83c[\ud000-\udfff]|\ud83d[\ud000-\udfff]|\ud83e[\ud000-\udfff]|\s)+$/g;
+    return emojiRegex.test(text.trim());
+};
 
 export function MessagesTab({ onBack }: { onBack?: () => void }) {
     const [mounted, setMounted] = useState(false)
     const [newMessage, setNewMessage] = useState("")
     const { user } = useAuth()
+    const inputRef = useRef<HTMLInputElement>(null)
+    const messagesEndRef = useState(null as HTMLDivElement | null)[1]
+    const scrollRef = (node: HTMLDivElement) => {
+        if (node) {
+            node.scrollIntoView({ behavior: "smooth" })
+        }
+    }
+    const [showEmojiPicker, setShowEmojiPicker] = useState(false)
+    const { theme } = useTheme()
+
+    const onEmojiClick = (emojiData: EmojiClickData) => {
+        setNewMessage((prev) => prev + emojiData.emoji)
+        setTimeout(() => {
+            inputRef.current?.focus()
+        }, 10)
+    }
+
+    const handleSendLink = (type: string) => {
+        if (typeof window === 'undefined') return;
+        const baseUrl = window.location.origin;
+        
+        // No dashboard do paciente, o paciente sou EU (user.id)
+        const patientId = user?.id;
+
+        let linkText = "";
+        switch(type) {
+            case 'anamnesis':
+                linkText = `Acabei de preencher minha anamnese! Pode dar uma olhada quando puder? link: ${baseUrl}/anamnesis/answer?patient=${patientId}&type=standard`;
+                break;
+        }
+        if(linkText) setNewMessage(linkText);
+    };
 
     const {
         conversations,
@@ -238,18 +287,39 @@ export function MessagesTab({ onBack }: { onBack?: () => void }) {
 
                             {messages.map(msg => {
                                 const isOwn = (msg.sender === user?.id || (msg.sender as any)?.id === user?.id)
+                                const onlyEmoji = isOnlyEmoji(msg.content)
 
                                 // Helper function to render text with clickable links
                                 const renderMessageContent = (content: string) => {
+                                    if (onlyEmoji) return content;
                                     const urlRegex = /(https?:\/\/[^\s]+)/g
                                     const parts = content.split(urlRegex)
 
                                     return parts.map((part, i) => {
                                         if (part.match(urlRegex)) {
+                                            let href = part;
+                                            // Fix legacy placeholder links
+                                            if (part.includes('nutri.app') && typeof window !== 'undefined') {
+                                                const patientId = user?.id;
+
+                                                // Redirecionamentos inteligentes para links legados
+                                                if (part.includes('/anamnese') || part.includes('/anamnesis')) {
+                                                    href = `${window.location.origin}/anamnesis/answer?patient=${patientId}&type=standard`;
+                                                } else if (part.includes('/agendamento')) {
+                                                    href = `${window.location.origin}/patient-dashboard-v2?tab=agenda`;
+                                                } else if (part.includes('/dieta')) {
+                                                    href = `${window.location.origin}/patient-dashboard-v2?tab=diet`;
+                                                } else if (part.includes('/evolucao')) {
+                                                    href = `${window.location.origin}/patient-dashboard-v2?tab=evolution`;
+                                                } else {
+                                                    href = part.replace('https://nutri.app', window.location.origin);
+                                                }
+                                            }
+
                                             return (
                                                 <a
                                                     key={i}
-                                                    href={part}
+                                                    href={href}
                                                     target="_blank"
                                                     rel="noopener noreferrer"
                                                     className={`underline break-all font-semibold ${isOwn ? 'text-white' : 'text-emerald-700 hover:text-emerald-800'}`}
@@ -266,28 +336,52 @@ export function MessagesTab({ onBack }: { onBack?: () => void }) {
                                 return (
                                     <div key={msg.id} className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}>
                                         <div className={`
-                                            max-w-[75%] px-3 py-1.5 rounded-lg text-sm relative shadow-sm border
-                                            ${isOwn
-                                                ? 'bg-emerald-600 text-white border-emerald-500 rounded-tr-none'
-                                                : 'bg-zinc-100 text-zinc-950 border-zinc-200 rounded-tl-none'}
+                                            max-w-[75%] px-3 py-1.5 rounded-lg text-sm relative shadow-sm
+                                            ${onlyEmoji 
+                                                ? 'bg-transparent shadow-none border-none' 
+                                                : isOwn
+                                                    ? 'bg-emerald-600 text-white border-emerald-500 rounded-tr-none border'
+                                                    : 'bg-zinc-100 text-zinc-950 border-zinc-200 rounded-tl-none border'}
                                         `}>
-                                            <div className="mr-12 pb-1 leading-relaxed whitespace-pre-wrap font-medium">
+                                            <div className={cn(
+                                                "leading-relaxed whitespace-pre-wrap font-medium",
+                                                onlyEmoji ? "text-5xl mr-0" : "mr-12 pb-1"
+                                            )}>
                                                 {renderMessageContent(msg.content)}
                                             </div>
-                                            <span className={`absolute bottom-1 right-2 text-[10px] ${isOwn ? 'text-white/80' : 'text-zinc-500'}`}>
+                                            <span className={`absolute bottom-1 right-2 text-[10px] ${onlyEmoji ? 'text-muted-foreground' : isOwn ? 'text-white/80' : 'text-zinc-500'}`}>
                                                 {new Date(msg.timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
                                             </span>
                                         </div>
                                     </div>
                                 )
                             })}
+                            <div ref={scrollRef} />
                         </div>
 
                         {/* Chat Footer */}
                         <div className="p-2 bg-background flex items-end gap-2 pb-safe-bottom relative z-10 border-t border-border/5">
-                            <div className="flex-1 bg-card rounded-2xl flex items-center px-2 py-2 gap-2 border border-border/50 focus-within:border-primary/50 transition-colors shadow-sm">
-                                <button className="text-muted-foreground hover:text-foreground"><span className="text-xl">😊</span></button>
+                            <div className="flex-1 bg-card rounded-2xl flex items-center px-2 py-2 gap-2 border border-border/50 focus-within:border-primary/50 transition-colors shadow-sm relative">
+                                
+                                <Popover open={showEmojiPicker} onOpenChange={setShowEmojiPicker}>
+                                    <PopoverTrigger asChild>
+                                        <button className="text-muted-foreground hover:text-foreground"><Smile className="w-5 h-5" /></button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-full p-0 border-none bg-transparent shadow-none" align="start" side="top">
+                                        <EmojiPicker 
+                                            onEmojiClick={onEmojiClick}
+                                            theme={theme === 'dark' ? Theme.DARK : Theme.LIGHT}
+                                            searchDisabled={false}
+                                            skinTonesDisabled
+                                            width={300}
+                                            height={400}
+                                            previewConfig={{ showPreview: false }}
+                                        />
+                                    </PopoverContent>
+                                </Popover>
+
                                 <input
+                                    ref={inputRef}
                                     type="text"
                                     placeholder="Mensagem"
                                     value={newMessage}
@@ -295,7 +389,29 @@ export function MessagesTab({ onBack }: { onBack?: () => void }) {
                                     onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
                                     className="flex-1 bg-transparent text-foreground placeholder:text-muted-foreground focus:outline-none text-sm max-h-24 py-1"
                                 />
-                                <button className="text-muted-foreground hover:text-foreground transform rotate-45"><Paperclip className="w-5 h-5" /></button>
+                                
+                                <Popover>
+                                    <PopoverTrigger asChild>
+                                        <button className="text-muted-foreground hover:text-foreground transform rotate-45"><Paperclip className="w-5 h-5" /></button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-48 p-2" align="end" side="top">
+                                        <div className="grid gap-1">
+                                            <Button variant="ghost" className="justify-start gap-2 h-9" onClick={() => alert("Upload de imagem em breve!")}>
+                                                <ImageIcon className="w-4 h-4 text-purple-500" />
+                                                <span>Foto/Vídeo</span>
+                                            </Button>
+                                            <Button variant="ghost" className="justify-start gap-2 h-9" onClick={() => alert("Upload de documento em breve!")}>
+                                                <FileText className="w-4 h-4 text-blue-500" />
+                                                <span>Documento</span>
+                                            </Button>
+                                            <Button variant="ghost" className="justify-start gap-2 h-9" onClick={() => handleSendLink('anamnesis')}>
+                                                <ClipboardList className="w-4 h-4 text-cyan-500" />
+                                                <span>Anamnese</span>
+                                            </Button>
+                                        </div>
+                                    </PopoverContent>
+                                </Popover>
+
                                 {!newMessage && <button className="text-muted-foreground hover:text-foreground"><Camera className="w-5 h-5" /></button>}
                             </div>
 

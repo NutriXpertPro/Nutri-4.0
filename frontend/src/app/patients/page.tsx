@@ -340,14 +340,7 @@ export default function PatientsPage() {
                     {paginatedPatients.map((patient) => (
                         <PatientCard
                             key={patient.id}
-                            patient={{
-                                ...patient,
-                                id: patient.id.toString(),
-                                createdAt: patient.created_at,
-                                status: patient.status ? 'active' : 'inactive',
-                                progress: { value: 0, isPositive: true },
-                                phone: patient.phone || '',
-                            }}
+                            patient={patient}
                         />
                     ))}
                 </div>

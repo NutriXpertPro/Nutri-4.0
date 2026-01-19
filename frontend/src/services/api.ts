@@ -116,96 +116,104 @@ export const authAPI = {
 // --- Patient Profile ---
 export const patientAPI = {
     getProfile: () =>
-        api.get('/patients/me/'),
+        api.get('patients/me/'),
 
     updateProfile: (data: any) =>
-        api.patch('/patients/me/', data),
+        api.patch('patients/me/', data),
 }
 
 // --- Metrics ---
 export const metricsAPI = {
     getMetrics: () =>
-        api.get('/patients/me/metrics/'),
+        api.get('patients/me/metrics/'),
 
     createMetric: (data: any) =>
-        api.post('/patients/me/metrics/', data),
+        api.post('patients/me/metrics/', data),
 }
 
 // --- Meals / Diet ---
 export const mealsAPI = {
     getDiet: () =>
-        api.get('/patients/me/diet/'),
+        api.get('patients/me/diet/'),
 
     getMeals: (date?: string) =>
-        api.get('/patients/me/meals/', { params: { date } }),
+        api.get('patients/me/meals/', { params: { date } }),
 
     checkInMeal: (mealId: number) =>
-        api.post(`/patients/me/meals/${mealId}/check-in/`),
+        api.post(`patients/me/meals/${mealId}/check_in/`),
+
+    uploadMealPhoto: (mealId: number, photo: FormData) =>
+        api.post(`patients/me/meals/${mealId}/upload_photo/`, photo, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+        }),
+
+    checkInAll: () =>
+        api.post('patients/me/meals/check_in_all/'),
 }
 
 // --- Evolution / Progress ---
 export const evolutionAPI = {
     getEvolution: (metric?: string) =>
-        api.get('/patients/me/evolution/', { params: { metric } }),
+        api.get('patients/me/evolution/', { params: { metric } }),
 
     getMeasurements: () =>
-        api.get('/patients/me/measurements/'),
+        api.get('patients/me/measurements/'),
 
     uploadPhotos: (photos: FormData) =>
-        api.post('/patients/me/photos/', photos, {
+        api.post('patients/me/photos/', photos, {
             headers: { 'Content-Type': 'multipart/form-data' },
         }),
 
     getComparisonPhotos: () =>
-        api.get('/patients/me/photos/comparison/'),
+        api.get('patients/me/photos/comparison/'),
 
     submitEvaluation: (data: any) =>
-        api.post('/patients/me/evaluations/', data),
+        api.post('patients/me/evaluations/', data),
 }
 
 // --- Appointments ---
 export const appointmentsAPI = {
     getAppointments: (status?: 'upcoming' | 'past') =>
-        api.get('/patients/me/appointments/', { params: { status } }),
+        api.get('patients/me/appointments/', { params: { status } }),
 
     confirmAppointment: (appointmentId: number) =>
-        api.post(`/patients/me/appointments/${appointmentId}/confirm/`),
+        api.post(`patients/me/appointments/${appointmentId}/confirm/`),
 
     cancelAppointment: (appointmentId: number) =>
-        api.delete(`/patients/me/appointments/${appointmentId}/`),
+        api.delete(`patients/me/appointments/${appointmentId}/`),
 }
 
 // --- Messages ---
 export const messagesAPI = {
     getConversations: () =>
-        api.get('/messages/inbox/'),
+        api.get('messages/inbox/'),
 
     getMessages: (conversationId: number) =>
-        api.get(`/messages/messages/?conversation=${conversationId}`),
+        api.get(`messages/messages/?conversation=${conversationId}`),
 
     sendMessage: (conversationId: number, content: string) =>
-        api.post('/messages/messages/', { content, conversation: conversationId }),
+        api.post('messages/messages/', { content, conversation: conversationId }),
 
     findOrCreateByPatient: (patientId: number) =>
-        api.post('/messages/conversations/find-or-create-by-patient/', { patient_id: patientId }).then(res => res.data),
+        api.post('messages/conversations/find-or-create-by-patient/', { patient_id: patientId }).then(res => res.data),
 
     markAsRead: (messageId: number) =>
-        api.patch(`/messages/messages/${messageId}/`, { is_read: true }),
+        api.patch(`messages/messages/${messageId}/`, { is_read: true }),
 
     markAllAsRead: (conversationId: number) =>
-        api.post(`/messages/conversations/${conversationId}/mark-all-as-read/`),
+        api.post(`messages/conversations/${conversationId}/mark-all-as-read/`),
 }
 
 // --- Settings ---
 export const settingsAPI = {
     getSettings: () =>
-        api.get('/users/me/'),
+        api.get('users/me/'),
 
     updateSettings: (data: any) =>
-        api.patch('/users/me/', data),
+        api.patch('users/me/', data),
 
     getNotifications: () =>
-        api.get('/notifications/'),
+        api.get('notifications/'),
 }
 
 export default api

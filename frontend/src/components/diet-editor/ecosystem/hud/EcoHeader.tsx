@@ -13,7 +13,9 @@ import {
     Smartphone,
     Search,
     Users,
-    Utensils
+    Utensils,
+    Save,
+    Loader2
 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { useRouter } from 'next/navigation'
@@ -49,6 +51,7 @@ import { Card } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 
 export function EcoHeader() {
+    const router = useRouter()
     const patient = useDietEditorPatient()
     const meals = useDietEditorMeals()
 
@@ -95,20 +98,50 @@ export function EcoHeader() {
         setShowPDFModal(true)
     }
 
-    const handleSendApp = () => {
+    const handleSendApp = async () => {
+        // Verificar se hÃ¡ conteÃºdo para enviar
+        const hasContent = workspaceMeals.some(meal => meal.foods.length > 0)
+
+        if (!hasContent) {
+            toast({
+                title: "Dieta vazia",
+                description: "Adicione alimentos Ã  dieta antes de enviar para o app.",
+                variant: "destructive"
+            })
+            return
+        }
+
+        if (!patient?.id) {
+            toast({
+                title: "Paciente nÃ£o selecionado",
+                description: "Selecione um paciente antes de enviar a dieta.",
+                variant: "destructive"
+            })
+            return
+        }
+
         toast({
             title: "Enviando para o App...",
-            description: "Sincronizando dieta com o aplicativo do paciente.",
+            description: "Salvando e sincronizando dieta com o aplicativo do paciente.",
         })
 
-        // Simulate API delay
-        setTimeout(() => {
+        try {
+            // Salvar a dieta (jÃ¡ marca como is_active: true no backend)
+            await saveDiet()
+
             toast({
                 title: "Sucesso!",
-                description: "Dieta enviada para o App do paciente.",
+                description: "Dieta enviada para o App do paciente com sucesso.",
                 className: "bg-green-500 text-white border-green-600"
             })
-        }, 1500)
+        } catch (error: any) {
+            console.error("Erro ao enviar dieta:", error)
+            toast({
+                title: "Erro ao enviar",
+                description: error?.message || "NÃ£o foi possÃ­vel enviar a dieta para o app. Tente novamente.",
+                variant: "destructive"
+            })
+        }
     }
     const {
         setPatient,
@@ -125,8 +158,27 @@ export function EcoHeader() {
         goalAdjustment,
         setGoalAdjustment,
         activeTab,
-        workspaceMeals
+        workspaceMeals,
+        saveDiet,
+        isSaving
     } = useDietEditorStore()
+
+    const handleSave = async () => {
+        try {
+            await saveDiet()
+            toast({
+                title: "Dieta Salva",
+                description: "O plano alimentar foi salvo com sucesso.",
+                className: "bg-green-500 text-white border-green-600"
+            })
+        } catch (error) {
+            toast({
+                title: "Erro ao salvar",
+                description: "NÃ£o foi possÃ­vel salvar a dieta. Verifique os dados.",
+                variant: "destructive"
+            })
+        }
+    }
 
     // Real-time Calculations
     const currentTotals = React.useMemo(() => {
@@ -229,7 +281,28 @@ export function EcoHeader() {
                                         <DropdownMenuSeparator />
                                         {isSearching && <div className="px-4 py-3 text-xs text-muted-foreground text-center italic">Buscando...</div>}
                                         {searchResults.map(p => (
-                                            <DropdownMenuItem key={p.id} onClick={() => { setPatient(p as any); setSearchQuery(""); setSearchResults([]); }} className="flex items-center gap-3 py-3 px-4 focus:bg-primary/10 cursor-pointer">
+                                            <DropdownMenuItem
+                                                key={p.id}
+                                                onClick={() => {
+                                                    // Set basic patient immediately for UI responsiveness
+                                                    setPatient({
+                                                        id: p.id,
+                                                        name: p.name,
+                                                        avatar: p.avatar,
+                                                        status: true,
+                                                        gender: 'M',
+                                                        goal: '',
+                                                        restrictions: [],
+                                                        allergies: []
+                                                    } as any);
+
+                                                    // Update URL to trigger full data fetch
+                                                    router.push(`/diets/create?patientId=${p.id}`);
+                                                    setSearchQuery("");
+                                                    setSearchResults([]);
+                                                }}
+                                                className="flex items-center gap-3 py-3 px-4 focus:bg-primary/10 cursor-pointer"
+                                            >
                                                 <Avatar className="h-8 w-8 border border-border/50">
                                                     <AvatarImage src={p.avatar} className="object-cover" />
                                                     <AvatarFallback className="text-[10px] bg-primary/5 text-primary">{p.name.substring(0, 2).toUpperCase()}</AvatarFallback>
@@ -252,7 +325,7 @@ export function EcoHeader() {
                             </div>
                             <p className="text-muted-foreground flex items-center gap-2">
                                 <Target className="h-4 w-4 text-primary" />
-                                <span className="uppercase tracking-widest text-xs font-normal">{patient?.goal || 'Objetivo não definido'}</span>
+                                <span className="uppercase tracking-widest text-xs font-normal">{patient?.goal || 'Objetivo nÃ£o definido'}</span>
                             </p>
                         </div>
                     </div>
@@ -341,17 +414,17 @@ export function EcoHeader() {
                                 }
                             >
                                 {[
-                                    { value: 'mifflin_1990', label: 'Mifflin-St Jeor 1990', desc: 'Padrão-ouro atual.' },
+                                    { value: 'mifflin_1990', label: 'Mifflin-St Jeor 1990', desc: 'PadrÃ£o-ouro atual.' },
                                     { value: 'katch_mcardle_1996', label: 'Katch-McArdle 1996', desc: 'Foco em Massa Magra.' },
-                                    { value: 'harris_benedict_1984', label: 'Harris-Benedict 1984', desc: 'Equação revisada.' },
-                                    { value: 'harris_benedict_1919', label: 'Harris-Benedict 1919', desc: 'Equação original.' },
+                                    { value: 'harris_benedict_1984', label: 'Harris-Benedict 1984', desc: 'EquaÃ§Ã£o revisada.' },
+                                    { value: 'harris_benedict_1919', label: 'Harris-Benedict 1919', desc: 'EquaÃ§Ã£o original.' },
                                     { value: 'cunningham_1980', label: 'Cunningham 1980', desc: 'Atletas e Massa Magra.' },
                                     { value: 'fao_who_2004', label: 'FAO/WHO 2004', desc: 'Diretrizes mundiais.' },
-                                    { value: 'eer_iom_2005', label: 'EER/IOM 2005', desc: 'Equações de predição.' },
-                                    { value: 'eer_iom_2023', label: 'EER/IOM 2023', desc: 'Atualização recente.' },
-                                    { value: 'henry_rees_1991', label: 'Henry & Rees 1991', desc: 'Populações específicas.' },
-                                    { value: 'tinsley_2018_weight', label: 'Tinsley 2018 (Peso)', desc: 'Treinamento de força.' },
-                                    { value: 'tinsley_2018_lbm', label: 'Tinsley 2018 (MM)', desc: 'Treinamento de força.' },
+                                    { value: 'eer_iom_2005', label: 'EER/IOM 2005', desc: 'EquaÃ§Ãµes de prediÃ§Ã£o.' },
+                                    { value: 'eer_iom_2023', label: 'EER/IOM 2023', desc: 'AtualizaÃ§Ã£o recente.' },
+                                    { value: 'henry_rees_1991', label: 'Henry & Rees 1991', desc: 'PopulaÃ§Ãµes especÃ­ficas.' },
+                                    { value: 'tinsley_2018_weight', label: 'Tinsley 2018 (Peso)', desc: 'Treinamento de forÃ§a.' },
+                                    { value: 'tinsley_2018_lbm', label: 'Tinsley 2018 (MM)', desc: 'Treinamento de forÃ§a.' },
                                 ].map((option) => (
                                     <DropdownMenuItem key={option.value} onClick={() => setCalculationMethod(option.value as any)} className="flex flex-col items-start py-1 px-3 cursor-pointer focus:bg-primary/10">
                                         <span className="text-xs font-medium">{option.label}</span>
@@ -361,7 +434,7 @@ export function EcoHeader() {
                             </Selector>
                             <Selector
                                 icon={Dna}
-                                label={dietType === 'personalizada' ? 'PERSONALIZADA' : (DIET_TYPE_MACROS[dietType]?.label || 'ESTRATÉGIA').toUpperCase()}
+                                label={dietType === 'personalizada' ? 'PERSONALIZADA' : (DIET_TYPE_MACROS[dietType]?.label || 'ESTRATÃ‰GIA').toUpperCase()}
                             >
                                 {Object.keys(DIET_TYPE_MACROS).map((key) => {
                                     const data = DIET_TYPE_MACROS[key as DietType];
@@ -380,6 +453,15 @@ export function EcoHeader() {
                             </Selector>
                         </div>
                         <div className="flex gap-2 translate-y-[44px]">
+                            <Button
+                                size="sm"
+                                onClick={handleSave}
+                                disabled={isSaving}
+                                className="h-[36px] px-4 gap-2 rounded-xl text-[10px] uppercase tracking-widest shadow-lg shadow-primary/20"
+                            >
+                                {isSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+                                {isSaving ? "SALVANDO..." : "SALVAR DIETA"}
+                            </Button>
                             <Button
                                 variant="outline"
                                 size="sm"
@@ -414,7 +496,7 @@ export function EcoHeader() {
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <button className="flex flex-col items-start gap-1 p-2.5 rounded-xl hover:bg-primary/5 transition-all group border border-transparent hover:border-primary/20">
-                                <span className="text-[10px] uppercase tracking-widest text-muted-foreground opacity-60">Nível de Atividade</span>
+                                <span className="text-[10px] uppercase tracking-widest text-muted-foreground opacity-60">NÃ­vel de Atividade</span>
                                 <div className="flex items-center gap-2 mt-0.5">
                                     <Activity className="h-5 w-5 text-emerald-500 group-hover:scale-110 transition-transform" />
                                     <span className="text-base text-foreground font-medium">

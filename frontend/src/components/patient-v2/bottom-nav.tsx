@@ -23,10 +23,10 @@ export function PatientBottomNav({ activeTab, onTabChange }: PatientBottomNavPro
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 px-6 pb-6 pt-2
-      bg-gradient-to-t from-background via-background/95 to-transparent">
+      bg-gradient-to-t from-background via-background/90 to-transparent">
 
-      <div className="mx-auto max-w-md bg-zinc-900/90 backdrop-blur-xl border border-white/10 
-        rounded-full h-16 px-2 flex items-center justify-between shadow-2xl shadow-black/50">
+      <div className="mx-auto max-w-md bg-card/90 backdrop-blur-xl border border-border/50 
+        rounded-full h-16 px-2 flex items-center justify-between shadow-xl shadow-black/10 dark:shadow-black/50 transition-all duration-300">
 
         {navItems.map((item) => {
           const isActive = activeTab === item.id

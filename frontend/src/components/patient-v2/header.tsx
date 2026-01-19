@@ -1,12 +1,12 @@
 "use client"
 
-import { Bell, Moon, Sun, Palette, User, LogOut } from "lucide-react"
+import { Bell, Moon, Sun, Palette, User, LogOut, Volume2 } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { usePatient } from "@/contexts/patient-context"
 import { useTheme } from "next-themes"
 import { useColorTheme } from "@/contexts/color-theme-context"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useMessages } from "@/hooks/useMessages"
 import {
   DropdownMenu,
@@ -25,10 +25,19 @@ export function PatientHeaderV2({ onNavigate }: { onNavigate?: (tab: string) => 
   const { logout } = useAuth()
   const totalUnread = conversations.reduce((acc: number, conv: any) => acc + (conv.unread || 0), 0)
   const hasUnread = totalUnread > 0
+  const prevUnreadRef = useRef(totalUnread)
+
+  // Tocar som quando houver novas mensagens não lidas
+  useEffect(() => {
+    if (totalUnread > prevUnreadRef.current) {
+      notificationService.playNotificationSound()
+    }
+    prevUnreadRef.current = totalUnread
+  }, [totalUnread])
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 h-16 px-4 flex items-center justify-between
-      bg-background/60 backdrop-blur-xl border-b border-white/5 supports-[backdrop-filter]:bg-background/20 max-w-md mx-auto">
+      bg-background/80 backdrop-blur-xl border-b border-border/40 supports-[backdrop-filter]:bg-background/60 w-full max-w-md mx-auto transition-all duration-300">
 
       {/* Brand Identity */}
       <div className="flex items-center gap-2 drop-shadow-sm">
@@ -86,8 +95,8 @@ export function PatientHeaderV2({ onNavigate }: { onNavigate?: (tab: string) => 
               Meu Perfil
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => notificationService.playNotificationSound()}>
-              <Bell className="mr-2 h-4 w-4" />
-              Testar Som 🔔
+              <Volume2 className="mr-2 h-4 w-4" />
+              Testar Som
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={logout} className="text-destructive focus:text-destructive">

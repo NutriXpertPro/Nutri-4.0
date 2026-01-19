@@ -26,7 +26,9 @@ import {
     Calendar,
     UtensilsCrossed,
     Palette,
-    Check
+    Check,
+    Volume2,
+    VolumeX
 } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { useTheme } from "next-themes"
@@ -125,6 +127,17 @@ export function Header({ className, sidebarCollapsed }: HeaderProps) {
     React.useEffect(() => {
         console.log('Header renderizado')
     }, [])
+
+    const [soundEnabled, setSoundEnabled] = React.useState(true);
+
+    React.useEffect(() => {
+        setSoundEnabled(notificationService.isSoundEnabled());
+    }, []);
+
+    const toggleNotificationSound = () => {
+        const newState = notificationService.toggleSound();
+        setSoundEnabled(newState || false);
+    };
 
     // Carregar notificações e contagem não lida
     React.useEffect(() => {
@@ -475,6 +488,14 @@ export function Header({ className, sidebarCollapsed }: HeaderProps) {
                                     Configurações
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator />
+                                <DropdownMenuItem onClick={toggleNotificationSound}>
+                                    {soundEnabled ? (
+                                        <Volume2 className="mr-2 h-4 w-4" />
+                                    ) : (
+                                        <VolumeX className="mr-2 h-4 w-4 text-muted-foreground" />
+                                    )}
+                                    {soundEnabled ? "Som Ativado" : "Som Desativado"}
+                                </DropdownMenuItem>
                                 <DropdownMenuItem onClick={() => {
                                     console.log('Testando som via botão...');
                                     notificationService.playNotificationSound();

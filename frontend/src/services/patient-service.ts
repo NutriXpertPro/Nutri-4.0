@@ -22,6 +22,17 @@ export interface Patient {
     nutritionist_name?: string
     nutritionist_title?: string
     nutritionist_avatar?: string
+    last_visit?: string
+    progress?: {
+        value: number
+        isPositive: boolean
+    }
+    exams?: Array<{
+        id: number
+        file_name: string
+        uploaded_at: string
+        file_type: string
+    }>
     anamnesis?: {
         type?: string
         template_title: string
@@ -44,7 +55,6 @@ export interface CreatePatientDTO {
     phone: string
     birth_date: string
     gender?: string
-    goal: string
     service_type: 'ONLINE' | 'PRESENCIAL'
     start_date: string
     profile_picture?: File | null
@@ -75,7 +85,6 @@ const patientService = {
             formData.append('gender', data.gender || 'F')
             formData.append('phone', data.phone)
 
-            if (data.goal) formData.append('goal', data.goal)
             formData.append('service_type', data.service_type)
             formData.append('start_date', data.start_date)
             if (data.birth_date) formData.append('birth_date', data.birth_date)
@@ -94,7 +103,6 @@ const patientService = {
             gender: data.gender || 'F',
             phone: data.phone,
             address: '', // Optional
-            goal: data.goal || null,
             service_type: data.service_type,
             start_date: data.start_date,
             birth_date: data.birth_date || null

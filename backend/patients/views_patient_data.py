@@ -4,21 +4,24 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import get_object_or_404
 from datetime import date
+import unicodedata
 
 from .models import PatientProfile
 from .models_patient_data import (
     PatientMetric,
     MealCheckIn,
     ProgressPhoto,
-    BodyMeasurement,
     AppointmentConfirmation,
-    ClinicalNote
+    ClinicalNote,
+    MealPhoto
 )
 from .serializers_patient_data import (
     PatientMetricSerializer,
     MealCheckInSerializer,
     ProgressPhotoSerializer,
-    BodyMeasurementSerializer
+    BodyMeasurementSerializer,
+    ClinicalNoteSerializer,
+    MealPhotoSerializer
 )
 
 
@@ -178,22 +181,133 @@ class PatientMealsViewSet(viewsets.ViewSet):
                 if checkin_exists:
                     status = 'completed'
                 
-                # Get food items
-                foods = [item.food_name for item in meal.items.all()]
+                # Get food items structured
+                items = []
                 total_calories = 0
-                for item in meal.items.all():
-                    try:
-                        cal = float(item.calories) if item.calories is not None else 0
-                        total_calories += cal
-                    except (ValueError, TypeError):
-                        pass
+                total_protein = 0
+                total_carbs = 0
+                total_fats = 0
+
+                # Get diet-wide substitutions
+                diet_subs = active_diet.substitutions or []
+                print(f"DEBUG: Dieta '{active_diet.name}' ativa. Regras de substituição: {len(diet_subs)}")
                 
+                for item in meal.items.all():
+                    item_calories = float(item.calories) if item.calories else 0
+                    item_protein = float(item.protein) if item.protein else 0
+                    item_carbs = float(item.carbs) if item.carbs else 0
+                    item_fats = float(item.fats) if item.fats else 0
+                    
+                    total_calories += item_calories
+                    total_protein += item_protein
+                    total_carbs += item_carbs
+                    total_fats += item_fats
+
+                    # Find substitutions for this item
+                    sub_options = []
+                    
+                    def normalize_text(text):
+                        if not text: return ""
+                        text = unicodedata.normalize('NFKD', text).encode('ascii', 'ignore').decode('utf8')
+                        return text.lower().strip()
+
+                    def get_significant_words(text):
+                        words = normalize_text(text).split()
+                        return [w for w in words if len(w) > 3]
+
+                    item_name_normalized = normalize_text(item.food_name)
+                    item_words = get_significant_words(item.food_name)
+                    
+                    for sub_group in diet_subs:
+                        original_name = sub_group.get('original', '')
+                        original_normalized = normalize_text(original_name)
+                        original_words = get_significant_words(original_name)
+                        
+                        is_match = False
+                        if original_normalized and (original_normalized in item_name_normalized or item_name_normalized in original_normalized):
+                            is_match = True
+                        elif any(w in item_words for w in original_words):
+                            is_match = True
+                            
+                        if is_match:
+                            print(f"DEBUG: MATCH ENCONTRADO para {item.food_name} com regra {original_name}!")
+                            for opt in sub_group.get('options', []):
+                                sub_options.append({
+                                    'name': opt.get('name', ''),
+                                    'quantity': float(opt.get('quantity', 0)),
+                                    'unit': opt.get('unit', item.unit)
+                                })
+
+                    # === AUTO SUBSTITUTION LOGIC (If no manual subs found) ===
+                    if not sub_options:
+                        try:
+                            from diets.models import AlimentoTACO
+                            # 1. Find the food in TACO
+                            # Clean name for better matching (remove "g", "ml", quantity digits)
+                            clean_name = ''.join([i for i in item.food_name if i.isalpha() or i.isspace()]).strip()
+                            words = clean_name.split()
+                            search_term = words[0] if words else clean_name
+                            
+                            # Try exact contain first
+                            taco_match = AlimentoTACO.objects.filter(nome__icontains=search_term).first()
+                            
+                            if taco_match and item_calories > 0:
+                                # 2. Find explicit candidates from same group
+                                # Randomize to give variety as requested
+                                candidates = AlimentoTACO.objects.filter(
+                                    grupo=taco_match.grupo
+                                ).exclude(id=taco_match.id).order_by('?')[:6]
+                                
+                                for cand in candidates:
+                                    if cand.energia_kcal and cand.energia_kcal > 0:
+                                        # 3. Calculate Equivalent Quantity
+                                        # Formula: Target Grams = (Original Total Kcal / Candidate Kcal per 100g) * 100
+                                        equiv_g = (item_calories / cand.energia_kcal) * 100
+                                        
+                                        # Format Output
+                                        final_qty = equiv_g
+                                        final_unit = 'g'
+                                        
+                                        # Try to convert to household measure if available
+                                        if cand.unidade_caseira and cand.peso_unidade_caseira_g:
+                                            qty_household = equiv_g / cand.peso_unidade_caseira_g
+                                            # Only use if it's a reasonable number (e.g. not 0.05 units)
+                                            if qty_household >= 0.1:
+                                                final_qty = qty_household
+                                                final_unit = cand.unidade_caseira
+                                        
+                                        sub_options.append({
+                                            'name': cand.nome,
+                                            'quantity': round(final_qty, 1),
+                                            'unit': final_unit,
+                                            'source': 'auto_taco',
+                                            'group': cand.grupo
+                                        })
+                                        
+                        except Exception as auto_sub_error:
+                            print(f"Auto-Sub Error for {item.food_name}: {str(auto_sub_error)}")
+                    # =========================================================
+
+                    items.append({
+                        'name': item.food_name,
+                        'quantity': float(item.quantity),
+                        'unit': item.unit,
+                        'kcal': item_calories,
+                        'protein': item_protein,
+                        'carbs': item_carbs,
+                        'fats': item_fats,
+                        'substitutions': sub_options
+                    })
+
                 result.append({
                     'id': meal.id,
                     'name': meal.name,
                     'time': meal.time.strftime('%H:%M'),
                     'calories': int(total_calories),
-                    'foods': foods,
+                    'protein': int(total_protein),
+                    'carbs': int(total_carbs),
+                    'fats': int(total_fats),
+                    'items': items,
                     'status': status
                 })
             
@@ -234,6 +348,63 @@ class PatientMealsViewSet(viewsets.ViewSet):
                 {'error': 'Patient profile not found'},
                 status=status.HTTP_404_NOT_FOUND
             )
+
+    @action(detail=True, methods=['post'])
+    def upload_photo(self, request, pk=None):
+        """POST /api/v1/patients/me/meals/{id}/upload_photo/"""
+        patient = request.user.patient_profile
+        from diets.models import Meal
+        
+        try:
+            meal = Meal.objects.get(id=pk)
+            # Verify meal belongs to patient's active diet
+            if meal.diet.patient != patient:
+                return Response({'error': 'Unauthorized'}, status=status.HTTP_403_FORBIDDEN)
+                
+            photo_file = request.FILES.get('photo')
+            if not photo_file:
+                return Response({'error': 'No photo provided'}, status=status.HTTP_400_BAD_REQUEST)
+                
+            meal_photo = MealPhoto.objects.create(
+                patient=patient,
+                meal=meal,
+                photo=photo_file
+            )
+            
+            serializer = MealPhotoSerializer(meal_photo)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            
+        except Meal.DoesNotExist:
+            return Response({'error': 'Meal not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    @action(detail=False, methods=['post'])
+    def check_in_all(self, request):
+        """POST /api/v1/patients/me/meals/check_in_all/"""
+        patient = request.user.patient_profile
+        from diets.models import Diet, Meal
+        from datetime import datetime
+        
+        today = datetime.now()
+        current_day = today.weekday()
+        
+        active_diet = Diet.objects.filter(patient=patient, is_active=True).first()
+        if not active_diet:
+            return Response({'error': 'No active diet found'}, status=status.HTTP_404_NOT_FOUND)
+            
+        meals = Meal.objects.filter(diet=active_diet, day_of_week=current_day)
+        
+        count = 0
+        for meal in meals:
+            checkin, created = MealCheckIn.objects.get_or_create(
+                patient=patient,
+                meal=meal,
+                checked_in_at__date=today.date(),
+                defaults={'checked_in_at': today}
+            )
+            if created:
+                count += 1
+                
+        return Response({'message': f'{count} refeições registradas com sucesso.'}, status=status.HTTP_200_OK)
 
 
 class PatientEvolutionViewSet(viewsets.ViewSet):
@@ -357,6 +528,67 @@ class ProgressPhotoViewSet(viewsets.ModelViewSet):
     
     def perform_create(self, serializer):
         serializer.save(patient=self.request.user.patient_profile)
+
+    @action(detail=False, methods=['GET'])
+    def comparison(self, request):
+        """
+        Retorna as fotos iniciais (da anamnese) e as mais recentes (do progresso)
+        para comparação visual na aba de evolução.
+        """
+        from anamnesis.models import Anamnesis
+        
+        try:
+            patient = request.user.patient_profile
+            
+            # 1. Fotos Iniciais (Anamnese)
+            initial_data = {
+                'front': None, 'side': None, 'back': None, 'date': None
+            }
+            try:
+                anamnesis = Anamnesis.objects.get(patient=patient)
+                initial_data['front'] = request.build_absolute_uri(anamnesis.foto_frente.url) if anamnesis.foto_frente else None
+                initial_data['side'] = request.build_absolute_uri(anamnesis.foto_lado.url) if anamnesis.foto_lado else None
+                initial_data['back'] = request.build_absolute_uri(anamnesis.foto_costas.url) if anamnesis.foto_costas else None
+                initial_data['date'] = anamnesis.created_at.strftime('%Y-%m-%d')
+            except Anamnesis.DoesNotExist:
+                pass
+
+            # 2. Fotos Atuais (ProgressPhoto mais recentes - Apenas se forem diferentes da inicial)
+            current_data = {
+                'front': None, 'side': None, 'back': None
+            }
+            for angle_code, angle_name in [('front', 'front'), ('side', 'side'), ('back', 'back')]:
+                latest_photo = ProgressPhoto.objects.filter(
+                    patient=patient, 
+                    angle=angle_code
+                ).order_by('-uploaded_at').first()
+                
+                if latest_photo:
+                    url = request.build_absolute_uri(latest_photo.photo.url)
+                    initial_url = initial_data[angle_name]
+                    
+                    # Só adicionamos como "Atual" se for uma foto DIFERENTE da inicial
+                    # (A sincronização de anamnese cria um ProgressPhoto com o mesmo nome de arquivo)
+                    import os
+                    is_sync_duplicate = False
+                    if initial_url:
+                        latest_filename = os.path.basename(latest_photo.photo.name)
+                        if initial_url.endswith(latest_filename):
+                            is_sync_duplicate = True
+
+                    if not is_sync_duplicate:
+                        current_data[angle_name] = {
+                            'url': url,
+                            'date': latest_photo.uploaded_at.strftime('%Y-%m-%d')
+                        }
+
+            return Response({
+                'initial': initial_data,
+                'current': current_data
+            })
+
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class PatientExamsViewSet(viewsets.ViewSet):

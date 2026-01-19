@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { Message, Conversation, UserType } from '@/types/chat';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Search, User, Phone, Video, MoreVertical, Check, CheckCheck, Paperclip, Smile, Mic, Send, Bell, BellOff } from 'lucide-react';
+import { Search, User, Phone, Video, MoreVertical, Check, CheckCheck, Paperclip, Smile, Mic, Send, Bell, BellOff, Image as ImageIcon, FileText, Calendar, Utensils, Activity, ClipboardList } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -19,7 +19,14 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { Trash2, Eraser } from 'lucide-react';
+import EmojiPicker, { EmojiClickData, Theme } from 'emoji-picker-react';
+import { useTheme } from 'next-themes';
 
 // Helper function to get initials from a name
 const getInitials = (name?: string) => {
@@ -455,13 +462,64 @@ interface WhatsAppChatAreaProps {
   currentUserId: string;
 }
 
+// Helper to check if string contains only emojis
+const isOnlyEmoji = (text: string) => {
+  if (!text) return false;
+  // Regex para detectar emojis (incluindo variações de tom de pele e sequências ZWJ)
+  const emojiRegex = /^(\u00a9|\u00ae|[\u2000-\u3300]|\ud83c[\ud000-\udfff]|\ud83d[\ud000-\udfff]|\ud83e[\ud000-\udfff]|\s)+$/g;
+  return emojiRegex.test(text.trim());
+};
+
 // Componente apenas para a área de chat
-const WhatsAppChatArea: React.FC<WhatsAppChatAreaProps> = ({ conversationId, currentUserId }) => {
+const WhatsAppChatArea: React.FC<WhatsAppChatAreaProps> = ({ conversationId, currentUserId: propCurrentUserId }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(true);
   const [conversation, setConversation] = useState<Conversation | null>(null);
   const messagesEndRef = React.useRef<HTMLDivElement>(null);
+  const inputRef = React.useRef<HTMLInputElement>(null);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const { theme } = useTheme();
+  
+  const onEmojiClick = (emojiData: EmojiClickData) => {
+    setMessage((prev) => prev + emojiData.emoji);
+    // Focar no input novamente para permitir o Enter
+    setTimeout(() => {
+        inputRef.current?.focus();
+    }, 10);
+  };
+
+  const handleSendLink = (type: string) => {
+    if (typeof window === 'undefined') return;
+    const baseUrl = window.location.origin;
+    
+    // Tentar obter o ID do paciente da conversa ou do participante
+    const patientParticipant = conversation?.participants.find(p => String(p.id) !== String(currentUserId));
+    const patientId = (conversation as any)?.patient_id || patientParticipant?.id;
+    
+    let linkText = "";
+    switch(type) {
+        case 'schedule':
+            linkText = `Olá! Gostaria de agendar uma consulta? Acesse: ${baseUrl}/patient-dashboard-v2?tab=agenda`;
+            break;
+        case 'diet':
+            linkText = `Seu plano alimentar está disponível! Acesse: ${baseUrl}/patient-dashboard-v2?tab=diet`;
+            break;
+        case 'evaluation':
+            linkText = `Sua avaliação física foi atualizada. Confira: ${baseUrl}/patient-dashboard-v2?tab=evolution`;
+            break;
+        case 'anamnesis':
+            linkText = `Por favor, preencha sua ficha de anamnese para que eu possa conhecer melhor seu perfil: ${baseUrl}/anamnesis/answer?patient=${patientId}&type=standard`;
+            break;
+    }
+    if(linkText) setMessage(linkText);
+  };
+  
+  // Garantir que temos o ID do usuário real
+  const { user: authUser } = useAuth();
+  const currentUserId = (propCurrentUserId === 'current_user_id' && authUser?.id) 
+    ? String(authUser.id) 
+    : String(propCurrentUserId);
 
   // Carregar mensagens da conversa específica
   useEffect(() => {
@@ -495,7 +553,10 @@ const WhatsAppChatArea: React.FC<WhatsAppChatAreaProps> = ({ conversationId, cur
         const previousMessageCount = messages.length;
         const newMessages = response.data;
 
-        setMessages(newMessages);
+        // Deduplicate messages just in case API returns duplicates or state update race condition
+        const uniqueMessages = Array.from(new Map(newMessages.map((m: any) => [m.id, m])).values());
+
+        setMessages(uniqueMessages as Message[]);
 
         // Atualizar informações da conversa com base nas mensagens, se necessário
         if (!conversationDetails.last_message && newMessages && newMessages.length > 0) {
@@ -510,7 +571,10 @@ const WhatsAppChatArea: React.FC<WhatsAppChatAreaProps> = ({ conversationId, cur
         if (!silent && newMessages.length > previousMessageCount) {
           // Identificar se as novas mensagens são de outro participante (não do usuário atual)
           const newUnreadMessages = newMessages.slice(previousMessageCount).filter(
-            msg => msg.sender.id !== currentUserId
+            msg => {
+                const senderId = typeof msg.sender === 'object' ? msg.sender.id : msg.sender;
+                return String(senderId) !== String(currentUserId);
+            }
           );
 
           if (newUnreadMessages.length > 0) {
@@ -554,16 +618,36 @@ const WhatsAppChatArea: React.FC<WhatsAppChatAreaProps> = ({ conversationId, cur
     const interval = setInterval(() => fetchMessages(true), 5000);
 
     return () => clearInterval(interval);
-  }, [conversationId]);
+  }, [conversationId, currentUserId]);
 
   // Auto-scroll para o final quando novas mensagens são adicionadas
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  const scrollToBottom = (behavior: ScrollBehavior = 'smooth') => {
+    messagesEndRef.current?.scrollIntoView({ behavior });
   };
 
-  // Scroll para o final quando mensagens mudam
+  // Scroll para o final quando mensagens mudam, mas apenas se estiver perto do fundo ou for a primeira carga
   useEffect(() => {
-    scrollToBottom();
+    // Se for a primeira carga (loading acabou de virar false), rola pro fim
+    if (!loading && messages.length > 0) {
+       scrollToBottom('auto');
+    }
+  }, [loading]); // Executa quando o loading termina
+
+  // Ref para controlar se devemos auto-scrollar
+  const shouldAutoScrollRef = React.useRef(true);
+
+  // Monitorar scroll do usuário para desativar auto-scroll se ele subir
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
+    // Se a distância do fundo for maior que 100px, o usuário subiu a tela
+    const distanceFromBottom = scrollHeight - scrollTop - clientHeight;
+    shouldAutoScrollRef.current = distanceFromBottom < 100;
+  };
+
+  useEffect(() => {
+    if (shouldAutoScrollRef.current) {
+        scrollToBottom();
+    }
   }, [messages]);
 
   const handleClearMessages = async (convId: string) => {
@@ -602,9 +686,16 @@ const WhatsAppChatArea: React.FC<WhatsAppChatAreaProps> = ({ conversationId, cur
         conversation: conversationId
       });
 
-      // Adicionar nova mensagem à lista
-      setMessages(prev => [...prev, response.data]);
+      // Adicionar nova mensagem à lista, evitando duplicatas
+      setMessages(prev => {
+          if (prev.some(m => m.id === response.data.id)) return prev;
+          return [...prev, response.data];
+      });
       setMessage('');
+      
+      // Forçar scroll para o fim ao enviar mensagem
+      shouldAutoScrollRef.current = true;
+      setTimeout(() => scrollToBottom(), 100);
 
       // Atualizar a lista de conversas para refletir a nova mensagem
       // (Isso pode ser feito via atualização imediata ou via polling)
@@ -633,6 +724,9 @@ const WhatsAppChatArea: React.FC<WhatsAppChatAreaProps> = ({ conversationId, cur
   }
 
   // Identificar o outro participante (paciente)
+  // Se o usuário atual NÃO for o participante, então o outro é... espera.
+  // Participants inclui EU e o PACIENTE.
+  // Quero achar o participante que NÃO sou eu.
   const patientParticipant = conversation?.participants.find(p => String(p.id) !== String(currentUserId));
 
   return (
@@ -700,61 +794,175 @@ const WhatsAppChatArea: React.FC<WhatsAppChatAreaProps> = ({ conversationId, cur
 
       {/* Messages Area */}
       <div
-        className="flex-1 min-h-0 p-4 space-y-3 bg-muted"
+        className="flex-1 min-h-0 p-4 space-y-3 bg-muted/30 dark:bg-muted/10"
+        onScroll={handleScroll}
         style={{
           overflowY: 'auto',
           overflowX: 'hidden',
-          backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%2394a3b8' fill-opacity='0.1' fill-rule='evenodd'%3E%3Ccircle cx='3' cy='3' r='3'/%3E%3Ccircle cx='13' cy='13' r='3'/%3E%3C/g%3E%3C/svg%3E\")"
+          backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%2394a3b8' fill-opacity='0.05' fill-rule='evenodd'%3E%3Ccircle cx='3' cy='3' r='3'/%3E%3Ccircle cx='13' cy='13' r='3'/%3E%3C/g%3E%3C/svg%3E\")"
         }}
       >
-        {messages.map((msg) => (
-          <div
-            key={msg.id}
-            className={cn(
-              'flex',
-              msg.sender.id === currentUserId ? 'justify-end' : 'justify-start'
-            )}
-          >
+        {messages.map((msg) => {
+          // Extrair ID do remetente de forma robusta
+          const senderId = typeof msg.sender === 'object' ? msg.sender.id : msg.sender;
+          
+          // Verificar se a mensagem é do usuário atual (Nutricionista)
+          const isOwn = String(senderId) === String(currentUserId);
+          const onlyEmoji = isOnlyEmoji(msg.content);
+          
+          // Helper function to render text with clickable links
+          const renderMessageContent = (content: string) => {
+              if (onlyEmoji) return content;
+              const urlRegex = /(https?:\/\/[^\s]+)/g
+              const parts = content.split(urlRegex)
+
+              return parts.map((part, i) => {
+                  if (part.match(urlRegex)) {
+                      let href = part;
+                      // Fix legacy placeholder links
+                      if (part.includes('nutri.app') && typeof window !== 'undefined') {
+                          const patientParticipant = conversation?.participants.find(p => String(p.id) !== String(currentUserId));
+                          const patientId = (conversation as any)?.patient_id || patientParticipant?.id;
+
+                          // Redirecionamentos inteligentes para links legados
+                          if (part.includes('/anamnese') || part.includes('/anamnesis')) {
+                              href = `${window.location.origin}/anamnesis/answer?patient=${patientId}&type=standard`;
+                          } else if (part.includes('/agendamento')) {
+                              href = `${window.location.origin}/patient-dashboard-v2?tab=agenda`;
+                          } else if (part.includes('/dieta')) {
+                              href = `${window.location.origin}/patient-dashboard-v2?tab=diet`;
+                          } else if (part.includes('/evolucao')) {
+                              href = `${window.location.origin}/patient-dashboard-v2?tab=evolution`;
+                          } else {
+                              href = part.replace('https://nutri.app', window.location.origin);
+                          }
+                      }
+                      
+                      return (
+                          <a
+                              key={i}
+                              href={href}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className={`underline break-all font-semibold ${isOwn ? 'text-white' : 'text-emerald-700 hover:text-emerald-800'}`}
+                              onClick={(e) => e.stopPropagation()}
+                          >
+                              {part}
+                          </a>
+                      )
+                  }
+                  return part
+              })
+          }
+          
+          return (
             <div
+              key={msg.id}
               className={cn(
-                'max-w-xs md:max-w-md lg:max-w-lg xl:max-w-xl rounded-lg px-4 py-2 shadow-sm',
-                msg.sender.id === currentUserId
-                  ? 'bg-primary text-primary-foreground rounded-tr-none'
-                  : 'bg-background text-foreground rounded-tl-none border'
+                'flex w-full',
+                isOwn ? 'justify-end' : 'justify-start'
               )}
             >
-              <p className="whitespace-pre-wrap">{msg.content}</p>
               <div
                 className={cn(
-                  'text-xs mt-1 flex items-center justify-end',
-                  msg.sender.id === currentUserId
-                    ? 'text-primary-foreground/80'
-                    : 'text-muted-foreground'
+                  'max-w-[85%] md:max-w-[70%] lg:max-w-[60%] px-4 py-2 shadow-sm relative',
+                  onlyEmoji 
+                    ? 'bg-transparent shadow-none border-none' 
+                    : isOwn
+                      ? 'bg-primary text-primary-foreground rounded-2xl rounded-tr-none' 
+                      : 'bg-card text-card-foreground border border-border/50 rounded-2xl rounded-tl-none'
                 )}
               >
-                <span>{new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                {msg.sender.id === currentUserId && (
-                  <span className="ml-1">
-                    {msg.is_read ? <CheckCheck className="w-3 h-3 text-primary-foreground/80" /> : <Check className="w-3 h-3" />}
-                  </span>
-                )}
+                <div className={cn(
+                    "whitespace-pre-wrap leading-relaxed",
+                    onlyEmoji ? "text-5xl" : "text-sm"
+                )}>
+                    {renderMessageContent(msg.content)}
+                </div>
+                <div
+                  className={cn(
+                    'text-[10px] mt-1 flex items-center justify-end gap-1 opacity-70',
+                    onlyEmoji 
+                      ? 'text-muted-foreground' 
+                      : isOwn
+                        ? 'text-primary-foreground'
+                        : 'text-muted-foreground'
+                  )}
+                >
+                  <span>{new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                  {isOwn && (
+                    <span className="ml-0.5">
+                      {msg.is_read ? <CheckCheck className="w-3 h-3" /> : <Check className="w-3 h-3" />}
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
         <div ref={messagesEndRef} id="messages-end" />
       </div>
 
       {/* Message Input Area */}
-      <div className="bg-muted p-3 flex items-center space-x-2 flex-shrink-0">
-        <Button size="sm" variant="ghost" className="text-muted-foreground hover:bg-accent">
-          <Smile className="w-5 h-5" />
-        </Button>
-        <Button size="sm" variant="ghost" className="text-muted-foreground hover:bg-accent">
-          <Paperclip className="w-5 h-5" />
-        </Button>
+      <div className="bg-muted p-3 flex items-center space-x-2 flex-shrink-0 relative z-20">
+        <Popover open={showEmojiPicker} onOpenChange={setShowEmojiPicker}>
+            <PopoverTrigger asChild>
+                <Button size="sm" variant="ghost" className="text-muted-foreground hover:bg-accent">
+                    <Smile className="w-5 h-5" />
+                </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-full p-0 border-none bg-transparent shadow-none" align="start" side="top">
+                <EmojiPicker 
+                    onEmojiClick={onEmojiClick}
+                    theme={theme === 'dark' ? Theme.DARK : Theme.LIGHT}
+                    searchDisabled={false}
+                    skinTonesDisabled
+                    width={300}
+                    height={400}
+                />
+            </PopoverContent>
+        </Popover>
+
+        <Popover>
+            <PopoverTrigger asChild>
+                <Button size="sm" variant="ghost" className="text-muted-foreground hover:bg-accent">
+                    <Paperclip className="w-5 h-5" />
+                </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-56 p-2" align="start" side="top">
+                <div className="grid gap-1">
+                    <Button variant="ghost" className="justify-start gap-2 h-9" onClick={() => alert("Upload de imagem em breve!")}>
+                        <ImageIcon className="w-4 h-4 text-purple-500" />
+                        <span>Foto/Vídeo</span>
+                    </Button>
+                    <Button variant="ghost" className="justify-start gap-2 h-9" onClick={() => alert("Upload de documento em breve!")}>
+                        <FileText className="w-4 h-4 text-blue-500" />
+                        <span>Documento</span>
+                    </Button>
+                    <DropdownMenuSeparator />
+                    <Button variant="ghost" className="justify-start gap-2 h-9" onClick={() => handleSendLink('schedule')}>
+                        <Calendar className="w-4 h-4 text-amber-500" />
+                        <span>Agendamento</span>
+                    </Button>
+                    <Button variant="ghost" className="justify-start gap-2 h-9" onClick={() => handleSendLink('diet')}>
+                        <Utensils className="w-4 h-4 text-green-500" />
+                        <span>Plano Alimentar</span>
+                    </Button>
+                    <Button variant="ghost" className="justify-start gap-2 h-9" onClick={() => handleSendLink('evaluation')}>
+                        <Activity className="w-4 h-4 text-rose-500" />
+                        <span>Avaliação</span>
+                    </Button>
+                    <Button variant="ghost" className="justify-start gap-2 h-9" onClick={() => handleSendLink('anamnesis')}>
+                        <ClipboardList className="w-4 h-4 text-cyan-500" />
+                        <span>Anamnese</span>
+                    </Button>
+                </div>
+            </PopoverContent>
+        </Popover>
+
         <div className="flex-1 bg-background rounded-lg px-3 py-2 border">
           <Input
+            ref={inputRef}
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             onKeyDown={handleKeyDown}

@@ -1,12 +1,20 @@
 import { useState, useEffect } from 'react'
 import { mealsAPI } from '@/services/api'
 
+interface MealItem {
+    name: string
+    quantity: number
+    unit: string
+    substitutions: any[]
+}
+
 interface Meal {
     id: number
     name: string
     time: string
     calories: number
-    foods: string[]
+    items: MealItem[]
+    foods: string[] // Manter para compatibilidade legada se necessário
     status: 'completed' | 'current' | 'upcoming'
     icon?: any
 }
@@ -20,7 +28,12 @@ export function useMeals(date?: string) {
         try {
             setLoading(true)
             const response = await mealsAPI.getMeals(date)
-            setMeals(response.data)
+            // Lógica para garantir compatibilidade com componentes que ainda usam .foods
+            const transformedMeals = response.data.map((meal: any) => ({
+                ...meal,
+                foods: meal.items?.map((i: any) => `${i.name} (${i.quantity}${i.unit})`) || []
+            }))
+            setMeals(transformedMeals)
             setError(null)
         } catch (err: any) {
             setError(err?.response?.data?.message || 'Erro ao carregar refeições')
@@ -33,14 +46,23 @@ export function useMeals(date?: string) {
     const checkInMeal = async (mealId: number) => {
         try {
             await mealsAPI.checkInMeal(mealId)
-            // Optimistic update
             setMeals(prev => prev.map(meal =>
                 meal.id === mealId ? { ...meal, status: 'completed' as const } : meal
             ))
-            await fetchMeals() // Re-fetch to get server data
+            await fetchMeals()
         } catch (err: any) {
             setError(err?.response?.data?.message || 'Erro ao registrar refeição')
-            console.error('Error checking in meal:', err)
+            throw err
+        }
+    }
+
+    const checkInAll = async () => {
+        try {
+            await mealsAPI.checkInAll()
+            setMeals(prev => prev.map(meal => ({ ...meal, status: 'completed' as const })))
+            await fetchMeals()
+        } catch (err: any) {
+            setError(err?.response?.data?.message || 'Erro ao registrar todas as refeições')
             throw err
         }
     }
@@ -49,5 +71,5 @@ export function useMeals(date?: string) {
         fetchMeals()
     }, [date])
 
-    return { meals, loading, error, refetch: fetchMeals, checkInMeal }
+    return { meals, loading, error, refetch: fetchMeals, checkInMeal, checkInAll }
 }

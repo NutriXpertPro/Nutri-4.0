@@ -276,7 +276,7 @@ export function SettingsTab({ onBack }: { onBack?: () => void }) {
                             </button>
                         </section>
                     </DialogTrigger>
-                    <DialogContent>
+                    <DialogContent className="sm:max-w-md">
                         <DialogHeader>
                             <DialogTitle>Confirmar Saída</DialogTitle>
                         </DialogHeader>

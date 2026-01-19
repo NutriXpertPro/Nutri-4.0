@@ -35,6 +35,8 @@ export interface DietDayPlan {
 export interface PatientContext {
     id: number
     name: string
+    avatar?: string
+    status: boolean
     gender: string
     age?: number
     weight?: number
@@ -43,6 +45,9 @@ export interface PatientContext {
     bodyFat?: number
     muscleMass?: number
     sex?: 'M' | 'F'
+    goal?: string
+    restrictions?: string[]
+    allergies?: string[]
     anamnesis?: any
     exams?: any[]
     notes?: ClinicalNote[]
@@ -196,7 +201,7 @@ export const ACTIVITY_LEVELS = [
 interface DietEditorState {
     // Patient
     patient: PatientContext | null
-    
+
     // Diet ID (if saved)
     dietId: number | null
 
@@ -334,6 +339,9 @@ interface DietEditorState {
 
     // Patient Actions (Transient for UI)
     addNote: (note: { title: string; category: string; content: string; date: string }) => void
+
+    // Diet Persistence
+    saveDiet: () => Promise<void>
 }
 
 // Helper: Generate unique ID
@@ -974,124 +982,160 @@ export const useDietEditorStore = create<DietEditorState>()(
                 })
             },
 
-            // Meal Preset Actions
-            loadMealPresets: async () => {
-                set({ presetsLoading: true });
-                try {
-                    // Tenta carregar do localStorage primeiro
-                    if (typeof window !== 'undefined') {
-                        const savedPresets = localStorage.getItem('meal_presets');
-                        const savedFavorites = localStorage.getItem('favorite_preset_ids');
+            saveDiet: async () => {
+                const { toast } = await import('sonner')
 
-                        if (savedPresets) {
-                            const parsedPresets = JSON.parse(savedPresets);
-                            // Only return if we actually have presets
-                            if (Array.isArray(parsedPresets) && parsedPresets.length > 0) {
-                                const favorites = savedFavorites ? JSON.parse(savedFavorites) : [];
-                                set({
-                                    mealPresets: parsedPresets,
-                                    favoritePresetIds: favorites,
-                                    presetsLoading: false
-                                });
-                                return;
+                set({ isSaving: true })
+                try {
+                    const state = get()
+                    const dietService = (await import('@/services/diet-service')).default
+
+                    if (!state.patient?.id) {
+                        toast.warning("Selecione um paciente antes de salvar a dieta.", {
+                            description: "Vá até a aba de pacientes e escolha para quem será essa dieta."
+                        })
+                        set({ isSaving: false })
+                        return
+                    }
+
+                    // Prepare Meal Data (Flatten WeekPlan)
+                    // Backend expects a flat list of meals with day_of_week
+                    const mealsPayload = []
+                    for (const dayPlan of state.weekPlan) {
+                        for (const meal of dayPlan.meals) {
+                            // Only include meals that have items or content
+                            if (meal.items.length > 0) {
+                                mealsPayload.push({
+                                    name: meal.name,
+                                    time: meal.time,
+                                    order: meal.order,
+                                    day_of_week: dayPlan.dayOfWeek,
+                                    notes: meal.notes || "",
+                                    items: meal.items.map(item => ({
+                                        food_name: item.customName || item.food?.nome || "Item desconhecido",
+                                        quantity: item.quantity,
+                                        unit: item.unit,
+                                        calories: item.calories,
+                                        protein: item.protein,
+                                        carbs: item.carbs,
+                                        fats: item.fats,
+                                        // fiber: item.fiber // Check if backend supports fiber
+                                    }))
+                                })
                             }
                         }
                     }
 
-                    // Simulação de presets com alimentos para demonstração
-                    // Only used if no local storage data found
-                    const mockPresets: MealPreset[] = [
-                        {
-                            id: 1,
-                            name: 'Café da Manhã',
-                            meal_type: 'cafe_da_manha',
-                            diet_type: 'normocalorica',
-                            description: '',
-                            foods: [
-                                { id: 1, food_name: 'Pão Integral', quantity: 60, unit: 'g', calories: 166, protein: 5, carbs: 29, fats: 2, fiber: 3 },
-                                { id: 2, food_name: 'Ovo Cozido', quantity: 70, unit: 'g', calories: 92, protein: 7, carbs: 0.6, fats: 6.3, fiber: 0 },
-                                { id: 3, food_name: 'Banana', quantity: 100, unit: 'g', calories: 89, protein: 1.1, carbs: 22.8, fats: 0.3, fiber: 2.6 },
-                                { id: 4, food_name: 'Café com Leite', quantity: 200, unit: 'ml', calories: 60, protein: 3.3, carbs: 6.8, fats: 2.5, fiber: 0 }
-                            ],
-                            total_calories: 407,
-                            total_protein: 16.5,
-                            total_carbs: 59.2,
-                            total_fats: 11.1,
-                            is_active: true,
-                            created_at: new Date().toISOString(),
-                            updated_at: new Date().toISOString(),
-                        },
-                        {
-                            id: 2,
-                            name: 'Almoço Low Carb',
-                            meal_type: 'almoco',
-                            diet_type: 'low_carb',
-                            description: '',
-                            foods: [
-                                { id: 1, food_name: 'Filé de Frango Grelhado', quantity: 150, unit: 'g', calories: 231, protein: 31, carbs: 0, fats: 12, fiber: 0 },
-                                { id: 2, food_name: 'Brócolis Cozido', quantity: 100, unit: 'g', calories: 34, protein: 2.8, carbs: 7, fats: 0.4, fiber: 2.6 },
-                                { id: 3, food_name: 'Abacate', quantity: 50, unit: 'g', calories: 80, protein: 1, carbs: 4, fats: 7, fiber: 3.4 }
-                            ],
-                            total_calories: 345,
-                            total_protein: 34.8,
-                            total_carbs: 11,
-                            total_fats: 19.4,
-                            is_active: true,
-                            created_at: new Date().toISOString(),
-                            updated_at: new Date().toISOString(),
-                        },
-                        {
-                            id: 3,
-                            name: 'Lanche da Tarde Proteico',
-                            meal_type: 'lanche_tarde',
-                            diet_type: 'hiperproteica',
-                            description: '',
-                            foods: [
-                                { id: 1, food_name: 'Iogurte Grego', quantity: 150, unit: 'g', calories: 100, protein: 10, carbs: 7, fats: 0, fiber: 0 },
-                                { id: 2, food_name: 'Castanha do Pará', quantity: 30, unit: 'g', calories: 187, protein: 4.3, carbs: 3.3, fats: 19.2, fiber: 2.4 }
-                            ],
-                            total_calories: 287,
-                            total_protein: 14.3,
-                            total_carbs: 10.3,
-                            total_fats: 19.2,
-                            is_active: true,
-                            created_at: new Date().toISOString(),
-                            updated_at: new Date().toISOString(),
+                    // Se o payload do weekPlan estiver vazio, tenta usar o workspaceMeals (Workflow do DietEcosystem)
+                    if (mealsPayload.length === 0) {
+                        // Replicamos a dieta para todos os dias da semana (0-6) para garantir
+                        // que apareça no app do paciente todos os dias.
+                        for (let day = 0; day <= 6; day++) {
+                            state.workspaceMeals.forEach((meal, idx) => {
+                                if (meal.foods.length > 0) {
+                                    mealsPayload.push({
+                                        name: meal.type,
+                                        time: meal.time || "00:00",
+                                        order: idx,
+                                        day_of_week: day,
+                                        notes: meal.observation || "",
+                                        items: meal.foods.map(food => ({
+                                            food_name: food.name,
+                                            quantity: Number(food.qty) || 0,
+                                            unit: food.unit || "g",
+                                            calories: Math.round(((food.ptn * 4) + (food.cho * 4) + (food.fat * 9)) * (Number(food.qty) / 100)),
+                                            protein: Number((food.ptn * (Number(food.qty) / 100)).toFixed(1)),
+                                            carbs: Number((food.cho * (Number(food.qty) / 100)).toFixed(1)),
+                                            fats: Number((food.fat * (Number(food.qty) / 100)).toFixed(1)),
+                                        }))
+                                    });
+                                }
+                            });
                         }
-                    ];
-                    set({ mealPresets: mockPresets });
-
-                    if (typeof window !== 'undefined') {
-                        localStorage.setItem('meal_presets', JSON.stringify(mockPresets));
                     }
+
+                    // Validate that there's at least some content to save
+                    if (mealsPayload.length === 0) {
+                        toast.warning("Adicione alimentos à dieta antes de salvar.", {
+                            description: "A dieta precisa ter pelo menos uma refeição com alimentos."
+                        })
+                        set({ isSaving: false })
+                        return
+                    }
+
+                    const dietData = {
+                        patient: state.patient.id,
+                        name: state.dietName || `Dieta para ${state.patient.name}`,
+                        goal: state.patient.goal,
+                        diet_type: state.dietType,
+                        target_calories: Math.round(state.targetCalories || 0),
+                        target_protein: Number(state.targetMacros.protein) || 0,
+                        target_carbs: Number(state.targetMacros.carbs) || 0,
+                        target_fats: Number(state.targetMacros.fats) || 0,
+                        tmb: Math.round(state.tmb || 0),
+                        gcdt: Math.round(state.get || 0),
+                        calculation_method: state.calculationMethod,
+                        meals_data: mealsPayload,
+                        is_active: true
+                    }
+
+                    // Decide whether to create or update (if dietId exists)
+                    // Currently only Create is fully supported by this flow logic
+                    // If we had dietId, we might call update
+                    const savedDiet = await dietService.create(dietData)
+
+                    set({
+                        dietId: savedDiet.id,
+                        isDirty: false,
+                        isSaving: false
+                    })
+
+                    toast.success("Dieta salva com sucesso!")
+                    return Promise.resolve()
+                } catch (error: any) {
+                    console.error("Erro ao salvar dieta:", error)
+                    set({ isSaving: false })
+                    toast.error("Erro ao salvar dieta", {
+                        description: error?.message || "Tente novamente mais tarde."
+                    })
+                }
+            },
+
+            // Meal Preset Actions
+            loadMealPresets: async () => {
+                set({ presetsLoading: true });
+                try {
+                    const data = await import('@/services/diet-service').then(m => m.default.getMealPresets());
+                    // Transform backend data if necessary, or ensure backend matches frontend interface
+                    // Assuming backend returns array of MealPreset matching the interface
+
+                    // Also load favorites from local storage as they are user preference UI state mostly
+                    // Or backend could store favorites. For now, let's keep favorites in local storage or simple state
+                    let favoriteIds: number[] = [];
+                    if (typeof window !== 'undefined') {
+                        const savedFavorites = localStorage.getItem('favorite_preset_ids');
+                        if (savedFavorites) favoriteIds = JSON.parse(savedFavorites);
+                    }
+
+                    set({
+                        mealPresets: data,
+                        favoritePresetIds: favoriteIds,
+                        presetsLoading: false
+                    });
                 } catch (error) {
                     console.error('Erro ao carregar presets:', error);
-                    // Fallback to empty array and STOP loading
                     set({ mealPresets: [], presetsLoading: false });
-                } finally {
-                    // Ensure loading is set to false in all paths
-                    set((state) => ({ ...state, presetsLoading: false }));
                 }
             },
 
             createMealPreset: async (presetData) => {
                 set({ presetsLoading: true });
                 try {
-                    const newPreset: MealPreset = {
-                        ...presetData,
-                        id: Date.now(),
-                        created_at: new Date().toISOString(),
-                        updated_at: new Date().toISOString(),
-                        is_active: true,
-                        foods: presetData.foods.map((f, i) => ({ ...f, id: Date.now() + i }))
-                    };
+                    const dietService = (await import('@/services/diet-service')).default;
+                    const newPreset = await dietService.createMealPreset(presetData);
 
                     const updatedPresets = [...get().mealPresets, newPreset];
                     set({ mealPresets: updatedPresets });
-
-                    if (typeof window !== 'undefined') {
-                        localStorage.setItem('meal_presets', JSON.stringify(updatedPresets));
-                    }
 
                     return Promise.resolve();
                 } catch (error) {
@@ -1104,14 +1148,13 @@ export const useDietEditorStore = create<DietEditorState>()(
 
             updateMealPreset: async (id, updates) => {
                 try {
+                    const dietService = (await import('@/services/diet-service')).default;
+                    const updatedPreset = await dietService.updateMealPreset(id, updates);
+
                     const updatedPresets = get().mealPresets.map(p =>
-                        p.id === id ? { ...p, ...updates, updated_at: new Date().toISOString() } : p
+                        p.id === id ? updatedPreset : p
                     );
                     set({ mealPresets: updatedPresets });
-
-                    if (typeof window !== 'undefined') {
-                        localStorage.setItem('meal_presets', JSON.stringify(updatedPresets));
-                    }
                 } catch (error) {
                     console.error('Erro ao atualizar preset:', error);
                     throw error;
@@ -1120,12 +1163,11 @@ export const useDietEditorStore = create<DietEditorState>()(
 
             deleteMealPreset: async (id) => {
                 try {
+                    const dietService = (await import('@/services/diet-service')).default;
+                    await dietService.deleteMealPreset(id);
+
                     const updatedPresets = get().mealPresets.filter(p => p.id !== id);
                     set({ mealPresets: updatedPresets });
-
-                    if (typeof window !== 'undefined') {
-                        localStorage.setItem('meal_presets', JSON.stringify(updatedPresets));
-                    }
                 } catch (error) {
                     console.error('Erro ao deletar preset:', error);
                     throw error;
@@ -1176,64 +1218,47 @@ export const useDietEditorStore = create<DietEditorState>()(
             loadDefaultPresets: async () => {
                 set({ defaultPresetsLoading: true });
                 try {
-                    // Tenta carregar do localStorage
-                    if (typeof window !== 'undefined') {
-                        const savedDefaults = localStorage.getItem('default_presets');
-                        if (savedDefaults) {
-                            set({ defaultPresets: JSON.parse(savedDefaults), defaultPresetsLoading: false });
-                            return;
-                        }
-                    }
-
-                    const mockDefaultPresets: DefaultPreset[] = [];
-                    set({ defaultPresets: mockDefaultPresets });
+                    const data = await import('@/services/diet-service').then(m => m.default.getDefaultPresets());
+                    set({ defaultPresets: data, defaultPresetsLoading: false });
                 } catch (error) {
                     console.error('Erro ao carregar presets padrão:', error);
-                } finally {
-                    set({ defaultPresetsLoading: false });
+                    set({ defaultPresets: [], defaultPresetsLoading: false });
                 }
             },
 
             setDefaultPreset: async (mealType, dietType, presetId) => {
                 try {
-                    // Em uma implementação real, isso faria uma chamada à API
-                    // const response = await api.post('/default-presets/', {
-                    //     meal_type: mealType,
-                    //     diet_type: dietType,
-                    //     preset: presetId
-                    // });
+                    const dietService = (await import('@/services/diet-service')).default;
 
-                    // Atualizar localmente
-                    const existingPreset = get().defaultPresets.find(dp =>
+                    // Check if already exists in state
+                    const currentDefaults = get().defaultPresets;
+                    const existing = currentDefaults.find(dp =>
                         dp.meal_type === mealType && dp.diet_type === dietType
                     );
 
-                    const newDefaultPreset: DefaultPreset = {
-                        id: existingPreset ? existingPreset.id : Date.now(),
-                        meal_type: mealType,
-                        diet_type: dietType,
-                        preset: presetId,
-                        is_active: true,
-                        created_at: existingPreset ? existingPreset.created_at : new Date().toISOString(),
-                        updated_at: new Date().toISOString()
-                    };
-
-                    let updatedDefaults;
-                    if (existingPreset) {
-                        updatedDefaults = get().defaultPresets.map(dp =>
-                            dp.meal_type === mealType && dp.diet_type === dietType
-                                ? newDefaultPreset
-                                : dp
-                        );
+                    let newDefault;
+                    if (existing) {
+                        // Update existing using PATCH
+                        newDefault = await dietService.updateDefaultPreset(existing.id, {
+                            preset: presetId,
+                            is_active: true
+                        });
                     } else {
-                        updatedDefaults = [...get().defaultPresets, newDefaultPreset];
+                        // Create new using POST
+                        newDefault = await dietService.createDefaultPreset({
+                            meal_type: mealType,
+                            diet_type: dietType,
+                            preset: presetId,
+                            is_active: true
+                        });
                     }
+
+                    // Update local state - replace if it was an update or add if it was new
+                    const updatedDefaults = existing
+                        ? currentDefaults.map(dp => dp.id === existing.id ? newDefault : dp)
+                        : [...currentDefaults, newDefault];
 
                     set({ defaultPresets: updatedDefaults });
-
-                    if (typeof window !== 'undefined') {
-                        localStorage.setItem('default_presets', JSON.stringify(updatedDefaults));
-                    }
                 } catch (error) {
                     console.error('Erro ao definir preset padrão:', error);
                     throw error;
@@ -1242,13 +1267,16 @@ export const useDietEditorStore = create<DietEditorState>()(
 
             removeDefaultPreset: async (mealType, dietType) => {
                 try {
-                    const updatedDefaults = get().defaultPresets.filter(dp =>
-                        !(dp.meal_type === mealType && dp.diet_type === dietType)
+                    const presetToRemove = get().defaultPresets.find(dp =>
+                        dp.meal_type === mealType && dp.diet_type === dietType
                     );
-                    set({ defaultPresets: updatedDefaults });
 
-                    if (typeof window !== 'undefined') {
-                        localStorage.setItem('default_presets', JSON.stringify(updatedDefaults));
+                    if (presetToRemove) {
+                        const dietService = (await import('@/services/diet-service')).default;
+                        await dietService.deleteDefaultPreset(presetToRemove.id);
+
+                        const updatedDefaults = get().defaultPresets.filter(dp => dp.id !== presetToRemove.id);
+                        set({ defaultPresets: updatedDefaults });
                     }
                 } catch (error) {
                     console.error('Erro ao remover preset padrão:', error);

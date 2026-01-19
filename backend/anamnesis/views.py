@@ -40,7 +40,7 @@ class AnamnesisViewSet(viewsets.ModelViewSet):
     serializer_class = AnamnesisSerializer
     
     def get_permissions(self):
-        if self.action in ['list', 'create', 'retrieve', 'update', 'partial_update']:
+        if self.action in ['list', 'create', 'retrieve', 'update', 'partial_update', 'evolution']:
             return [permissions.AllowAny()]
         return [permissions.IsAuthenticated()]
 
@@ -71,6 +71,30 @@ class AnamnesisViewSet(viewsets.ModelViewSet):
 
 
 
+    def get_object(self):
+        """
+        Custom lookup that handles either PatientProfile ID or User ID.
+        Anamnesis PK is the PatientProfile ID.
+        """
+        pk = self.kwargs.get('pk')
+        try:
+            # First try direct PatientProfile ID lookup (Standard behavior)
+            return super().get_object()
+        except:
+            # If not found, check if PK is actually a User ID
+            from patients.models import PatientProfile
+            profile = PatientProfile.objects.filter(user_id=pk).first()
+            if profile:
+                # If we found a profile for this User ID, look for its anamnesis
+                from .models import Anamnesis
+                # Using filter().first() to avoid another 404/Exception here if anamnesis doesn't exist yet
+                instance = Anamnesis.objects.filter(patient=profile).first()
+                if instance:
+                    return instance
+            
+            # Re-raise the original 404 if no resolution worked
+            raise
+
     def list(self, request, *args, **kwargs):
         # Prevent listing all anamneses for anonymous users without patient ID
         if not request.user.is_authenticated and not request.query_params.get('patient'):
@@ -93,7 +117,7 @@ class AnamnesisViewSet(viewsets.ModelViewSet):
     def create(self, request, *args, **kwargs):
         try:
             self.log_debug(f"--- UPSERT START ---")
-            data = request.data
+            data = request.data.copy() if hasattr(request.data, 'copy') else dict(request.data)
             
             # Strong patient_id extraction (Data > QueryParams > Kwargs)
             patient_id = data.get('patient') or self.request.query_params.get('patient') or self.kwargs.get('pk')
@@ -101,11 +125,33 @@ class AnamnesisViewSet(viewsets.ModelViewSet):
             if isinstance(patient_id, (list, tuple)) and len(patient_id) > 0:
                 patient_id = patient_id[0]
             
-            self.log_debug(f"Target Patient ID: {patient_id}")
+            self.log_debug(f"Raw Target Patient ID: {patient_id}")
+            
+            # Robust ID Resolution: Check if patient_id is User ID or Profile ID
+            from patients.models import PatientProfile
+            actual_patient_id = patient_id
+            target_profile = None
+            
+            if patient_id:
+                # 1. Try finding by PatientProfile ID
+                target_profile = PatientProfile.objects.filter(id=patient_id).first()
+                if not target_profile:
+                    # 2. Try finding by User ID
+                    target_profile = PatientProfile.objects.filter(user_id=patient_id).first()
+                
+                if target_profile:
+                    actual_patient_id = target_profile.id
+                    self.log_debug(f"Resolved to Profile ID: {actual_patient_id}")
+                    # Ensure the data sent to serializer uses the correct Profile ID
+                    if 'patient' in data:
+                        data['patient'] = actual_patient_id
+                else:
+                    self.log_debug(f"FAILED to resolve patient ID {patient_id}")
+                    return Response({"patient": "Paciente não encontrado."}, status=status.HTTP_400_BAD_REQUEST)
             
             existing_instance = None
-            if patient_id:
-                existing_instance = Anamnesis.objects.filter(patient_id=patient_id).first()
+            if actual_patient_id:
+                existing_instance = Anamnesis.objects.filter(patient_id=actual_patient_id).first()
             
             # Use partial=True so 'patient' field is not required in validation if missing
             serializer = self.get_serializer(existing_instance, data=data, partial=True)
@@ -115,14 +161,14 @@ class AnamnesisViewSet(viewsets.ModelViewSet):
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
             
             # If creating new record, we MUST ensure the patient relation is set
-            # If it's not in validated_data because it was missing in request, we inject it
             if not existing_instance:
-                if 'patient' not in serializer.validated_data and patient_id:
-                    from patients.models import PatientProfile
-                    try:
-                        serializer.validated_data['patient'] = PatientProfile.objects.get(id=patient_id)
-                    except PatientProfile.DoesNotExist:
-                        return Response({"patient": "Paciente não encontrado."}, status=status.HTTP_400_BAD_REQUEST)
+                if 'patient' not in serializer.validated_data and target_profile:
+                    serializer.validated_data['patient'] = target_profile
+                elif 'patient' in serializer.validated_data:
+                    # Already set correctly via data['patient'] update above
+                    pass
+                else:
+                    return Response({"patient": "Vinculação com paciente necessária."}, status=status.HTTP_400_BAD_REQUEST)
             
             self.perform_create(serializer) if not existing_instance else self.perform_update(serializer)
             
@@ -139,7 +185,10 @@ class AnamnesisViewSet(viewsets.ModelViewSet):
         try:
             self.log_debug(f"PATCH CALL - Data keys: {list(request.data.keys())}")
             self.log_debug(f"PATCH CALL - Files: {list(request.FILES.keys())}")
+            
+            # get_object() is now smarter thanks to our override
             instance = self.get_object()
+            
             self.log_debug(f"PATCH CALL - Found instance for patient: {instance.patient_id}")
             serializer = self.get_serializer(instance, data=request.data, partial=True)
             if not serializer.is_valid():
@@ -168,36 +217,47 @@ class AnamnesisViewSet(viewsets.ModelViewSet):
         
         try:
             patient = PatientProfile.objects.get(id=patient_id)
+            self.log_debug(f"Evolution requested for patient {patient_id}")
         except PatientProfile.DoesNotExist:
             return Response({"detail": "Patient not found"}, status=status.HTTP_404_NOT_FOUND)
         
-        # Sincronização sob demanda: Garante que fotos da anamnese atual estejam no histórico
+        # Sincronização sob demanda
         anamnesis = Anamnesis.objects.filter(patient=patient).first()
         if anamnesis:
             self._sync_progress_photos(anamnesis)
 
         def get_photos(angle_db):
-            # Ordenamos por uploaded_at para pegar a primeira e a última temporalmente
             photos = ProgressPhoto.objects.filter(patient=patient, angle=angle_db).order_by('uploaded_at', 'id')
             if not photos.exists():
-                return None
+                self.log_debug(f"No photos found for angle {angle_db}")
+                return {
+                    "first": None,
+                    "last": None,
+                    "dates": ["--/--/----", "--/--/----"]
+                }
             
             first = photos.first()
             last = photos.last()
             
-            # Helper para garantir URL absoluta
             def get_url(photo_obj):
                 if not photo_obj or not photo_obj.photo:
                     return None
-                url = photo_obj.photo.url
-                if not url.startswith('http'):
-                    return request.build_absolute_uri(url)
-                return url
+                try:
+                    url = photo_obj.photo.url
+                    if not url.startswith('http'):
+                        return request.build_absolute_uri(url)
+                    return url
+                except Exception as e:
+                    self.log_debug(f"Error getting URL for photo {photo_obj.id}: {str(e)}")
+                    return None
 
             first_url = get_url(first)
             last_url = get_url(last)
             
-            # Se só existir uma foto ou forem iguais, repetimos para o Início e Atual
+            # Se forem iguais, preenchemos ambos com a mesma foto para não ficar vazio
+            # Mas mantemos a lógica de 'last' poder ser null se o frontend preferir
+            self.log_debug(f"Angle {angle_db}: first={first_url}, last={last_url}")
+            
             return {
                 "first": first_url,
                 "last": last_url,
@@ -207,11 +267,12 @@ class AnamnesisViewSet(viewsets.ModelViewSet):
                 ]
             }
 
-        return Response({
+        data = {
             "frente": get_photos('front'),
             "lado": get_photos('side'),
             "costas": get_photos('back'),
-        })
+        }
+        return Response(data)
 
     def perform_update(self, serializer):
         instance = serializer.save()

@@ -33,7 +33,6 @@ export default function NewPatientPage() {
         phone: "",
         birth_date: "",
         gender: "F",
-        goal: "",
         service_type: "ONLINE", // Default
         start_date: new Date().toISOString().split('T')[0]
     })
@@ -113,7 +112,6 @@ export default function NewPatientPage() {
                             name: "Nome",
                             phone: "Telefone",
                             birth_date: "Data de Nascimento",
-                            goal: "Objetivo",
                             gender: "Gênero"
                         }[key] || key
                         return `${fieldName}: ${Array.isArray(val) ? val.join(" ") : val}`
@@ -318,36 +316,6 @@ export default function NewPatientPage() {
                                         <SelectContent>
                                             <SelectItem value="F">Feminino</SelectItem>
                                             <SelectItem value="M">Masculino</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-
-                                {/* Objetivo Principal */}
-                                <div className="space-y-2 col-span-1 md:col-span-2 group">
-                                    <Label htmlFor="goal" className="text-xs uppercase tracking-wider text-muted-foreground font-semibold group-focus-within:text-primary transition-colors">Objetivo Principal</Label>
-                                    <Select
-                                        value={formData.goal}
-                                        onValueChange={(value) => handleChange("goal", value)}
-                                    >
-                                        <SelectTrigger className="h-12 bg-background/50 border-input transition-all focus:border-primary focus:ring-4 focus:ring-primary/10 rounded-xl">
-                                            <SelectValue placeholder="Qual o foco do tratamento?" />
-                                        </SelectTrigger>
-                                        <SelectContent className="max-h-60">
-                                            <SelectItem value="PERDA_PESO">Perda de peso - Redução de peso com foco em saúde e sustentabilidade</SelectItem>
-                                            <SelectItem value="GANHO_MUSCULAR">Ganho de massa muscular - Hipertrofia e desenvolvimento muscular</SelectItem>
-                                            <SelectItem value="MANUTENCAO_PESO">Manutenção do peso - Equilíbrio e manutenção do peso atual</SelectItem>
-                                            <SelectItem value="PERFORMANCE_ESPORTIVA">Performance esportiva - Otimização do desempenho atlético e competitivo</SelectItem>
-                                            <SelectItem value="GESTACAO_LACTACAO">Gestação e lactação - Acompanhamento nutricional materno-infantil</SelectItem>
-                                            <SelectItem value="DOENCAS_CRONICAS">Manejo de doenças crônicas - Diabetes, hipertensão, dislipidemias, doenças cardiovasculares</SelectItem>
-                                            <SelectItem value="REABILITACAO_NUTRICIONAL">Reabilitação nutricional - Recuperação pós-cirúrgica ou pós-doença</SelectItem>
-                                            <SelectItem value="TRANSTORNOS_ALIMENTARES">Transtornos alimentares - Apoio no tratamento de anorexia, bulimia, compulsão alimentar</SelectItem>
-                                            <SelectItem value="ALERGIAS_INTOLERANCIAS">Alergias e intolerâncias alimentares - Manejo de restrições alimentares específicas</SelectItem>
-                                            <SelectItem value="DISTURBIOS_GASTROINTESTINAIS">Distúrbios gastrointestinais - Síndrome do intestino irritável, doença celíaca, refluxo</SelectItem>
-                                            <SelectItem value="CONDICOES_HORMONAIS">Condições hormonais - SOP (Síndrome dos Ovários Policísticos), hipotireoidismo, menopausa</SelectItem>
-                                            <SelectItem value="NUTRICAO_FUNCIONAL">Nutrição funcional e integrativa - Abordagem holística e preventiva</SelectItem>
-                                            <SelectItem value="SUPLEMENTACAO_ORIENTADA">Suplementação orientada - Otimização do uso de suplementos nutricionais</SelectItem>
-                                            <SelectItem value="SAUDE_IDOSO">Saúde do idoso - Nutrição voltada para longevidade e qualidade de vida</SelectItem>
-                                            <SelectItem value="PREVENCAO_DOENCAS">Prevenção de doenças - Promoção de saúde e hábitos preventivos</SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </div>

@@ -10,8 +10,8 @@ urlpatterns = [
     path('foods/favorites/', views.FoodSearchViewSet.as_view({'get': 'favorites'}), name='food-favorites'),
     path('toggle-favorite/', views.ToggleFavoriteView.as_view(), name='toggle-favorite'),
     # Diet CRUD
-    path('diets/', views.DietViewSet.as_view({'get': 'list', 'post': 'create'}), name='diet-list'),
-    path('diets/<int:pk>/', views.DietViewSet.as_view({'get': 'retrieve', 'patch': 'partial_update', 'delete': 'destroy'}), name='diet-detail'),
+    path('', views.DietViewSet.as_view({'get': 'list', 'post': 'create'}), name='diet-list'),
+    path('<int:pk>/', views.DietViewSet.as_view({'get': 'retrieve', 'patch': 'partial_update', 'delete': 'destroy'}), name='diet-detail'),
     # Meals
     path('meals/', views.MealViewSet.as_view({'get': 'list', 'post': 'create'}), name='meal-list'),
     path('meals/<int:pk>/', views.MealViewSet.as_view({'get': 'retrieve', 'patch': 'partial_update', 'delete': 'destroy'}), name='meal-detail'),

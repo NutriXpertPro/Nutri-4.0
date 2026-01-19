@@ -9,8 +9,10 @@ import { useTimeline } from "@/hooks/useTimeline"
 export function TimelineWidget() {
     const [currentTime, setCurrentTime] = useState("")
     const [selectedMeal, setSelectedMeal] = useState<any>(null)
-    const { events, loading, error, checkIn } = useTimeline()
+    const { events, loading, error, checkIn, uploadMealPhoto } = useTimeline()
     const [completedMeals, setCompletedMeals] = useState<number[]>([])
+    const fileInputRef = useRef<HTMLInputElement>(null)
+    const [uploadingPhoto, setUploadingPhoto] = useState(false)
 
     useEffect(() => {
         const updateTime = () => {
@@ -49,6 +51,22 @@ export function TimelineWidget() {
             }
         }
         setSelectedMeal(null)
+    }
+
+    const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0]
+        if (!file || !selectedMeal) return
+
+        try {
+            setUploadingPhoto(true)
+            await uploadMealPhoto(selectedMeal.id, file)
+            alert("Foto enviada com sucesso!")
+        } catch (err) {
+            console.error('Upload failed:', err)
+            alert("Erro ao enviar foto.")
+        } finally {
+            setUploadingPhoto(false)
+        }
     }
 
     // Loading state
@@ -154,70 +172,115 @@ export function TimelineWidget() {
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
                             onClick={() => setSelectedMeal(null)}
-                            className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-end justify-center sm:items-center p-4"
+                            className="fixed inset-0 bg-black/40 dark:bg-black/80 backdrop-blur-sm z-50 flex items-end justify-center sm:items-center p-4"
                         >
+                            <div className="absolute inset-0 z-[-1]" />
                             <motion.div
                                 initial={{ y: "100%" }}
                                 animate={{ y: 0 }}
                                 exit={{ y: "100%" }}
                                 transition={{ type: "spring", damping: 25, stiffness: 200 }}
                                 onClick={(e) => e.stopPropagation()}
-                                className="bg-[#121212] w-full max-w-sm rounded-3xl overflow-hidden border border-white/10 shadow-2xl relative"
+                                className="bg-background w-full max-w-md rounded-t-3xl sm:rounded-3xl overflow-hidden border border-border shadow-2xl relative flex flex-col max-h-[85vh]"
                             >
                                 {/* Header Image Placeholder or Title */}
-                                <div className="h-32 bg-gradient-to-br from-emerald-900/20 to-zinc-900 border-b border-white/5 flex items-center justify-center relative">
+                                <div className="h-32 bg-gradient-to-br from-primary/10 to-muted border-b border-border flex items-center justify-center relative">
                                     <button
                                         onClick={() => setSelectedMeal(null)}
-                                        className="absolute top-4 right-4 p-2 bg-black/20 rounded-full text-white/70 hover:bg-black/40 hover:text-white transition-colors"
+                                        className="absolute top-4 right-4 p-2 bg-foreground/10 rounded-full text-foreground/70 hover:bg-foreground/20 hover:text-foreground transition-colors"
                                     >
                                         <X className="w-5 h-5" />
                                     </button>
 
                                     <div className="text-center">
-                                        <div className="w-12 h-12 rounded-full bg-emerald-500/10 flex items-center justify-center mx-auto mb-2 text-emerald-500">
+                                        <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-2 text-primary">
                                             {selectedMeal.type === 'workout' ? <Flame className="w-6 h-6" /> : <Clock className="w-6 h-6" />}
                                         </div>
-                                        <h2 className="text-lg font-bold text-white leading-none">{selectedMeal.title}</h2>
-                                        <p className="text-emerald-400 text-sm font-medium mt-1">{selectedMeal.time}</p>
+                                        <h2 className="text-lg font-bold text-foreground leading-none">{selectedMeal.title}</h2>
+                                        <p className="text-primary text-sm font-medium mt-1">{selectedMeal.time}</p>
                                     </div>
                                 </div>
 
-                                {/* Content */}
-                                <div className="p-6 space-y-6">
+                                {/* Content - Scrollable Area */}
+                                <div className="p-6 space-y-6 flex-1 overflow-y-auto pb-10 scrollbar-hide">
                                     {/* Stats Grid */}
                                     {selectedMeal.type === 'meal' && (
-                                        <div className="grid grid-cols-3 gap-2">
-                                            <div className="bg-zinc-900/50 p-3 rounded-xl border border-white/5 text-center">
-                                                <p className="text-[10px] text-zinc-500 uppercase tracking-wider">Kcal</p>
-                                                <p className="font-bold text-white">{selectedMeal.kcal}</p>
+                                        <div className="grid grid-cols-4 gap-2">
+                                            <div className="bg-muted/50 p-2 rounded-xl border border-border text-center">
+                                                <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Kcal</p>
+                                                <p className="font-bold text-foreground text-xs">{selectedMeal.kcal}</p>
                                             </div>
-                                            <div className="bg-zinc-900/50 p-3 rounded-xl border border-white/5 text-center">
-                                                <p className="text-[10px] text-zinc-500 uppercase tracking-wider">Prot</p>
-                                                <p className="font-bold text-emerald-400">{selectedMeal.protein}</p>
+                                            <div className="bg-muted/50 p-2 rounded-xl border border-border text-center">
+                                                <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Prot</p>
+                                                <p className="font-bold text-primary text-xs">{selectedMeal.protein}</p>
                                             </div>
-                                            <div className="bg-zinc-900/50 p-3 rounded-xl border border-white/5 text-center">
-                                                <p className="text-[10px] text-zinc-500 uppercase tracking-wider">Carb</p>
-                                                <p className="font-bold text-blue-400">{selectedMeal.carbs}</p>
+                                            <div className="bg-muted/50 p-2 rounded-xl border border-border text-center">
+                                                <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Carb</p>
+                                                <p className="font-bold text-blue-500 text-xs">{selectedMeal.carbs}</p>
+                                            </div>
+                                            <div className="bg-muted/50 p-2 rounded-xl border border-border text-center">
+                                                <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Gord</p>
+                                                <p className="font-bold text-amber-500 text-xs">{selectedMeal.fat}</p>
                                             </div>
                                         </div>
                                     )}
 
-                                    {/* Description */}
-                                    <div className="space-y-2">
-                                        <h3 className="text-sm font-medium text-zinc-400">Descrição</h3>
-                                        <p className="text-sm text-zinc-200 leading-relaxed bg-zinc-900/30 p-4 rounded-xl border border-white/5">
-                                            {selectedMeal.description}
-                                        </p>
+                                    {/* Items List */}
+                                    <div className="space-y-4">
+                                        <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Cardápio de Hoje</h3>
+                                        <div className="space-y-3">
+                                            {selectedMeal.items?.map((item: any, idx: number) => (
+                                                <div key={idx} className="bg-card p-4 rounded-xl border border-border space-y-2">
+                                                    <div className="flex justify-between items-start">
+                                                        <span className="text-foreground font-medium">{item.name}</span>
+                                                        <span className="text-primary text-xs font-bold">{item.quantity}{item.unit}</span>
+                                                    </div>
+
+                                                    {item.substitutions && item.substitutions.length > 0 && (
+                                                        <div className="pt-2 border-t border-border">
+                                                            <p className="text-[10px] text-muted-foreground uppercase tracking-widest mb-1">Substituições</p>
+                                                            <div className="flex flex-wrap gap-2">
+                                                                {item.substitutions.map((sub: any, sIdx: number) => (
+                                                                    <div key={sIdx} className="text-[11px] text-foreground/80 bg-muted px-2 py-1 rounded-lg border border-border">
+                                                                        {sub.name} ({sub.quantity}{sub.unit})
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            ))}
+                                            {(!selectedMeal.items || selectedMeal.items.length === 0) && (
+                                                <p className="text-sm text-foreground/80 leading-relaxed bg-card p-4 rounded-xl border border-border">
+                                                    {selectedMeal.description}
+                                                </p>
+                                            )}
+                                        </div>
                                     </div>
+
+                                    {/* Hidden File Input */}
+                                    <input
+                                        type="file"
+                                        ref={fileInputRef}
+                                        className="hidden"
+                                        accept="image/*"
+                                        onChange={handlePhotoUpload}
+                                    />
 
                                     {/* Actions */}
                                     <div className="grid grid-cols-2 gap-3 pt-2">
                                         <Button
                                             variant="outline"
-                                            className="w-full border-dashed border-zinc-700 hover:border-zinc-500 hover:bg-zinc-900 h-12 gap-2"
+                                            onClick={() => fileInputRef.current?.click()}
+                                            disabled={uploadingPhoto}
+                                            className="w-full border-dashed border-border hover:border-primary/50 hover:bg-muted h-12 gap-2"
                                         >
-                                            <Camera className="w-4 h-4" />
-                                            Foto
+                                            {uploadingPhoto ? (
+                                                <Loader2 className="w-4 h-4 animate-spin" />
+                                            ) : (
+                                                <Camera className="w-4 h-4" />
+                                            )}
+                                            {uploadingPhoto ? "Enviando..." : "Foto"}
                                         </Button>
                                         <Button
                                             onClick={() => handleCheckIn(selectedMeal.id)}

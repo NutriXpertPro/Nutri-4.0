@@ -313,6 +313,10 @@ export function StandardAnamnesisForm({ patientId, onBack, initialData, onSave }
         setIsSaving(true)
         try {
             await onSave(formData)
+        } catch (error) {
+            console.error("Erro ao salvar anamnese:", error)
+            // O tratamento de erro detalhado já é feito pelo mutation no componente pai,
+            // mas aqui garantimos que o estado de loading seja resetado.
         } finally {
             setIsSaving(false)
         }

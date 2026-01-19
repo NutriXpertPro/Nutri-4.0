@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { anamnesisService } from "@/services/anamnesis-service"
 import { usePatient } from "@/hooks/usePatients"
@@ -19,18 +19,38 @@ import {
     ChevronLeft,
     ChevronRight,
     X,
+    MapPin,
+    Phone,
+    Calendar,
+    Utensils,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
+import { settingsService } from "@/services/settings-service"
 
 interface AnamnesisReportViewProps {
     patientId: number
     onClose?: () => void
-    initialData?: any 
+    initialData?: any
 }
 
 export function AnamnesisReportView({ patientId, onClose, initialData }: AnamnesisReportViewProps) {
+    const [nutritionist, setNutritionist] = useState<any>(null)
+
+    useEffect(() => {
+        settingsService.getCombinedSettings().then((settings: any) => {
+            setNutritionist({
+                name: settings.profile.name,
+                title: settings.profile.title,
+                crn: settings.profile.crn,
+                address: settings.branding.address,
+                phone: settings.branding.phone,
+                logo: settings.branding.logo
+            })
+        }).catch(console.error)
+    }, [])
+
     const [currentAngle, setCurrentAngle] = useState(0)
     const [zoomPhoto, setZoomPhoto] = useState<string | null>(null)
 
@@ -95,55 +115,66 @@ export function AnamnesisReportView({ patientId, onClose, initialData }: Anamnes
 
     return (
         <div className="bg-white dark:bg-zinc-950 shadow-[0_0_50px_rgba(0,0,0,0.08)] rounded-[2.5rem] overflow-hidden border border-border/10 relative w-full">
-            <div className="h-2 w-full bg-linear-to-r from-emerald-500 via-primary to-indigo-600" />
+            {/* DECORATIVE TOP BAR */}
+            <div className="h-3 w-full bg-emerald-500 print:h-2" />
 
-            <header className="p-8 md:p-12 border-b border-border/5 bg-linear-to-b from-muted/20 to-transparent relative overflow-hidden">
-                <div className="flex flex-col md:flex-row justify-between items-start gap-8 relative z-10">
-                    <div className="space-y-6">
-                        <div className="flex items-center gap-5">
-                            <div className="bg-white dark:bg-zinc-900 p-3 rounded-2xl shadow-xl shadow-black/5 ring-1 ring-black/5">
-                                <img src="/logo.png" alt="Nutri Xpert Pro" className="h-10 w-auto" />
-                            </div>
-                            <div>
-                                <h1 className="text-2xl font-light tracking-tight text-foreground">Ficha de Anamnese</h1>
-                                <p className="text-[10px] text-primary uppercase tracking-[0.3em] mt-1 ml-0.5">Nutri Xpert Pro • Clínica Digital</p>
-                            </div>
+            {/* HEADER - STANDARD DIET PDF STYLE */}
+            <header className="p-12 pb-8 flex flex-col md:flex-row justify-between items-start print:p-8 bg-white dark:bg-zinc-950 text-slate-900 dark:text-slate-100 font-sans">
+                <div className="space-y-6 max-w-full md:max-w-[65%]">
+                    <div className="flex items-center gap-4">
+                        <div className="w-14 h-14 bg-emerald-500 rounded-2xl flex items-center justify-center text-white shadow-xl shadow-emerald-500/30 overflow-hidden shrink-0">
+                            {nutritionist?.logo ? (
+                                <img src={nutritionist.logo} alt="Logo" className="w-full h-full object-cover" />
+                            ) : (
+                                <FileText className="h-7 w-7" />
+                            )}
                         </div>
+                        <h1 className="text-3xl font-normal tracking-tighter uppercase leading-none">
+                            Ficha de<br /><span className="text-emerald-500">Anamnese</span>
+                        </h1>
+                    </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-10 gap-y-4 pt-4 border-t border-border/10">
-                            <div className="space-y-1">
-                                <p className="text-[10px] text-muted-foreground uppercase tracking-widest">Paciente</p>
-                                <p className="text-base font-normal text-foreground">{anamnesisData?.nome}</p>
+                    <div className="space-y-3">
+                        <p className="text-[10px] font-normal uppercase tracking-[0.2em] text-emerald-500 opacity-80">Nutri Xpert Pro • Clínica Digital</p>
+
+                        <div className="space-y-1">
+                            <span className="text-[10px] text-slate-400 uppercase tracking-widest">Paciente</span>
+                            <h2 className="text-2xl font-normal tracking-tight">{anamnesisData?.nome}</h2>
+
+                            <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-xs font-normal text-slate-500 dark:text-slate-400 pt-1">
+                                <div className="flex items-center gap-2">
+                                    <Calendar className="h-3.5 w-3.5 text-emerald-500" />
+                                    <span>Emitido em {anamnesisData?.updated_at ? new Date(anamnesisData.updated_at).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' }) : '--'}</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <span className="text-emerald-500 font-bold">•</span>
+                                    <span>{anamnesisData?.idade} Anos</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <span className="text-emerald-500 font-bold">•</span>
+                                    <span>{patient?.gender === 'M' ? 'Masculino' : 'Feminino'}</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <span className="text-emerald-500 font-bold text-[10px]">ID</span>
+                                    <span className="font-mono">#ANM-{anamnesisData?.id?.toString().padStart(4, '0') || '----'}</span>
+                                </div>
                             </div>
-                            <div className="space-y-1">
-                                <p className="text-[10px] text-muted-foreground uppercase tracking-widest">Data do Relatório</p>
-                                <p className="text-base font-normal text-foreground">{anamnesisData?.updated_at ? new Date(anamnesisData.updated_at).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' }) : '--'}</p>
-                            </div>
-                            <div className="space-y-1">
-                                <p className="text-[10px] text-muted-foreground uppercase tracking-widest">Objetivo Clínico</p>
-                                <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 px-3 py-0.5 rounded-full text-[10px] ">
-                                    {anamnesisData?.objetivo || "Não especificado"}
+
+                            <div className="pt-3 flex items-center gap-3">
+                                <span className="text-[10px] text-slate-400 uppercase tracking-widest">Objetivo Clínico</span>
+                                <Badge variant="outline" className="bg-emerald-50 dark:bg-emerald-900/10 text-emerald-600 dark:text-emerald-400 border-emerald-100 dark:border-emerald-900/20 px-3 py-0.5 rounded-lg text-[10px] font-medium tracking-wide shadow-xs">
+                                    {(anamnesisData?.objetivo || "Não especificado").replace(/_/g, ' ')}
                                 </Badge>
-                            </div>
-                            <div className="space-y-1">
-                                <p className="text-[10px] text-muted-foreground uppercase tracking-widest">ID Registro</p>
-                                <p className="text-xs font-mono text-muted-foreground font-normal">#ANM-{anamnesisData?.id?.toString().padStart(4, '0') || '----'}</p>
                             </div>
                         </div>
                     </div>
+                </div>
 
-                    <div className="hidden lg:flex flex-col items-end gap-3 text-right">
-                        <div className="w-20 h-20 rounded-full border-4 border-white dark:border-zinc-800 shadow-2xl overflow-hidden ring-1 ring-black/5">
-                            <img
-                                src={patient?.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${patient?.name}`}
-                                alt={patient?.name}
-                                className="w-full h-full object-cover"
-                            />
-                        </div>
-                        <div>
-                            <p className="text-sm  text-foreground">{anamnesisData?.idade} Anos</p>
-                            <p className="text-[10px] text-muted-foreground uppercase tracking-widest">{patient?.gender === 'M' ? 'Masculino' : 'Feminino'}</p>
-                        </div>
+                <div className="text-right flex flex-col items-end gap-3 mt-8 md:mt-0">
+                    <div className="bg-slate-50 dark:bg-zinc-900 border border-slate-100 dark:border-zinc-800 p-4 rounded-2xl min-w-[200px] shadow-sm">
+                        <p className="text-[9px] font-normal uppercase tracking-widest text-emerald-500 mb-1">Especialista</p>
+                        <p className="text-sm font-normal text-slate-800 dark:text-slate-200 leading-tight">{nutritionist?.name || 'Seu Nome'}</p>
+                        <p className="text-[10px] font-normal text-slate-400 mt-1">{nutritionist?.title || 'Nutricionista'} | CRN {nutritionist?.crn || '---'}</p>
                     </div>
                 </div>
             </header>
@@ -384,7 +415,7 @@ export function AnamnesisReportView({ patientId, onClose, initialData }: Anamnes
                 </div>
                 <div className="flex gap-2">
                     {onClose && (
-                         <Button variant="outline" className="rounded-2xl gap-2 text-xs no-print" onClick={onClose}>
+                        <Button variant="outline" className="rounded-2xl gap-2 text-xs no-print" onClick={onClose}>
                             <X className="h-4 w-4" />
                             Fechar
                         </Button>

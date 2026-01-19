@@ -96,7 +96,7 @@ export function PatientContextTab({ patientId }: PatientContextTabProps) {
                     <div className="grid grid-cols-2 gap-3">
                         <InfoItem icon={Target} label="Objetivo" value={patient?.goal || 'Não definido'} iconColor="text-rose-500" />
                         <InfoItem icon={Cake} label="Idade" value={patient?.birth_date ? `${calculateAge(patient.birth_date)} anos` : '--'} sub={patient?.birth_date ? new Date(patient.birth_date).toLocaleDateString('pt-BR') : undefined} iconColor="text-pink-500" />
-                        <InfoItem icon={User} label="Gênero" value={patient?.sex === 'M' ? 'Masculino' : patient?.sex === 'F' ? 'Feminino' : '--'} iconColor="text-blue-500" />
+                        <InfoItem icon={User} label="Gênero" value={patient?.gender === 'M' ? 'Masculino' : patient?.gender === 'F' ? 'Feminino' : '--'} iconColor="text-blue-500" />
                         <InfoItem icon={Phone} label="Telefone" value={patient?.phone || '--'} iconColor="text-emerald-500" />
                         <InfoItem icon={Mail} label="Email" value={patient?.email || '--'} className="truncate" iconColor="text-violet-500" />
                         <InfoItem icon={Calendar} label="Início" value={patient?.start_date ? new Date(patient.start_date).toLocaleDateString('pt-BR') : '--'} iconColor="text-indigo-500" />
@@ -114,7 +114,7 @@ export function PatientContextTab({ patientId }: PatientContextTabProps) {
                     </div>
                 </CardHeader>
                 <CardContent className="space-y-6 pt-2">
-                    
+
                     <div className="grid sm:grid-cols-2 gap-6">
                         <Section
                             icon={Target}

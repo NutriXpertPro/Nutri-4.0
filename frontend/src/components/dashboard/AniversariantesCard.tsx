@@ -1,9 +1,12 @@
 
-import { MessageCircle, Calendar, Gift } from "lucide-react"
+import { MessageCircle, Calendar, Gift, Loader2 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useRouter } from "next/navigation"
+import { useState } from "react"
+import { messagesAPI } from "@/services/api"
+import { toast } from "sonner"
 
 export interface BirthdayPatient {
     id: number
@@ -19,9 +22,28 @@ interface AniversariantesCardProps {
 
 export function AniversariantesCard({ patients = [] }: AniversariantesCardProps) {
     const router = useRouter()
+    const [sendingId, setSendingId] = useState<number | null>(null)
 
-    const handleSendMessage = (patientId: number) => {
-        router.push(`/messages?chat=${patientId}`)
+    const handleSendMessage = async (patientId: number) => {
+        setSendingId(patientId)
+        try {
+            // 1. Encontrar ou criar conversa
+            const conversation = await messagesAPI.findOrCreateByPatient(patientId)
+            
+            // 2. Enviar mensagem de aniversário
+            const message = "Feliz aniversário! 🎉 Muita saúde e conquistas nesse novo ciclo. Conte comigo para alcançar seus objetivos!"
+            await messagesAPI.sendMessage(conversation.id, message)
+            
+            toast.success("Mensagem de aniversário enviada!")
+            
+            // Opcional: redirecionar para o chat para continuar conversando
+            // router.push(`/messages?conversation=${conversation.id}`)
+        } catch (error) {
+            console.error("Erro ao enviar mensagem:", error)
+            toast.error("Erro ao enviar mensagem.")
+        } finally {
+            setSendingId(null)
+        }
     }
 
     if (!patients || patients.length === 0) {
@@ -97,9 +119,14 @@ export function AniversariantesCard({ patients = [] }: AniversariantesCardProps)
                                 variant="secondary"
                                 className="bg-pink-50 dark:bg-pink-900/20 hover:bg-pink-100 dark:hover:bg-pink-900/40 text-pink-600 dark:text-pink-400 hover:text-pink-700 dark:hover:text-pink-300 border border-pink-200 dark:border-pink-900/30 shadow-sm"
                                 onClick={() => handleSendMessage(patient.id)}
+                                disabled={sendingId === patient.id}
                             >
-                                <MessageCircle className="h-4 w-4 mr-2" />
-                                Enviar
+                                {sendingId === patient.id ? (
+                                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                                ) : (
+                                    <MessageCircle className="h-4 w-4 mr-2" />
+                                )}
+                                {sendingId === patient.id ? "Enviando..." : "Enviar"}
                             </Button>
                         </div>
                     ))}

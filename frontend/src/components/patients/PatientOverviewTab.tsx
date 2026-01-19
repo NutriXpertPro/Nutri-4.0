@@ -61,9 +61,15 @@ export function PatientOverviewTab({ patientId }: { patientId: number }) {
     // Format Date Helper
     const formatDate = (dateStr: string) => {
         try {
-            return new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }).format(new Date(dateStr))
+            if (!dateStr) return 'Data não disponível'
+            const date = new Date(dateStr)
+            // Check for invalid date or epoch 0 (timezone adjusted often hits 1969)
+            if (isNaN(date.getTime()) || date.getFullYear() < 2000) {
+                return 'Data não disponível'
+            }
+            return new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }).format(date)
         } catch {
-            return dateStr
+            return dateStr || 'Data não disponível'
         }
     }
 
