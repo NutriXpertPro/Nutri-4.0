@@ -97,14 +97,14 @@ export function PatientContextPanel() {
             </div>
 
             {/* Restrictions */}
-            {patient.restrictions.length > 0 && (
+            {(patient.restrictions?.length ?? 0) > 0 && (
                 <div className="rounded-lg bg-amber-500/10 border border-amber-500/30 p-3">
                     <div className="flex items-center gap-2 text-amber-400 text-xs mb-2">
                         <AlertTriangle className="h-3 w-3" />
                         <span>Restrições Alimentares</span>
                     </div>
                     <div className="flex flex-wrap gap-1">
-                        {patient.restrictions.map((restriction, i) => (
+                        {patient.restrictions?.map((restriction, i) => (
                             <span
                                 key={i}
                                 className="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-xs"
@@ -117,14 +117,14 @@ export function PatientContextPanel() {
             )}
 
             {/* Allergies */}
-            {patient.allergies.length > 0 && (
+            {(patient.allergies?.length ?? 0) > 0 && (
                 <div className="rounded-lg bg-red-500/10 border border-red-500/30 p-3">
                     <div className="flex items-center gap-2 text-red-400 text-xs mb-2">
                         <AlertTriangle className="h-3 w-3" />
                         <span>Alergias</span>
                     </div>
                     <div className="flex flex-wrap gap-1">
-                        {patient.allergies.map((allergy, i) => (
+                        {patient.allergies?.map((allergy, i) => (
                             <span
                                 key={i}
                                 className="px-2 py-0.5 rounded-full bg-red-500/20 text-red-300 text-xs"

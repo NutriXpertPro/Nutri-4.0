@@ -273,8 +273,8 @@ export function PatientAnalysisTab({ patientId }: PatientAnalysisTabProps) {
                                     <SelectContent>
                                         <SelectItem value="all">Todos os métodos</SelectItem>
                                         {uniqueMethods.map(method => (
-                                            <SelectItem key={method} value={method}>
-                                                {method.replace(/_/g, ' ')}
+                                            <SelectItem key={method || 'unknown'} value={method || ''}>
+                                                {(method || '').replace(/_/g, ' ')}
                                             </SelectItem>
                                         ))}
                                     </SelectContent>

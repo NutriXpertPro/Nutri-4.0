@@ -45,9 +45,9 @@ ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='*', cast=Csv())
 # Validade do token de reset de senha: 24 horas (em segundos)
 PASSWORD_RESET_TIMEOUT = 86400
 
-# CORS Configuration - TEMPORARIAMENTE PERMISSIVO PARA DEBUG
+# CORS Configuration
 # Isso permite TODAS as origens. Deve ser removido após identificar o problema.
-CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_ALL_ORIGINS = config('CORS_ALLOW_ALL_ORIGINS', default=False, cast=bool)
 CORS_ALLOW_CREDENTIALS = True
 
 INSTALLED_APPS = [

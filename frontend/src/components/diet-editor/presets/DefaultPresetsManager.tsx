@@ -13,11 +13,13 @@ import {
   Settings,
   Star,
   Save,
-  Flame
+  Flame,
+  Check
 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 import { useDietEditorStore, MealPreset } from '@/stores/diet-editor-store';
 import { PresetFoodItem } from './PresetFoodItem';
 
@@ -54,6 +56,7 @@ interface DefaultPresetsManagerProps {
 export function DefaultPresetsManager({ onBack, targetMealId, onPresetApplied }: DefaultPresetsManagerProps) {
   const [selectedMealType, setSelectedMealType] = useState<string>('');
   const [selectedDietType, setSelectedDietType] = useState<string>('');
+  const [isSaving, setIsSaving] = useState(false);
 
   // Pegar presets e funções do store
   const mealPresets = useDietEditorStore(state => state.mealPresets);
@@ -214,11 +217,11 @@ export function DefaultPresetsManager({ onBack, targetMealId, onPresetApplied }:
                               <div className="p-4 bg-muted/10 border-b border-border/10">
                                 <div className="flex items-start justify-between">
                                   <div className="flex items-start gap-4">
-                                    <div className="p-3 rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 text-primary flex items-center justify-center shadow-md">
+                                    <div className="p-3 rounded-xl bg-primary/10 text-primary flex items-center justify-center shadow-md group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-300">
                                       <IconComponent className="w-6 h-6" />
                                     </div>
                                     <div className="flex-1 min-w-0">
-                                      <h4 className="font-normal text-lg text-foreground truncate">
+                                      <h4 className="font-normal text-lg text-foreground truncate flex items-center gap-2">
                                         {mealLabel}
                                         <span className="text-muted-foreground/40 mx-2 font-normal">-</span>
                                         <span className={`font-normal ${selectedDietType === 'low_carb' ? 'text-amber-500' :
@@ -231,6 +234,7 @@ export function DefaultPresetsManager({ onBack, targetMealId, onPresetApplied }:
                                           }`}>
                                           {dietLabel}
                                         </span>
+                                        <Star className="w-5 h-5 fill-primary text-primary animate-in zoom-in duration-300 opacity-80" />
                                       </h4>
                                       <p className="text-xs text-muted-foreground mt-1 font-normal">{preset.name}</p>
                                     </div>
@@ -254,26 +258,26 @@ export function DefaultPresetsManager({ onBack, targetMealId, onPresetApplied }:
                                 {/* Quadrado de nutrientes sincronizado */}
                                 <div className="mb-6 pb-6 border-b border-border/10">
                                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                                    <div className="flex flex-col items-center justify-center p-3 bg-zinc-500/5 rounded-xl border border-zinc-500/10">
-                                      <div className="text-lg font-normal text-zinc-600">
+                                    <div className="flex flex-col items-center justify-center p-3 bg-muted/20 rounded-xl border border-border/40">
+                                      <div className="text-lg font-normal text-foreground">
                                         {preset.total_calories}
                                       </div>
                                       <div className="text-[10px] uppercase font-normal text-muted-foreground mt-0.5 tracking-tighter">kcal</div>
                                     </div>
-                                    <div className="flex flex-col items-center justify-center p-3 bg-emerald-500/5 rounded-xl border border-emerald-500/10">
-                                      <div className="text-lg font-normal text-emerald-600">
+                                    <div className="flex flex-col items-center justify-center p-3 bg-primary/10 rounded-xl border border-primary/20">
+                                      <div className="text-lg font-normal text-primary">
                                         {preset.total_protein}
                                       </div>
                                       <div className="text-[10px] uppercase font-normal text-muted-foreground mt-0.5 tracking-tighter">g PTN</div>
                                     </div>
-                                    <div className="flex flex-col items-center justify-center p-3 bg-blue-500/5 rounded-xl border border-blue-500/10">
-                                      <div className="text-lg font-normal text-blue-600">
+                                    <div className="flex flex-col items-center justify-center p-3 bg-primary/10 rounded-xl border border-primary/20">
+                                      <div className="text-lg font-normal text-primary">
                                         {preset.total_carbs}
                                       </div>
                                       <div className="text-[10px] uppercase font-normal text-muted-foreground mt-0.5 tracking-tighter">g CHO</div>
                                     </div>
-                                    <div className="flex flex-col items-center justify-center p-3 bg-orange-500/5 rounded-xl border border-orange-500/10">
-                                      <div className="text-lg font-normal text-orange-600">
+                                    <div className="flex flex-col items-center justify-center p-3 bg-primary/10 rounded-xl border border-primary/20">
+                                      <div className="text-lg font-normal text-primary">
                                         {preset.total_fats}
                                       </div>
                                       <div className="text-[10px] uppercase font-normal text-muted-foreground mt-0.5 tracking-tighter">g FAT</div>
@@ -298,17 +302,39 @@ export function DefaultPresetsManager({ onBack, targetMealId, onPresetApplied }:
                                     size="lg"
                                     onClick={async () => {
                                       try {
+                                        setIsSaving(true);
                                         const { toast } = await import('sonner');
                                         toast.success('Preferência padrão confirmada!');
-                                        if (onPresetApplied) onPresetApplied();
+                                        if (onPresetApplied) {
+                                          setTimeout(() => {
+                                            onPresetApplied();
+                                            setIsSaving(false);
+                                          }, 800);
+                                        } else {
+                                          setTimeout(() => setIsSaving(false), 2000);
+                                        }
                                       } catch (error) {
                                         console.error(error);
+                                        setIsSaving(false);
                                       }
                                     }}
-                                    className="gap-2 px-8 bg-primary hover:bg-primary/90 h-11"
+                                    className={cn(
+                                      "gap-2 px-8 h-11 transition-all duration-300 font-normal",
+                                      isSaving ? "bg-emerald-500 hover:bg-emerald-600 text-white" : "bg-primary hover:bg-primary/90"
+                                    )}
+                                    disabled={isSaving}
                                   >
-                                    <Save className="w-5 h-5" />
-                                    Salvar
+                                    {isSaving ? (
+                                      <>
+                                        <Check className="w-5 h-5 animate-in zoom-in duration-300" />
+                                        Salvo
+                                      </>
+                                    ) : (
+                                      <>
+                                        <Save className="w-5 h-5" />
+                                        Salvar
+                                      </>
+                                    )}
                                   </Button>
                                 </div>
                               </div>
@@ -343,20 +369,20 @@ export function DefaultPresetsManager({ onBack, targetMealId, onPresetApplied }:
                                 <div className="p-3 bg-muted/5 flex-1">
                                   <div className="grid grid-cols-4 gap-2 text-center">
                                     <div className="flex flex-col">
-                                      <span className="text-[10px] text-muted-foreground uppercase">kcal</span>
-                                      <span className="text-xs font-semibold">{preset.total_calories}</span>
+                                      <span className="text-[10px] text-muted-foreground uppercase font-normal">kcal</span>
+                                      <span className="text-xs font-normal">{preset.total_calories}</span>
                                     </div>
                                     <div className="flex flex-col border-l border-border/10">
-                                      <span className="text-[10px] text-muted-foreground uppercase">ptn</span>
-                                      <span className="text-xs font-semibold">{preset.total_protein}g</span>
+                                      <span className="text-[10px] text-muted-foreground uppercase font-normal">ptn</span>
+                                      <span className="text-xs font-normal">{preset.total_protein}g</span>
                                     </div>
                                     <div className="flex flex-col border-l border-border/10">
-                                      <span className="text-[10px] text-muted-foreground uppercase">cho</span>
-                                      <span className="text-xs font-semibold">{preset.total_carbs}g</span>
+                                      <span className="text-[10px] text-muted-foreground uppercase font-normal">cho</span>
+                                      <span className="text-xs font-normal">{preset.total_carbs}g</span>
                                     </div>
                                     <div className="flex flex-col border-l border-border/10">
-                                      <span className="text-[10px] text-muted-foreground uppercase">fat</span>
-                                      <span className="text-xs font-semibold">{preset.total_fats}g</span>
+                                      <span className="text-[10px] text-muted-foreground uppercase font-normal">fat</span>
+                                      <span className="text-xs font-normal">{preset.total_fats}g</span>
                                     </div>
                                   </div>
                                 </div>
@@ -457,23 +483,23 @@ export function DefaultPresetsManager({ onBack, targetMealId, onPresetApplied }:
                               {/* Quadrado de nutrientes sincronizado */}
                               <div className="mb-4 pb-3 border-b border-border/10">
                                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
-                                  <div className="flex items-center justify-center p-1.5 bg-zinc-500/5 rounded-md border border-zinc-500/10">
-                                    <div className="text-sm font-normal text-zinc-600">
+                                  <div className="flex items-center justify-center p-1.5 bg-muted/20 rounded-md border border-border/40">
+                                    <div className="text-sm font-normal text-foreground">
                                       {preset.total_calories} <span className="text-[10px] font-normal text-muted-foreground ml-0.5">kcal</span>
                                     </div>
                                   </div>
-                                  <div className="flex items-center justify-center p-1.5 bg-emerald-500/5 rounded-md border border-emerald-500/10">
-                                    <div className="text-sm font-normal text-emerald-600">
+                                  <div className="flex items-center justify-center p-1.5 bg-emerald-500/10 rounded-md border border-emerald-500/20">
+                                    <div className="text-sm font-normal text-emerald-600 dark:text-emerald-400">
                                       {preset.total_protein} <span className="text-[10px] font-normal text-muted-foreground ml-0.5">g PTN</span>
                                     </div>
                                   </div>
-                                  <div className="flex items-center justify-center p-1.5 bg-blue-500/5 rounded-md border border-blue-500/10">
-                                    <div className="text-sm font-normal text-blue-600">
+                                  <div className="flex items-center justify-center p-1.5 bg-blue-500/10 rounded-md border border-blue-500/20">
+                                    <div className="text-sm font-normal text-blue-600 dark:text-blue-400">
                                       {preset.total_carbs} <span className="text-[10px] font-normal text-muted-foreground ml-0.5">g CHO</span>
                                     </div>
                                   </div>
-                                  <div className="flex items-center justify-center p-1.5 bg-orange-500/5 rounded-md border border-orange-500/10">
-                                    <div className="text-sm font-normal text-orange-600">
+                                  <div className="flex items-center justify-center p-1.5 bg-orange-500/10 rounded-md border border-orange-500/20">
+                                    <div className="text-sm font-normal text-orange-600 dark:text-orange-400">
                                       {preset.total_fats} <span className="text-[10px] font-normal text-muted-foreground ml-0.5">g FAT</span>
                                     </div>
                                   </div>
@@ -492,24 +518,46 @@ export function DefaultPresetsManager({ onBack, targetMealId, onPresetApplied }:
                             </div>
 
                             {/* Rodapé com botão Salvar */}
-                            <div className="p-3 border-t border-border/20 bg-muted/5">
+                            <div className="p-3 bg-transparent">
                               <div className="flex justify-end">
                                 <Button
                                   variant="default"
                                   size="sm"
-                                  className="gap-1.5 px-4 py-1 text-xs h-8 bg-primary hover:bg-primary/90"
+                                  className={cn(
+                                    "gap-1.5 px-4 py-1 text-xs h-8 transition-all duration-300 font-normal",
+                                    isSaving ? "bg-emerald-500 hover:bg-emerald-600 text-white" : "bg-primary hover:bg-primary/90"
+                                  )}
+                                  disabled={isSaving}
                                   onClick={async () => {
                                     try {
+                                      setIsSaving(true);
                                       const { toast } = await import('sonner');
                                       toast.success('Preferência padrão confirmada!');
-                                      if (onPresetApplied) onPresetApplied();
+                                      if (onPresetApplied) {
+                                        setTimeout(() => {
+                                          onPresetApplied();
+                                          setIsSaving(false);
+                                        }, 800);
+                                      } else {
+                                        setTimeout(() => setIsSaving(false), 2000);
+                                      }
                                     } catch (error) {
                                       console.error(error);
+                                      setIsSaving(false);
                                     }
                                   }}
                                 >
-                                  <Save className="w-3.5 h-3.5" />
-                                  Salvar
+                                  {isSaving ? (
+                                    <>
+                                      <Check className="w-3.5 h-3.5 animate-in zoom-in duration-300" />
+                                      Salvo
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Save className="w-3.5 h-3.5" />
+                                      Salvar
+                                    </>
+                                  )}
                                 </Button>
                               </div>
                             </div>

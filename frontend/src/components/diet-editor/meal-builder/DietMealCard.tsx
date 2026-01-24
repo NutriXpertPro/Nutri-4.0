@@ -15,6 +15,7 @@ import { getFoodIcon } from './DietTopBar'
 import { ExpressSelectorModal } from './ExpressSelectorModal'
 import { SubstitutionModal } from './SubstitutionModal'
 import { SmartQuantitySelector } from './SmartQuantitySelector'
+import { SubstitutionDrawer } from '../SubstitutionDrawer'
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -39,6 +40,7 @@ interface DietMealCardProps {
     onAddFood: (mealId: number, food: Food) => void
     onRemoveFood: (mealId: number, foodId: number) => void
     compact?: boolean
+    dietType?: any
 }
 
 // Helper Component for Subtotal Metrics
@@ -54,9 +56,9 @@ function SubtotalMetric({ label, value, color, bgColor, dotColor }: { label: str
     )
 }
 
-export function DietMealCard({
-    meal, index, onUpdate, onDelete, onCopy, onAddFood, onRemoveFood, compact = false
-}: DietMealCardProps) {
+ export function DietMealCard({
+    meal, index, onUpdate, onDelete, onCopy, onAddFood, onRemoveFood, compact = false, dietType
+ }: DietMealCardProps) {
     const queryClient = useQueryClient()
     const { addFavorite, removeFavorite, favorites } = useDietEditorStore()
     const [searchQuery, setSearchQuery] = useState('')
@@ -64,11 +66,42 @@ export function DietMealCard({
     const [isSearchFocused, setIsSearchFocused] = useState(false)
     const [expanded, setExpanded] = useState(!compact)
     const [lastAddedFoodId, setLastAddedFoodId] = useState<number | null>(null)
-
+    
     const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false)
-    const [isSubstitutionModalOpen, setIsSubstitutionModalOpen] = useState(false)
-    const [selectedFoodForSub, setSelectedFoodForSub] = useState<string>('')
+    const [isSubstitutionDrawerOpen, setIsSubstitutionDrawerOpen] = useState(false)
+    const [selectedFoodForSub, setSelectedFoodForSub] = useState<WorkspaceMealFood | null>(null)
 
+    const handleSubstituteFood = (food: Food, quantity: number) => {
+        if (!selectedFoodForSub) return
+        
+        const newFood: WorkspaceMealFood = {
+            id: Date.now(),
+            name: food.nome,
+            qty: quantity,
+            unit: 'g',
+            measure: 'g',
+            prep: '',
+            ptn: food.proteina_g,
+            cho: food.carboidrato_g,
+            fat: food.lipidios_g,
+            fib: food.fibra_g || 0,
+            preferred: false,
+            unidade_caseira: food.unidade_caseira ?? undefined,
+            peso_unidade_caseira_g: food.peso_unidade_caseira_g ?? undefined,
+            medidas: food.medidas,
+            originalId: food.id,
+            source: food.source
+        }
+
+        // Substituir o alimento selecionado
+        const updatedFoods = meal.foods.map(f =>
+            f.id === selectedFoodForSub.id ? newFood : f
+        )
+
+        onUpdate({ foods: updatedFoods })
+        setIsSubstitutionDrawerOpen(false)
+        setSelectedFoodForSub(null)
+    }
 
     // Função para o botão "Preview"
     const handlePreview = () => {
@@ -369,7 +402,7 @@ export function DietMealCard({
                                     >
                                         Todas
                                     </button>
-                                    {['TACO', 'TBCA', 'USDA', 'IBGE'].map(src => {
+                                    {['TACO', 'TBCA', 'USDA'].map(src => {
                                         const isActive = sourceFilter === src
                                         let activeClass = "bg-primary text-primary-foreground border-primary"
                                         let inactiveClass = "text-muted-foreground hover:text-foreground border-border/30 hover:border-primary/40 bg-muted/20"
@@ -378,7 +411,6 @@ export function DietMealCard({
                                             case 'TACO': activeClass = "bg-emerald-500 text-white border-emerald-600 shadow-sm shadow-emerald-500/20"; inactiveClass = "text-emerald-600/70 border-emerald-500/20 hover:bg-emerald-500/5 hover:text-emerald-600"; break;
                                             case 'TBCA': activeClass = "bg-orange-500 text-white border-orange-600 shadow-sm shadow-orange-500/20"; inactiveClass = "text-orange-600/70 border-orange-500/20 hover:bg-orange-500/5 hover:text-orange-600"; break;
                                             case 'USDA': activeClass = "bg-blue-500 text-white border-blue-600 shadow-sm shadow-blue-500/20"; inactiveClass = "text-blue-600/70 border-blue-500/20 hover:bg-blue-500/5 hover:text-blue-600"; break;
-                                            case 'IBGE': activeClass = "bg-violet-500 text-white border-violet-600 shadow-sm shadow-violet-500/20"; inactiveClass = "text-violet-600/70 border-violet-500/5 hover:text-violet-600"; break;
                                         }
 
                                         return (
@@ -430,10 +462,11 @@ export function DietMealCard({
                                         )
                                     })}
 
-                                    <Button variant="outline" size="sm" className="h-8 rounded-xl px-3 gap-2 text-[10px] uppercase tracking-widest text-muted-foreground border-border/40 hover:border-primary/40 whitespace-nowrap" onClick={onCopy}>
+                                     <Button variant="outline" size="sm" className="h-8 rounded-xl px-3 gap-2 text-[10px] uppercase tracking-widest text-muted-foreground border-border/40 hover:border-primary/40 whitespace-nowrap" onClick={onCopy}>
                                         <Copy className="w-3.5 h-3.5 text-primary" />
-                                        <span className="hidden sm:inline">Copiar Refeição</span>
+                                        <span className="hidden sm:inline">Copiar</span>
                                     </Button>
+                                    
                                     <Button variant="outline" size="sm" className="h-8 rounded-xl px-3 gap-2 text-[10px] uppercase tracking-widest text-muted-foreground border-border/40 hover:border-primary/40 whitespace-nowrap" onClick={handlePreview}>
                                         <Eye className="w-3.5 h-3.5 text-primary" />
                                         <span className="hidden sm:inline">Preview</span>
@@ -564,6 +597,54 @@ export function DietMealCard({
                                             </td>
                                             <td className="p-3">
                                                 <div className="flex items-center gap-3">
+                                                    {/* Botão de Favorito */}
+                                                    <button
+                                                        className="p-1.5 rounded-lg hover:bg-amber-100/10 text-muted-foreground hover:text-amber-500 transition-colors shrink-0"
+                                                        title={favorites.some(fav => (food.originalId && String(fav.id) === String(food.originalId) && fav.source === food.source) || (!food.originalId && fav.nome.trim().toLowerCase() === food.name.trim().toLowerCase())) ? "Remover dos favoritos" : "Adicionar aos favoritos"}
+                                                        onClick={async (e) => {
+                                                            e.stopPropagation();
+                                                            const match = favorites.find(fav =>
+                                                                (food.originalId && String(fav.id) === String(food.originalId) && fav.source === food.source) ||
+                                                                (!food.originalId && fav.nome.trim().toLowerCase() === food.name.trim().toLowerCase())
+                                                            );
+
+                                                            if (match) {
+                                                                await removeFavorite(match.id, match.source, match.nome);
+                                                            } else if (food.originalId && food.source) {
+                                                                const foodToFav: Food = {
+                                                                    id: food.originalId as any,
+                                                                    source: food.source as 'TACO' | 'TBCA' | 'USDA' | 'IBGE',
+                                                                    nome: food.name,
+                                                                    grupo: food.prep || '',
+                                                                    proteina_g: food.ptn,
+                                                                    carboidrato_g: food.cho,
+                                                                    lipidios_g: food.fat,
+                                                                    fibra_g: food.fib,
+                                                                    energia_kcal: (food.ptn *4 + food.cho *4 + food.fat * 9),
+                                                                    unidade_caseira: food.unidade_caseira,
+                                                                    peso_unidade_caseira_g: food.peso_unidade_caseira_g,
+                                                                    medidas: food.medidas,
+                                                                    is_favorite: false
+                                                                };
+                                                                await addFavorite(foodToFav);
+                                                            } else {
+                                                                try {
+                                                                    const searchRes = await foodService.search(food.name, undefined);
+                                                                    const firstMatch = searchRes.results.find((f: any) => f.nome === food.name);
+                                                                    if (firstMatch) {
+                                                                        addFavorite(firstMatch);
+                                                                    } else {
+                                                                        alert("Food ID not found.");
+                                                                    }
+                                                                } catch (err) {
+                                                                    console.error(err);
+                                                                }
+                                                            }
+                                                        }}
+                                                    >
+                                                        <Star className={cn("w-4 h-4 transition-colors", favorites.some(fav => (food.originalId && String(fav.id) === String(food.originalId) && fav.source === food.source) || (!food.originalId && fav.nome.trim().toLowerCase() === food.name.trim().toLowerCase())) ? "fill-amber-400 text-amber-400" : "")} />
+                                                    </button>
+                                                    
                                                     <div className="w-8 h-8 rounded-lg bg-primary/5 flex items-center justify-center text-lg shrink-0 border border-primary/10">
                                                         {getFoodIcon(food.name, food.prep || '')}
                                                     </div>
@@ -612,51 +693,21 @@ export function DietMealCard({
                                             </td>
                                             <td className="p-3 text-center">
                                                 <div className="flex justify-center transition-all gap-1 transform">
-                                                    <button
-                                                        className="p-1.5 rounded-lg hover:bg-amber-100/10 text-muted-foreground hover:text-amber-500 transition-colors"
-                                                        title={favorites.some(fav => (food.originalId && String(fav.id) === String(food.originalId) && fav.source === food.source) || (!food.originalId && fav.nome.trim().toLowerCase() === food.name.trim().toLowerCase())) ? "Remover dos favoritos" : "Adicionar aos favoritos"}
-                                                        onClick={async () => {
-                                                            const match = favorites.find(fav =>
-                                                                (food.originalId && String(fav.id) === String(food.originalId) && fav.source === food.source) ||
-                                                                (!food.originalId && fav.nome.trim().toLowerCase() === food.name.trim().toLowerCase())
-                                                            );
-
-                                                            if (match) {
-                                                                await removeFavorite(match.id, match.source, match.nome);
-                                                            } else if (food.originalId && food.source) {
-                                                                const foodToFav: Food = {
-                                                                    id: food.originalId as any,
-                                                                    source: food.source as 'TACO' | 'TBCA' | 'USDA' | 'IBGE',
-                                                                    nome: food.name,
-                                                                    grupo: food.prep || '',
-                                                                    proteina_g: food.ptn,
-                                                                    carboidrato_g: food.cho,
-                                                                    lipidios_g: food.fat,
-                                                                    fibra_g: food.fib,
-                                                                    energia_kcal: (food.ptn * 4 + food.cho * 4 + food.fat * 9),
-                                                                    unidade_caseira: food.unidade_caseira,
-                                                                    peso_unidade_caseira_g: food.peso_unidade_caseira_g,
-                                                                    medidas: food.medidas,
-                                                                    is_favorite: false
-                                                                };
-                                                                await addFavorite(foodToFav);
-                                                            } else {
-                                                                try {
-                                                                    const searchRes = await foodService.search(food.name, undefined);
-                                                                    const firstMatch = searchRes.results.find((f: any) => f.nome === food.name);
-                                                                    if (firstMatch) {
-                                                                        addFavorite(firstMatch);
-                                                                    } else {
-                                                                        alert("Food ID not found.");
-                                                                    }
-                                                                } catch (err) {
-                                                                    console.error(err);
-                                                                }
-                                                            }
-                                                        }}
-                                                    >
-                                                        <Star className={cn("w-4 h-4 transition-colors", favorites.some(fav => (food.originalId && String(fav.id) === String(food.originalId) && fav.source === food.source) || (!food.originalId && fav.nome.trim().toLowerCase() === food.name.trim().toLowerCase())) ? "fill-amber-400 text-amber-400" : "")} />
-                                                    </button>
+                                                    {/* Botão de Substituição */}
+                                                    {food.originalId && food.source ? (
+                                                        <button
+                                                            className="p-1.5 rounded-lg hover:bg-blue-100/10 text-muted-foreground hover:text-blue-500 transition-colors"
+                                                            title="Substituir alimento"
+                                                            onClick={() => {
+                                                                setSelectedFoodForSub(food)
+                                                                setIsSubstitutionDrawerOpen(true)
+                                                            }}
+                                                        >
+                                                            <RefreshCw className="w-3.5 h-3.5" />
+                                                        </button>
+                                                    ) : null}
+                                                    
+                                                    {/* Botão de Excluir */}
                                                     <button className="p-1.5 rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors" title="Remover" onClick={() => onRemoveFood(meal.id, food.id)}>
                                                         <Trash2 className="w-3.5 h-3.5" />
                                                     </button>
@@ -738,7 +789,34 @@ export function DietMealCard({
                 onApplyPreset={handleApplyPreset}
                 mealId={meal.id.toString()}
             />
-            <SubstitutionModal isOpen={isSubstitutionModalOpen} onClose={() => setIsSubstitutionModalOpen(false)} originalFoodName={selectedFoodForSub} onSubstitute={() => setIsSubstitutionModalOpen(false)} />
+            
+            {/* Drawer de Substituição */}
+            {selectedFoodForSub && (
+                <SubstitutionDrawer
+                    isOpen={isSubstitutionDrawerOpen}
+                    onClose={() => {
+                        setIsSubstitutionDrawerOpen(false)
+                        setSelectedFoodForSub(null)
+                    }}
+                    originalFood={{
+                        id: selectedFoodForSub.originalId as any,
+                        source: selectedFoodForSub.source as any,
+                        nome: selectedFoodForSub.name,
+                        proteina_g: selectedFoodForSub.ptn,
+                        carboidrato_g: selectedFoodForSub.cho,
+                        lipidios_g: selectedFoodForSub.fat,
+                        fibra_g: selectedFoodForSub.fib,
+                        energia_kcal: (selectedFoodForSub.ptn * 4 + selectedFoodForSub.cho * 4 + selectedFoodForSub.fat * 9),
+                        grupo: selectedFoodForSub.prep || '',
+                        unidade_caseira: selectedFoodForSub.unidade_caseira,
+                        peso_unidade_caseira_g: selectedFoodForSub.peso_unidade_caseira_g,
+                        medidas: selectedFoodForSub.medidas || []
+                    }}
+                    originalQuantity={typeof selectedFoodForSub.qty === 'number' ? selectedFoodForSub.qty : 100}
+                    dietType={dietType || 'normocalorica'}
+                    onSubstitute={handleSubstituteFood}
+                />
+            )}
         </>
     )
 }

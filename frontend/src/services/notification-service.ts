@@ -28,15 +28,15 @@ export const playNotificationSound = () => {
   try {
     const audio = new Audio('/notification.mp3');
     audio.volume = 0.5;
-    
+
     const playPromise = audio.play();
-    
+
     if (playPromise !== undefined) {
       playPromise.catch(error => {
         console.error("Auto-play prevented:", error);
       });
     }
-    
+
     if (typeof navigator !== 'undefined' && navigator.vibrate) {
       navigator.vibrate(200);
     }
@@ -55,7 +55,7 @@ export const updateNotificationBadge = (count: number) => {
 export const fetchUnreadCount = async (): Promise<number> => {
   console.log('fetchUnreadCount called');
   try {
-    const response = await api.get('/notifications/');
+    const response = await api.get('notifications/');
     if (Array.isArray(response.data)) {
       const count = response.data.filter((n: any) => !n.is_read).length;
       console.log('fetchUnreadCount result:', count);
@@ -70,12 +70,12 @@ export const fetchUnreadCount = async (): Promise<number> => {
 
 export const notifyNewMessage = (sender: string, message: string) => {
   if (typeof window === 'undefined') return;
-  
+
   if (isNotificationEnabled()) {
     try {
       new Notification(`Nova mensagem de ${sender}`, {
         body: message,
-        icon: '/logo.png' 
+        icon: '/logo.png'
       });
     } catch (e) {
       console.error("Error showing notification:", e);
@@ -85,7 +85,7 @@ export const notifyNewMessage = (sender: string, message: string) => {
 
 export const markAsRead = async (id: number) => {
   try {
-    await api.patch(`/notifications/${id}/`, { is_read: true });
+    await api.patch(`notifications/${id}/`, { is_read: true });
   } catch (error) {
     console.error('Error marking notification as read:', error);
   }
@@ -93,7 +93,7 @@ export const markAsRead = async (id: number) => {
 
 export const initializeNotificationService = async () => {
   if (typeof window === 'undefined') return;
-  
+
   if ('Notification' in window && Notification.permission === 'default') {
     try {
       await Notification.requestPermission();
@@ -101,7 +101,7 @@ export const initializeNotificationService = async () => {
       console.error("Error requesting notification permission:", e);
     }
   }
-  
+
   console.log("Notification service initialized");
 };
 

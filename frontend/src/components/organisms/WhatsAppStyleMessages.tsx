@@ -44,7 +44,7 @@ const triggerNotificationVisualEffect = () => {
 
   // Adiciona classe de animação ao ícone de notificação no header
   const notificationIcon = document.querySelector('button[aria-label="Notifications"]') ||
-                           document.querySelector('button svg.lucide-bell').closest('button');
+    document.querySelector('button svg.lucide-bell')?.closest('button');
 
   if (notificationIcon) {
     // Adiciona classes para efeito de piscar em vermelho
@@ -96,7 +96,7 @@ const WhatsAppConversationsList: React.FC<WhatsAppConversationsListProps> = ({
 
       setIsSearching(true);
       try {
-        const response = await api.get(`/patients/?search=${searchQuery}`);
+        const response = await api.get(`patients/?search=${searchQuery}`);
         setSearchResults(response.data.results || response.data);
       } catch (error) {
         console.error('Error searching patients:', error);
@@ -125,7 +125,7 @@ const WhatsAppConversationsList: React.FC<WhatsAppConversationsListProps> = ({
     } else {
       // Create new conversation using the correct endpoint
       try {
-        const response = await api.post('/messages/conversations/find-or-create-by-patient/', {
+        const response = await api.post('messages/conversations/find-or-create-by-patient/', {
           patient_id: patient.id
         });
 
@@ -165,7 +165,7 @@ const WhatsAppConversationsList: React.FC<WhatsAppConversationsListProps> = ({
     if (!confirm('Tem certeza que deseja limpar todo o histórico desta conversa?')) return;
 
     try {
-      await api.post(`/messages/conversations/${convId}/clear-messages/`);
+      await api.post(`messages/conversations/${convId}/clear-messages/`);
       // Se a conversa limpa for a selecionada, poderíamos recarregar as mensagens
       // Mas o polling ou a ação do usuário no ChatArea deve cuidar disso
       alert('Histórico limpo com sucesso!');
@@ -181,7 +181,7 @@ const WhatsAppConversationsList: React.FC<WhatsAppConversationsListProps> = ({
     if (!confirm('Tem certeza que deseja excluir esta conversa? Todas as mensagens serão perdidas.')) return;
 
     try {
-      await api.delete(`/messages/conversations/${convId}/`);
+      await api.delete(`messages/conversations/${convId}/`);
       setConversations(prev => prev.filter(c => c.id !== convId));
       if (selectedConversationId === convId) {
         // Notificar o pai que nada está selecionado
@@ -199,7 +199,7 @@ const WhatsAppConversationsList: React.FC<WhatsAppConversationsListProps> = ({
     const fetchConversations = async (silent = false) => {
       try {
         if (!silent) setLoading(true);
-        const response = await api.get('/messages/inbox/');
+        const response = await api.get('messages/inbox/');
 
         // Verificar se há novas conversas ou mensagens não vistas
         const previousConversations = conversations;
@@ -240,7 +240,7 @@ const WhatsAppConversationsList: React.FC<WhatsAppConversationsListProps> = ({
         if (axios.isAxiosError(error) && error.response?.status === 404) {
           try {
             // Tentar endpoint alternativo para listagem de conversas
-            const response = await api.get('/messages/conversations/');
+            const response = await api.get('messages/conversations/');
             const conversationsData = response.data.map((conv: any) => ({
               ...conv,
               last_message: conv.messages?.length > 0 ? conv.messages[conv.messages.length - 1].content : '',
@@ -254,7 +254,7 @@ const WhatsAppConversationsList: React.FC<WhatsAppConversationsListProps> = ({
         } else {
           // Para outros tipos de erro, tentar novamente com fallback
           try {
-            const response = await api.get('/messages/conversations/');
+            const response = await api.get('messages/conversations/');
             const conversationsData = response.data.map((conv: any) => ({
               ...conv,
               last_message: conv.messages?.length > 0 ? conv.messages[conv.messages.length - 1].content : '',
@@ -480,45 +480,45 @@ const WhatsAppChatArea: React.FC<WhatsAppChatAreaProps> = ({ conversationId, cur
   const inputRef = React.useRef<HTMLInputElement>(null);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const { theme } = useTheme();
-  
+
   const onEmojiClick = (emojiData: EmojiClickData) => {
     setMessage((prev) => prev + emojiData.emoji);
     // Focar no input novamente para permitir o Enter
     setTimeout(() => {
-        inputRef.current?.focus();
+      inputRef.current?.focus();
     }, 10);
   };
 
   const handleSendLink = (type: string) => {
     if (typeof window === 'undefined') return;
     const baseUrl = window.location.origin;
-    
+
     // Tentar obter o ID do paciente da conversa ou do participante
     const patientParticipant = conversation?.participants.find(p => String(p.id) !== String(currentUserId));
     const patientId = (conversation as any)?.patient_id || patientParticipant?.id;
-    
+
     let linkText = "";
-    switch(type) {
-        case 'schedule':
-            linkText = `Olá! Gostaria de agendar uma consulta? Acesse: ${baseUrl}/patient-dashboard-v2?tab=agenda`;
-            break;
-        case 'diet':
-            linkText = `Seu plano alimentar está disponível! Acesse: ${baseUrl}/patient-dashboard-v2?tab=diet`;
-            break;
-        case 'evaluation':
-            linkText = `Sua avaliação física foi atualizada. Confira: ${baseUrl}/patient-dashboard-v2?tab=evolution`;
-            break;
-        case 'anamnesis':
-            linkText = `Por favor, preencha sua ficha de anamnese para que eu possa conhecer melhor seu perfil: ${baseUrl}/anamnesis/answer?patient=${patientId}&type=standard`;
-            break;
+    switch (type) {
+      case 'schedule':
+        linkText = `Olá! Gostaria de agendar uma consulta? Acesse: ${baseUrl}/patient-dashboard-v2?tab=agenda`;
+        break;
+      case 'diet':
+        linkText = `Seu plano alimentar está disponível! Acesse: ${baseUrl}/patient-dashboard-v2?tab=diet`;
+        break;
+      case 'evaluation':
+        linkText = `Sua avaliação física foi atualizada. Confira: ${baseUrl}/patient-dashboard-v2?tab=evolution`;
+        break;
+      case 'anamnesis':
+        linkText = `Por favor, preencha sua ficha de anamnese para que eu possa conhecer melhor seu perfil: ${baseUrl}/anamnesis/answer?patient=${patientId}&type=standard`;
+        break;
     }
-    if(linkText) setMessage(linkText);
+    if (linkText) setMessage(linkText);
   };
-  
+
   // Garantir que temos o ID do usuário real
   const { user: authUser } = useAuth();
-  const currentUserId = (propCurrentUserId === 'current_user_id' && authUser?.id) 
-    ? String(authUser.id) 
+  const currentUserId = (propCurrentUserId === 'current_user_id' && authUser?.id)
+    ? String(authUser.id)
     : String(propCurrentUserId);
 
   // Carregar mensagens da conversa específica
@@ -531,7 +531,7 @@ const WhatsAppChatArea: React.FC<WhatsAppChatAreaProps> = ({ conversationId, cur
         // Primeiro tentar obter detalhes da conversa
         let conversationDetails = null;
         try {
-          const conversationResponse = await api.get(`/messages/conversations/${conversationId}/`);
+          const conversationResponse = await api.get(`messages/conversations/${conversationId}/`);
           conversationDetails = conversationResponse.data;
         } catch (conversationError) {
           // Se falhar, criar um objeto básico de conversa
@@ -547,7 +547,7 @@ const WhatsAppChatArea: React.FC<WhatsAppChatAreaProps> = ({ conversationId, cur
         }
 
         // Buscar mensagens da conversa
-        const response = await api.get(`/messages/messages/?conversation=${conversationId}`);
+        const response = await api.get(`messages/messages/?conversation=${conversationId}`);
 
         // Verificar se há novas mensagens não vistas
         const previousMessageCount = messages.length;
@@ -571,9 +571,9 @@ const WhatsAppChatArea: React.FC<WhatsAppChatAreaProps> = ({ conversationId, cur
         if (!silent && newMessages.length > previousMessageCount) {
           // Identificar se as novas mensagens são de outro participante (não do usuário atual)
           const newUnreadMessages = newMessages.slice(previousMessageCount).filter(
-            msg => {
-                const senderId = typeof msg.sender === 'object' ? msg.sender.id : msg.sender;
-                return String(senderId) !== String(currentUserId);
+            (msg: any) => {
+              const senderId = typeof msg.sender === 'object' ? msg.sender.id : msg.sender;
+              return String(senderId) !== String(currentUserId);
             }
           );
 
@@ -588,7 +588,7 @@ const WhatsAppChatArea: React.FC<WhatsAppChatAreaProps> = ({ conversationId, cur
         if (axios.isAxiosError(error) && error.response?.status === 404) {
           try {
             // Tentar endpoint alternativo para mensagens filtrando por conversa
-            const messagesResponse = await api.get(`/messages/messages/?conversation=${conversationId}`);
+            const messagesResponse = await api.get(`messages/messages/?conversation=${conversationId}`);
             setMessages(messagesResponse.data);
 
             // Criar um objeto de conversa básico
@@ -629,7 +629,7 @@ const WhatsAppChatArea: React.FC<WhatsAppChatAreaProps> = ({ conversationId, cur
   useEffect(() => {
     // Se for a primeira carga (loading acabou de virar false), rola pro fim
     if (!loading && messages.length > 0) {
-       scrollToBottom('auto');
+      scrollToBottom('auto');
     }
   }, [loading]); // Executa quando o loading termina
 
@@ -646,7 +646,7 @@ const WhatsAppChatArea: React.FC<WhatsAppChatAreaProps> = ({ conversationId, cur
 
   useEffect(() => {
     if (shouldAutoScrollRef.current) {
-        scrollToBottom();
+      scrollToBottom();
     }
   }, [messages]);
 
@@ -654,7 +654,7 @@ const WhatsAppChatArea: React.FC<WhatsAppChatAreaProps> = ({ conversationId, cur
     if (!confirm('Tem certeza que deseja limpar todo o histórico desta conversa?')) return;
 
     try {
-      await api.post(`/messages/conversations/${convId}/clear-messages/`);
+      await api.post(`messages/conversations/${convId}/clear-messages/`);
       setMessages([]);
       alert('Histórico limpo com sucesso!');
     } catch (error) {
@@ -667,7 +667,7 @@ const WhatsAppChatArea: React.FC<WhatsAppChatAreaProps> = ({ conversationId, cur
     if (!confirm('Tem certeza que deseja excluir esta conversa? Todas as mensagens serão perdidas.')) return;
 
     try {
-      await api.delete(`/messages/conversations/${convId}/`);
+      await api.delete(`messages/conversations/${convId}/`);
       alert('Conversa excluída com sucesso!');
       window.location.reload();
     } catch (error) {
@@ -681,18 +681,18 @@ const WhatsAppChatArea: React.FC<WhatsAppChatAreaProps> = ({ conversationId, cur
 
     try {
       // Enviar mensagem através da API
-      const response = await api.post(`/messages/messages/`, {
+      const response = await api.post(`messages/messages/`, {
         content: message,
         conversation: conversationId
       });
 
       // Adicionar nova mensagem à lista, evitando duplicatas
       setMessages(prev => {
-          if (prev.some(m => m.id === response.data.id)) return prev;
-          return [...prev, response.data];
+        if (prev.some(m => m.id === response.data.id)) return prev;
+        return [...prev, response.data];
       });
       setMessage('');
-      
+
       // Forçar scroll para o fim ao enviar mensagem
       shouldAutoScrollRef.current = true;
       setTimeout(() => scrollToBottom(), 100);
@@ -805,56 +805,56 @@ const WhatsAppChatArea: React.FC<WhatsAppChatAreaProps> = ({ conversationId, cur
         {messages.map((msg) => {
           // Extrair ID do remetente de forma robusta
           const senderId = typeof msg.sender === 'object' ? msg.sender.id : msg.sender;
-          
+
           // Verificar se a mensagem é do usuário atual (Nutricionista)
           const isOwn = String(senderId) === String(currentUserId);
           const onlyEmoji = isOnlyEmoji(msg.content);
-          
+
           // Helper function to render text with clickable links
           const renderMessageContent = (content: string) => {
-              if (onlyEmoji) return content;
-              const urlRegex = /(https?:\/\/[^\s]+)/g
-              const parts = content.split(urlRegex)
+            if (onlyEmoji) return content;
+            const urlRegex = /(https?:\/\/[^\s]+)/g
+            const parts = content.split(urlRegex)
 
-              return parts.map((part, i) => {
-                  if (part.match(urlRegex)) {
-                      let href = part;
-                      // Fix legacy placeholder links
-                      if (part.includes('nutri.app') && typeof window !== 'undefined') {
-                          const patientParticipant = conversation?.participants.find(p => String(p.id) !== String(currentUserId));
-                          const patientId = (conversation as any)?.patient_id || patientParticipant?.id;
+            return parts.map((part, i) => {
+              if (part.match(urlRegex)) {
+                let href = part;
+                // Fix legacy placeholder links
+                if (part.includes('nutri.app') && typeof window !== 'undefined') {
+                  const patientParticipant = conversation?.participants.find(p => String(p.id) !== String(currentUserId));
+                  const patientId = (conversation as any)?.patient_id || patientParticipant?.id;
 
-                          // Redirecionamentos inteligentes para links legados
-                          if (part.includes('/anamnese') || part.includes('/anamnesis')) {
-                              href = `${window.location.origin}/anamnesis/answer?patient=${patientId}&type=standard`;
-                          } else if (part.includes('/agendamento')) {
-                              href = `${window.location.origin}/patient-dashboard-v2?tab=agenda`;
-                          } else if (part.includes('/dieta')) {
-                              href = `${window.location.origin}/patient-dashboard-v2?tab=diet`;
-                          } else if (part.includes('/evolucao')) {
-                              href = `${window.location.origin}/patient-dashboard-v2?tab=evolution`;
-                          } else {
-                              href = part.replace('https://nutri.app', window.location.origin);
-                          }
-                      }
-                      
-                      return (
-                          <a
-                              key={i}
-                              href={href}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className={`underline break-all font-semibold ${isOwn ? 'text-white' : 'text-emerald-700 hover:text-emerald-800'}`}
-                              onClick={(e) => e.stopPropagation()}
-                          >
-                              {part}
-                          </a>
-                      )
+                  // Redirecionamentos inteligentes para links legados
+                  if (part.includes('/anamnese') || part.includes('/anamnesis')) {
+                    href = `${window.location.origin}/anamnesis/answer?patient=${patientId}&type=standard`;
+                  } else if (part.includes('/agendamento')) {
+                    href = `${window.location.origin}/patient-dashboard-v2?tab=agenda`;
+                  } else if (part.includes('/dieta')) {
+                    href = `${window.location.origin}/patient-dashboard-v2?tab=diet`;
+                  } else if (part.includes('/evolucao')) {
+                    href = `${window.location.origin}/patient-dashboard-v2?tab=evolution`;
+                  } else {
+                    href = part.replace('https://nutri.app', window.location.origin);
                   }
-                  return part
-              })
+                }
+
+                return (
+                  <a
+                    key={i}
+                    href={href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={`underline break-all font-semibold ${isOwn ? 'text-white' : 'text-emerald-700 hover:text-emerald-800'}`}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {part}
+                  </a>
+                )
+              }
+              return part
+            })
           }
-          
+
           return (
             <div
               key={msg.id}
@@ -866,24 +866,24 @@ const WhatsAppChatArea: React.FC<WhatsAppChatAreaProps> = ({ conversationId, cur
               <div
                 className={cn(
                   'max-w-[85%] md:max-w-[70%] lg:max-w-[60%] px-4 py-2 shadow-sm relative',
-                  onlyEmoji 
-                    ? 'bg-transparent shadow-none border-none' 
+                  onlyEmoji
+                    ? 'bg-transparent shadow-none border-none'
                     : isOwn
-                      ? 'bg-primary text-primary-foreground rounded-2xl rounded-tr-none' 
+                      ? 'bg-primary text-primary-foreground rounded-2xl rounded-tr-none'
                       : 'bg-card text-card-foreground border border-border/50 rounded-2xl rounded-tl-none'
                 )}
               >
                 <div className={cn(
-                    "whitespace-pre-wrap leading-relaxed",
-                    onlyEmoji ? "text-5xl" : "text-sm"
+                  "whitespace-pre-wrap leading-relaxed",
+                  onlyEmoji ? "text-5xl" : "text-sm"
                 )}>
-                    {renderMessageContent(msg.content)}
+                  {renderMessageContent(msg.content)}
                 </div>
                 <div
                   className={cn(
                     'text-[10px] mt-1 flex items-center justify-end gap-1 opacity-70',
-                    onlyEmoji 
-                      ? 'text-muted-foreground' 
+                    onlyEmoji
+                      ? 'text-muted-foreground'
                       : isOwn
                         ? 'text-primary-foreground'
                         : 'text-muted-foreground'
@@ -906,58 +906,58 @@ const WhatsAppChatArea: React.FC<WhatsAppChatAreaProps> = ({ conversationId, cur
       {/* Message Input Area */}
       <div className="bg-muted p-3 flex items-center space-x-2 flex-shrink-0 relative z-20">
         <Popover open={showEmojiPicker} onOpenChange={setShowEmojiPicker}>
-            <PopoverTrigger asChild>
-                <Button size="sm" variant="ghost" className="text-muted-foreground hover:bg-accent">
-                    <Smile className="w-5 h-5" />
-                </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-full p-0 border-none bg-transparent shadow-none" align="start" side="top">
-                <EmojiPicker 
-                    onEmojiClick={onEmojiClick}
-                    theme={theme === 'dark' ? Theme.DARK : Theme.LIGHT}
-                    searchDisabled={false}
-                    skinTonesDisabled
-                    width={300}
-                    height={400}
-                />
-            </PopoverContent>
+          <PopoverTrigger asChild>
+            <Button size="sm" variant="ghost" className="text-muted-foreground hover:bg-accent">
+              <Smile className="w-5 h-5" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-full p-0 border-none bg-transparent shadow-none" align="start" side="top">
+            <EmojiPicker
+              onEmojiClick={onEmojiClick}
+              theme={theme === 'dark' ? Theme.DARK : Theme.LIGHT}
+              searchDisabled={false}
+              skinTonesDisabled
+              width={300}
+              height={400}
+            />
+          </PopoverContent>
         </Popover>
 
         <Popover>
-            <PopoverTrigger asChild>
-                <Button size="sm" variant="ghost" className="text-muted-foreground hover:bg-accent">
-                    <Paperclip className="w-5 h-5" />
-                </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-56 p-2" align="start" side="top">
-                <div className="grid gap-1">
-                    <Button variant="ghost" className="justify-start gap-2 h-9" onClick={() => alert("Upload de imagem em breve!")}>
-                        <ImageIcon className="w-4 h-4 text-purple-500" />
-                        <span>Foto/Vídeo</span>
-                    </Button>
-                    <Button variant="ghost" className="justify-start gap-2 h-9" onClick={() => alert("Upload de documento em breve!")}>
-                        <FileText className="w-4 h-4 text-blue-500" />
-                        <span>Documento</span>
-                    </Button>
-                    <DropdownMenuSeparator />
-                    <Button variant="ghost" className="justify-start gap-2 h-9" onClick={() => handleSendLink('schedule')}>
-                        <Calendar className="w-4 h-4 text-amber-500" />
-                        <span>Agendamento</span>
-                    </Button>
-                    <Button variant="ghost" className="justify-start gap-2 h-9" onClick={() => handleSendLink('diet')}>
-                        <Utensils className="w-4 h-4 text-green-500" />
-                        <span>Plano Alimentar</span>
-                    </Button>
-                    <Button variant="ghost" className="justify-start gap-2 h-9" onClick={() => handleSendLink('evaluation')}>
-                        <Activity className="w-4 h-4 text-rose-500" />
-                        <span>Avaliação</span>
-                    </Button>
-                    <Button variant="ghost" className="justify-start gap-2 h-9" onClick={() => handleSendLink('anamnesis')}>
-                        <ClipboardList className="w-4 h-4 text-cyan-500" />
-                        <span>Anamnese</span>
-                    </Button>
-                </div>
-            </PopoverContent>
+          <PopoverTrigger asChild>
+            <Button size="sm" variant="ghost" className="text-muted-foreground hover:bg-accent">
+              <Paperclip className="w-5 h-5" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-56 p-2" align="start" side="top">
+            <div className="grid gap-1">
+              <Button variant="ghost" className="justify-start gap-2 h-9" onClick={() => alert("Upload de imagem em breve!")}>
+                <ImageIcon className="w-4 h-4 text-purple-500" />
+                <span>Foto/Vídeo</span>
+              </Button>
+              <Button variant="ghost" className="justify-start gap-2 h-9" onClick={() => alert("Upload de documento em breve!")}>
+                <FileText className="w-4 h-4 text-blue-500" />
+                <span>Documento</span>
+              </Button>
+              <DropdownMenuSeparator />
+              <Button variant="ghost" className="justify-start gap-2 h-9" onClick={() => handleSendLink('schedule')}>
+                <Calendar className="w-4 h-4 text-amber-500" />
+                <span>Agendamento</span>
+              </Button>
+              <Button variant="ghost" className="justify-start gap-2 h-9" onClick={() => handleSendLink('diet')}>
+                <Utensils className="w-4 h-4 text-green-500" />
+                <span>Plano Alimentar</span>
+              </Button>
+              <Button variant="ghost" className="justify-start gap-2 h-9" onClick={() => handleSendLink('evaluation')}>
+                <Activity className="w-4 h-4 text-rose-500" />
+                <span>Avaliação</span>
+              </Button>
+              <Button variant="ghost" className="justify-start gap-2 h-9" onClick={() => handleSendLink('anamnesis')}>
+                <ClipboardList className="w-4 h-4 text-cyan-500" />
+                <span>Anamnese</span>
+              </Button>
+            </div>
+          </PopoverContent>
         </Popover>
 
         <div className="flex-1 bg-background rounded-lg px-3 py-2 border">

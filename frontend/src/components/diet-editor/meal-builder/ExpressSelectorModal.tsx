@@ -101,7 +101,7 @@ export function ExpressSelectorModal({ isOpen, onClose, onApplyTemplate, mealTit
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="max-w-[95vw] w-full sm:max-w-none max-h-[95vh] p-0 overflow-hidden border-none shadow-2xl rounded-2xl bg-background/80 backdrop-blur-2xl flex flex-col">
+            <DialogContent className="max-w-[95vw] w-full sm:max-w-none max-h-[95vh] p-0 overflow-hidden border-none shadow-2xl rounded-2xl bg-background flex flex-col">
                 <DialogHeader className="sr-only">
                     <DialogTitle>Seletor de Presets</DialogTitle>
                     <DialogDescription>Escolha um modelo de refeição para aplicar à sua dieta.</DialogDescription>
@@ -198,8 +198,14 @@ export function ExpressSelectorModal({ isOpen, onClose, onApplyTemplate, mealTit
                     )}
                 </div>
 
-                <div className="p-4 bg-muted/30 border-t border-border/50 flex justify-end gap-3">
-                    <Button variant="outline" className="rounded-lg text-sm" onClick={onClose}>Fechar</Button>
+                <div className="p-6 flex justify-end gap-3 mt-auto bg-transparent">
+                    <Button
+                        variant="default"
+                        className="rounded-lg text-sm font-normal h-11 px-10 shadow-lg shadow-primary/20 hover:-translate-y-0.5 transition-all"
+                        onClick={onClose}
+                    >
+                        Fechar
+                    </Button>
                 </div>
             </DialogContent>
         </Dialog>

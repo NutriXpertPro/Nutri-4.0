@@ -71,17 +71,17 @@ export const foodService = {
         if (options?.page) params.append('page', options.page.toString())
         if (options?.page_size) params.append('page_size', options.page_size.toString())
 
-        const { data } = await api.get<FoodSearchResponse>(`/diets/foods/?${params}`)
+        const { data } = await api.get<FoodSearchResponse>(`diets/foods/?${params}`)
         return data
     },
 
     toggleFavorite: async (source: string, id: string | number, nome: string) => {
-        const { data } = await api.post('/diets/toggle-favorite/', { source, id, nome })
+        const { data } = await api.post('diets/toggle-favorite/', { source, id, nome })
         return data
     },
 
     getFavorites: async () => {
-        const { data } = await api.get<FoodSearchResponse>('/diets/foods/favorites/')
+        const { data } = await api.get<FoodSearchResponse>('diets/foods/favorites/')
         return data
     },
 
@@ -89,7 +89,7 @@ export const foodService = {
      * Get all available food groups/categories
      */
     getGrupos: async () => {
-        const { data } = await api.get<FoodGruposResponse>('/foods/grupos/')
+        const { data } = await api.get<FoodGruposResponse>('diets/foods/grupos/')
         return data.grupos
     }
 }
@@ -100,7 +100,7 @@ export const dietService = {
      * List diets for a patient
      */
     listByPatient: async (patientId: number) => {
-        const { data } = await api.get<Diet[]>(`/diets/?patient=${patientId}`)
+        const { data } = await api.get<Diet[]>(`diets/?patient=${patientId}`)
         return data
     },
 
@@ -108,7 +108,7 @@ export const dietService = {
      * Get diet by ID
      */
     getById: async (id: number) => {
-        const { data } = await api.get<Diet>(`/diets/${id}/`)
+        const { data } = await api.get<Diet>(`diets/${id}/`)
         return data
     },
 
@@ -116,7 +116,7 @@ export const dietService = {
      * Create a new diet
      */
     create: async (dietData: CreateDietDTO) => {
-        const { data } = await api.post<Diet>('/diets/', dietData)
+        const { data } = await api.post<Diet>('diets/', dietData)
         return data
     },
 
@@ -124,7 +124,7 @@ export const dietService = {
      * Update a diet
      */
     update: async (id: number, dietData: Partial<CreateDietDTO>) => {
-        const { data } = await api.patch<Diet>(`/diets/${id}/`, dietData)
+        const { data } = await api.patch<Diet>(`diets/${id}/`, dietData)
         return data
     },
 
@@ -132,6 +132,6 @@ export const dietService = {
      * Delete a diet
      */
     delete: async (id: number) => {
-        await api.delete(`/diets/${id}/`)
+        await api.delete(`diets/${id}/`)
     }
 }

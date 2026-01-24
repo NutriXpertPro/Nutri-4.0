@@ -34,7 +34,7 @@ const defaultPatient = {
     phone: "(11) 99999-8888",
     age: 32,
     occupation: "Advogada",
-    status: "active" as const,
+    status: true,
     adesao: 87,
 }
 
@@ -49,7 +49,7 @@ export function PatientHeader({ patient = defaultPatient, fullData, className }:
 
         try {
             // Usar o endpoint otimizado que encontra ou cria a conversa automaticamente
-            const response = await api.post('/messages/conversations/find-or-create-by-patient/', {
+            const response = await api.post('messages/conversations/find-or-create-by-patient/', {
                 patient_id: fullData.id
             });
 
@@ -74,7 +74,7 @@ export function PatientHeader({ patient = defaultPatient, fullData, className }:
 
         setIsSendingLink(true);
         try {
-            const response = await api.post(`/patients/${fullData.id}/resend-password-link/`);
+            const response = await api.post(`patients/${fullData.id}/resend-password-link/`);
             alert(response.data.message || 'Link de redefinição de senha enviado com sucesso!');
         } catch (error: any) {
             console.error('Erro ao reenviar link de redefinição de senha:', error);

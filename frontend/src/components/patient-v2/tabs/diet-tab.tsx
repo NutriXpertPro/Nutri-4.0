@@ -123,8 +123,9 @@ export function DietTab() {
                                                             <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1 font-bold">Opções de Troca:</p>
                                                             <div className="flex flex-wrap gap-2">
                                                                 {item.substitutions.map((s: any, idx: number) => (
-                                                                    <span key={idx} className="text-xs bg-muted px-2 py-1 rounded-md border border-border text-foreground">
+                                                                    <span key={idx} className="text-xs bg-muted px-2 py-1 rounded-md border border-border text-foreground flex items-center gap-1">
                                                                         {s.name} <span className="text-primary font-bold">({s.quantity}{s.unit})</span>
+                                                                        {s.kcal && <span className="text-[10px] text-muted-foreground ml-1">{s.kcal} kcal</span>}
                                                                     </span>
                                                                 ))}
                                                             </div>

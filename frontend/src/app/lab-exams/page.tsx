@@ -7,13 +7,13 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
 } from '@/components/ui/table';
 import {
   Upload,
@@ -60,8 +60,8 @@ const LabExamsPage: React.FC = () => {
     const fetchExams = async () => {
       try {
         setLoading(true);
-        const response = await api.get('/lab_exams/');
-        
+        const response = await api.get('lab_exams/');
+
         // Formatar os dados para o modelo local
         const formattedExams = response.data.map((exam: any) => ({
           id: exam.id.toString(),
@@ -74,7 +74,7 @@ const LabExamsPage: React.FC = () => {
           notes: exam.notes,
           status: exam.status as LabExam['status'] || 'pending',
         }));
-        
+
         setExams(formattedExams);
       } catch (error) {
         console.error('Erro ao carregar exames laboratoriais:', error);
@@ -94,7 +94,7 @@ const LabExamsPage: React.FC = () => {
   // Fazer upload de novo exame
   const handleUploadExam = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     try {
       const formData = new FormData();
       formData.append('patient', newExam.patient_id);
@@ -102,12 +102,12 @@ const LabExamsPage: React.FC = () => {
       formData.append('exam_type', newExam.exam_type);
       formData.append('date', newExam.date);
       formData.append('notes', newExam.notes);
-      
+
       if (file) {
         formData.append('file', file);
       }
 
-      const response = await api.post('/lab_exams/', formData, {
+      const response = await api.post('lab_exams/', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
@@ -127,7 +127,7 @@ const LabExamsPage: React.FC = () => {
       };
 
       setExams([formattedExam, ...exams]);
-      
+
       // Resetar o formulário
       setNewExam({
         patient_id: '',
@@ -145,7 +145,7 @@ const LabExamsPage: React.FC = () => {
   // Excluir um exame
   const handleDeleteExam = async (id: string) => {
     try {
-      await api.delete(`/lab_exams/${id}/`);
+      await api.delete(`lab_exams/${id}/`);
       setExams(exams.filter(exam => exam.id !== id));
     } catch (error) {
       console.error('Erro ao excluir exame:', error);
@@ -155,8 +155,8 @@ const LabExamsPage: React.FC = () => {
   // Filtrar exames com base na busca
   const filteredExams = exams.filter(exam => {
     const matchesSearch = exam.exam_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         exam.patient_name.toLowerCase().includes(searchTerm.toLowerCase());
-    
+      exam.patient_name.toLowerCase().includes(searchTerm.toLowerCase());
+
     return matchesSearch;
   });
 
@@ -337,7 +337,7 @@ const LabExamsPage: React.FC = () => {
                   <Input
                     id="patient-id"
                     value={newExam.patient_id}
-                    onChange={(e) => setNewExam({...newExam, patient_id: e.target.value})}
+                    onChange={(e) => setNewExam({ ...newExam, patient_id: e.target.value })}
                     placeholder="Digite o ID do paciente"
                     className="mt-1"
                     required
@@ -351,7 +351,7 @@ const LabExamsPage: React.FC = () => {
                   <Input
                     id="exam-type"
                     value={newExam.exam_type}
-                    onChange={(e) => setNewExam({...newExam, exam_type: e.target.value})}
+                    onChange={(e) => setNewExam({ ...newExam, exam_type: e.target.value })}
                     placeholder="Ex: Sangue, Urina, Fezes"
                     className="mt-1"
                     required
@@ -373,7 +373,7 @@ const LabExamsPage: React.FC = () => {
                   </p>
                 </div>
               </div>
-              
+
               <div className="space-y-4">
                 <div>
                   <label htmlFor="exam-name" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
@@ -382,7 +382,7 @@ const LabExamsPage: React.FC = () => {
                   <Input
                     id="exam-name"
                     value={newExam.exam_name}
-                    onChange={(e) => setNewExam({...newExam, exam_name: e.target.value})}
+                    onChange={(e) => setNewExam({ ...newExam, exam_name: e.target.value })}
                     placeholder="Ex: Hemograma completo, Glicemia, Colesterol"
                     className="mt-1"
                     required
@@ -397,7 +397,7 @@ const LabExamsPage: React.FC = () => {
                     id="exam-date"
                     type="date"
                     value={newExam.date}
-                    onChange={(e) => setNewExam({...newExam, date: e.target.value})}
+                    onChange={(e) => setNewExam({ ...newExam, date: e.target.value })}
                     className="mt-1"
                     required
                   />
@@ -410,13 +410,13 @@ const LabExamsPage: React.FC = () => {
                   <Input
                     id="exam-notes"
                     value={newExam.notes}
-                    onChange={(e) => setNewExam({...newExam, notes: e.target.value})}
+                    onChange={(e) => setNewExam({ ...newExam, notes: e.target.value })}
                     placeholder="Observações sobre o exame"
                     className="mt-1"
                   />
                 </div>
               </div>
-              
+
               <div className="md:col-span-2 flex justify-end">
                 <Button type="submit">
                   <Upload className="h-4 w-4 mr-2 text-green-500" />

@@ -113,12 +113,12 @@ export const settingsService = {
     });
 
     // Adicionar arquivo de logo se existir
-    if (data.logo instanceof File) {
+    if (data.logo && typeof data.logo === 'object' && data.logo instanceof File) {
       formData.append('logo', data.logo);
     }
 
     // Adicionar arquivo de assinatura se existir
-    if (data.signature_image instanceof File) {
+    if (data.signature_image && typeof data.signature_image === 'object' && data.signature_image instanceof File) {
       formData.append('signature_image', data.signature_image);
     }
 

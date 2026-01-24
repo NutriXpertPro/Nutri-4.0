@@ -94,17 +94,27 @@ export function PresetManager({ onApplyPreset, onBack, targetMealId, onPresetApp
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="border-b border-border/50 bg-muted/20">
+      {/* Tabs - Redesenhados como Botões intuitivos */}
+      <div className="p-4 bg-background">
         <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'presets' | 'defaults')} className="w-full">
-          <TabsList className="w-full grid grid-cols-2 h-12">
-            <TabsTrigger value="presets" className="flex items-center gap-2 font-normal">
-              <Layers className="w-4 h-4" />
-              Meus Presets
+          <TabsList className="w-full grid grid-cols-2 h-14 bg-muted/30 p-1.5 rounded-2xl border border-border/10">
+            <TabsTrigger
+              value="presets"
+              className="flex items-center gap-3 font-normal rounded-xl transition-all data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-lg active:scale-95 group"
+            >
+              <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center group-data-[state=active]:bg-primary group-data-[state=active]:text-primary-foreground transition-colors transition-all duration-300">
+                <Layers className="w-4 h-4" />
+              </div>
+              <span className="text-sm">Meus Presets</span>
             </TabsTrigger>
-            <TabsTrigger value="defaults" className="flex items-center gap-2 font-normal">
-              <Star className="w-4 h-4" />
-              Presets Padrão
+            <TabsTrigger
+              value="defaults"
+              className="flex items-center gap-3 font-normal rounded-xl transition-all data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-lg active:scale-95 group"
+            >
+              <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center group-data-[state=active]:bg-primary group-data-[state=active]:text-primary-foreground transition-colors transition-all duration-300">
+                <Star className="w-4 h-4 fill-current" />
+              </div>
+              <span className="text-sm">Presets Padrão</span>
             </TabsTrigger>
           </TabsList>
         </Tabs>
@@ -192,6 +202,7 @@ function MealPresetsManagerContent({
 
   // Pegar presets e funções do store
   const mealPresets = useDietEditorStore(state => state.mealPresets);
+  const defaultPresets = useDietEditorStore(state => state.defaultPresets);
   const favoritePresetIds = useDietEditorStore(state => state.favoritePresetIds);
   const createMealPreset = useDietEditorStore(state => state.createMealPreset);
   const updateMealPreset = useDietEditorStore(state => state.updateMealPreset);
@@ -843,23 +854,23 @@ function MealPresetsManagerContent({
                       {/* Informações nutricionais principais */}
                       <div className="mb-4 pb-3 border-b border-border/10">
                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
-                          <div className="flex items-center justify-center p-1.5 bg-zinc-500/5 rounded-md border border-zinc-500/10">
-                            <div className="text-sm font-normal text-zinc-600">
+                          <div className="flex items-center justify-center p-1.5 bg-muted/20 rounded-md border border-border/40">
+                            <div className="text-sm font-normal text-foreground">
                               {preset.total_calories} <span className="text-[10px] font-normal text-muted-foreground ml-0.5">kcal</span>
                             </div>
                           </div>
-                          <div className="flex items-center justify-center p-1.5 bg-emerald-500/5 rounded-md border border-emerald-500/10">
-                            <div className="text-sm font-normal text-emerald-600">
+                          <div className="flex items-center justify-center p-1.5 bg-primary/10 rounded-md border border-primary/20">
+                            <div className="text-sm font-normal text-primary">
                               {preset.total_protein} <span className="text-[10px] font-normal text-muted-foreground ml-0.5">g PTN</span>
                             </div>
                           </div>
-                          <div className="flex items-center justify-center p-1.5 bg-blue-500/5 rounded-md border border-blue-500/10">
-                            <div className="text-sm font-normal text-blue-600">
+                          <div className="flex items-center justify-center p-1.5 bg-primary/10 rounded-md border border-primary/20">
+                            <div className="text-sm font-normal text-primary">
                               {preset.total_carbs} <span className="text-[10px] font-normal text-muted-foreground ml-0.5">g CHO</span>
                             </div>
                           </div>
-                          <div className="flex items-center justify-center p-1.5 bg-orange-500/5 rounded-md border border-orange-500/10">
-                            <div className="text-sm font-normal text-orange-600">
+                          <div className="flex items-center justify-center p-1.5 bg-primary/10 rounded-md border border-primary/20">
+                            <div className="text-sm font-normal text-primary">
                               {preset.total_fats} <span className="text-[10px] font-normal text-muted-foreground ml-0.5">g FAT</span>
                             </div>
                           </div>
@@ -899,16 +910,27 @@ function MealPresetsManagerContent({
                             onClick={async (e) => {
                               e.stopPropagation();
                               try {
-                                await useDietEditorStore.getState().setPresetAsDefault(preset.id, preset.meal_type, preset.diet_type);
-                                await useDietEditorStore.getState().loadDefaultPresets();
-                                alert(`Preset "${preset.name}" definido como padrão!`);
+                                const store = useDietEditorStore.getState();
+                                await store.setPresetAsDefault(preset.id, preset.meal_type, preset.diet_type);
+                                await store.loadDefaultPresets();
+                                toast.success(`Preset "${preset.name}" definido como padrão!`);
                               } catch (error) {
                                 console.error('Erro ao definir padrão:', error);
                               }
                             }}
-                            className="gap-1.5 px-2.5 py-1 text-xs h-8"
+                            className={cn(
+                              "gap-1.5 px-2.5 py-1 text-xs h-8 transition-all",
+                              defaultPresets.some(def => def.preset === preset.id && def.meal_type === preset.meal_type && def.diet_type === preset.diet_type)
+                                ? "border-yellow-500/50 bg-yellow-500/5 text-yellow-600 hover:bg-yellow-500/10"
+                                : ""
+                            )}
                           >
-                            <Star className="w-3.5 h-3.5" />
+                            <Star className={cn(
+                              "w-3.5 h-3.5 transition-all",
+                              defaultPresets.some(def => def.preset === preset.id && def.meal_type === preset.meal_type && def.diet_type === preset.diet_type)
+                                ? "fill-yellow-500 text-yellow-500 scale-110"
+                                : ""
+                            )} />
                             Padrão
                           </Button>
                         </div>

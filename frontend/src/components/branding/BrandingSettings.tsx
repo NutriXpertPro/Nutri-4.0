@@ -39,7 +39,7 @@ const BrandingSettingsComponent = () => {
     const fetchBranding = async () => {
       try {
         setLoading(true);
-        const response = await api.get('/branding/branding/me');
+        const response = await api.get('branding/branding/me');
 
         if (isMounted) { // Verificar se o componente ainda está montado
           setBranding(response.data);
@@ -56,7 +56,7 @@ const BrandingSettingsComponent = () => {
           console.error('Erro ao carregar configurações de branding:', error);
           // Criar configurações padrão se não existirem
           try {
-            const response = await api.patch('/branding/branding/me', {
+            const response = await api.patch('branding/branding/me', {
               primary_color: '#22c55e',
               secondary_color: '#059669'
             });
@@ -129,7 +129,7 @@ const BrandingSettingsComponent = () => {
         formData.append('signature_image', signatureInputRef.current.files[0]);
       }
 
-      const response = await api.patch('/branding/branding/me', formData, {
+      const response = await api.patch('branding/branding/me', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },

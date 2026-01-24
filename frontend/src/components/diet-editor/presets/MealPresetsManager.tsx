@@ -736,7 +736,7 @@ export function MealPresetsManager({ onApplyPreset, onBack, showDefaultsTab = tr
                             </div>
                             <div className="flex-1 min-w-0">
                               <h4 className="font-normal text-sm text-foreground truncate">{preset.name}</h4>
-                              <div className="flex items-center gap-2 mt-1.5">                                <span className="inline-flex items-center gap-1 text-xs font-medium px-2.5 py-0.5 rounded-full bg-primary/10 text-primary">
+                              <div className="flex items-center gap-2 mt-1.5">                                <span className="inline-flex items-center gap-1 text-xs font-normal px-2.5 py-0.5 rounded-full bg-primary/10 text-primary">
                                 {getMealTypeLabel(preset.meal_type)}
                               </span>
                                 <span className="text-xs text-muted-foreground">•</span>
@@ -792,41 +792,41 @@ export function MealPresetsManager({ onApplyPreset, onBack, showDefaultsTab = tr
 
                           <div className="flex flex-wrap gap-3 mt-4 pt-4 border-t border-border/20">
                             <div className="flex items-center gap-2">
-                              <div className="p-2 bg-blue-500/10 rounded-lg">
-                                <Flame className="w-4 h-4 text-blue-500" />
+                              <div className="p-2 bg-primary/10 rounded-lg">
+                                <Flame className="w-4 h-4 text-primary" />
                               </div>
                               <div>
-                                <div className="text-sm font-medium text-foreground">{preset.total_calories}</div>
+                                <div className="text-sm font-normal text-foreground">{preset.total_calories}</div>
                                 <div className="text-xs text-muted-foreground">kcal</div>
                               </div>
                             </div>
 
                             <div className="flex items-center gap-2">
-                              <div className="p-2 bg-emerald-500/10 rounded-lg">
-                                <Apple className="w-4 h-4 text-emerald-500" />
+                              <div className="p-2 bg-primary/10 rounded-lg">
+                                <Apple className="w-4 h-4 text-primary" />
                               </div>
                               <div>
-                                <div className="text-sm font-medium text-foreground">{preset.total_protein}g</div>
+                                <div className="text-sm font-normal text-foreground">{preset.total_protein}g</div>
                                 <div className="text-xs text-muted-foreground">prot</div>
                               </div>
                             </div>
 
                             <div className="flex items-center gap-2">
-                              <div className="p-2 bg-orange-500/10 rounded-lg">
-                                <Wheat className="w-4 h-4 text-orange-500" />
+                              <div className="p-2 bg-primary/10 rounded-lg">
+                                <Wheat className="w-4 h-4 text-primary" />
                               </div>
                               <div>
-                                <div className="text-sm font-medium text-foreground">{preset.total_carbs}g</div>
+                                <div className="text-sm font-normal text-foreground">{preset.total_carbs}g</div>
                                 <div className="text-xs text-muted-foreground">carb</div>
                               </div>
                             </div>
 
                             <div className="flex items-center gap-2">
-                              <div className="p-2 bg-amber-500/10 rounded-lg">
-                                <Droplets className="w-4 h-4 text-amber-500" />
+                              <div className="p-2 bg-primary/10 rounded-lg">
+                                <Droplets className="w-4 h-4 text-primary" />
                               </div>
                               <div>
-                                <div className="text-sm font-medium text-foreground">{preset.total_fats}g</div>
+                                <div className="text-sm font-normal text-foreground">{preset.total_fats}g</div>
                                 <div className="text-xs text-muted-foreground">gord</div>
                               </div>
                             </div>
@@ -836,7 +836,7 @@ export function MealPresetsManager({ onApplyPreset, onBack, showDefaultsTab = tr
                             <div className="flex items-center gap-2">
                               <Badge
                                 variant={preset.is_active ? "default" : "outline"}
-                                className="text-xs px-3 py-1.5 font-medium"
+                                className="text-xs px-3 py-1.5 font-normal"
                               >
                                 <div className={`w-2 h-2 rounded-full mr-2 ${preset.is_active ? 'bg-green-500' : 'bg-gray-400'}`}></div>
                                 {preset.is_active ? 'Ativo' : 'Inativo'}

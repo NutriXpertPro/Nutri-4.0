@@ -927,7 +927,7 @@ export const useDietEditorStore = create<DietEditorState>()(
                         const newFood: WorkspaceMealFood = {
                             id: Date.now(),
                             name: food.nome,
-                            qty: '',
+                            qty: 100,
                             unit: 'g',
                             measure: 'default',
                             prep: '',

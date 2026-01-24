@@ -10,7 +10,7 @@ import { Card } from "@/components/ui/card"
 import { DietTopBar } from './meal-builder/DietTopBar'
 import { DietMealCard } from './meal-builder/DietMealCard'
 
-export function DietTemplateWorkspace() {
+ export function DietTemplateWorkspace() {
     const {
         workspaceMeals,
         addWorkspaceMeal,
@@ -18,7 +18,8 @@ export function DietTemplateWorkspace() {
         deleteWorkspaceMeal,
         copyWorkspaceMeal,
         addFoodToWorkspaceMeal,
-        removeFoodFromWorkspaceMeal
+        removeFoodFromWorkspaceMeal,
+        dietType
     } = useDietEditorStore()
 
     const handleUpdateMeal = (index: number, updates: Partial<WorkspaceMeal>) => {
@@ -102,6 +103,7 @@ export function DietTemplateWorkspace() {
                                         onAddFood={addFoodToWorkspaceMeal}
                                         onRemoveFood={removeFoodFromWorkspaceMeal}
                                         compact={workspaceMeals.length > 4}
+                                        dietType={dietType}
                                     />
                                 </div>
                             ))}

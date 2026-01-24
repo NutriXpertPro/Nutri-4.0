@@ -40,7 +40,7 @@ const AutomationSettings = () => {
     const fetchTemplates = async () => {
       try {
         setLoading(true);
-        const response = await api.get('/automation/templates/');
+        const response = await api.get('automation/templates/');
 
         if (isMounted) { // Verificar se o componente ainda está montado
           setTemplates(response.data);
@@ -93,7 +93,7 @@ const AutomationSettings = () => {
     if (!id) return;
 
     try {
-      await api.delete(`/automation/templates/${id}/`);
+      await api.delete(`automation/templates/${id}/`);
       setTemplates(templates.filter(template => template.id !== id));
     } catch (error) {
       console.error('Erro ao deletar template:', error);
@@ -106,11 +106,11 @@ const AutomationSettings = () => {
     try {
       if (currentTemplate.id) {
         // Atualizar template existente
-        const response = await api.patch(`/automation/templates/${currentTemplate.id}/`, currentTemplate);
+        const response = await api.patch(`automation/templates/${currentTemplate.id}/`, currentTemplate);
         setTemplates(templates.map(t => t.id === currentTemplate.id ? response.data : t));
       } else {
         // Criar novo template
-        const response = await api.post('/automation/templates/', currentTemplate);
+        const response = await api.post('automation/templates/', currentTemplate);
         setTemplates([...templates, response.data]);
       }
       setIsEditing(false);

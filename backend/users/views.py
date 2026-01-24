@@ -1,5 +1,6 @@
 import os
 import time
+import logging
 from django.conf import settings
 from django.contrib.auth import get_user_model, authenticate
 from django.contrib.auth.tokens import default_token_generator
@@ -25,6 +26,8 @@ from .serializers import (
 )
 from .models import AuthenticationLog
 from .throttles import AuthRateThrottle
+
+logger = logging.getLogger(__name__)
 
 User = get_user_model()
 
@@ -81,23 +84,23 @@ def _perform_login(request, required_user_type, unauthorized_error_msg):
             status=status.HTTP_400_BAD_REQUEST
         )
 
-    file_log(f"LOGIN ATTEMPT: {email}")
+    logger.info(f"LOGIN ATTEMPT: {email}")
     # O Django vai usar os backends configurados automaticamente
     user = authenticate(request=request, username=email, password=password)
 
     # Padronizar mensagem para evitar enumeração de contas
     if user is None:
-        file_log(f"LOGIN FAIL: Authentication failed for {email}")
+        logger.warning(f"LOGIN FAIL: Authentication failed for {email}")
         time.sleep(0.5)
         return Response(
             {"error": unauthorized_error_msg},
             status=status.HTTP_401_UNAUTHORIZED
         )
     
-    file_log(f"LOGIN SUCCESS AUTH: User {user.email} found. Type: {user.user_type}, Required: {required_user_type}")
+    logger.info(f"LOGIN SUCCESS AUTH: User {user.email} found. Type: {user.user_type}, Required: {required_user_type}")
     
     if user.user_type != required_user_type:
-        file_log(f"LOGIN FAIL: User type mismatch. Got {user.user_type}, expected {required_user_type}")
+        logger.warning(f"LOGIN FAIL: User type mismatch. Got {user.user_type}, expected {required_user_type}")
         # Adicionando tempo de espera constante para prevenir ataques de timing
         time.sleep(0.5)  # Atraso constante para todos os logins falhos
         return Response(
@@ -240,12 +243,12 @@ class PasswordResetView(APIView):
     permission_classes = (AllowAny,)
 
     def post(self, request):
-        file_log(f"Password reset request for email: {request.data.get('email', 'unknown')}")
+        logger.info(f"Password reset request for email: {request.data.get('email', 'unknown')}")
         serializer = PasswordResetSerializer(data=request.data)
         if serializer.is_valid():
             email = serializer.validated_data['email']
             user = User.objects.filter(email=email).first()
-            file_log(f"User found for email {email}: {'Yes' if user else 'No'}")
+            logger.info(f"User found for email {email}: {'Yes' if user else 'No'}")
             if user:
                 token = default_token_generator.make_token(user)
                 uid = urlsafe_base64_encode(force_bytes(user.pk))
@@ -261,40 +264,32 @@ class PasswordResetView(APIView):
                         [email],
                         fail_silently=False,
                     )
-                    file_log(f"Email sent successfully to {email}")
+                    logger.info(f"Email sent successfully to {email}")
                 except Exception as e:
-                    file_log(f"Error sending email to {email}: {str(e)}")
+                    logger.error(f"Error sending email to {email}: {str(e)}")
                     return Response({"error": "Erro ao enviar email."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
             # Por segurança, sempre retornar 200 mesmo se o email não existir
-            file_log(f"Password reset response sent for email: {email}")
+            logger.info(f"Password reset response sent for email: {email}")
             return Response({"message": "Se o email existir, as instruções foram enviadas."}, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
-def file_log(msg):
-    try:
-        with open('reset_debug.log', 'a', encoding='utf-8') as f:
-            from datetime import datetime
-            f.write(f"[{datetime.now()}] {msg}\n")
-    except:
-        pass
 
 class PasswordResetConfirmView(APIView):
     permission_classes = (AllowAny,)
 
     def post(self, request, uidb64=None, token=None):
-        file_log(f"--- RESET REQUEST RECEIVED ---")
+        logger.info(f"--- RESET REQUEST RECEIVED ---")
         
         # Obter uidb64 e token de várias fontes (URL path, query params ou body)
         uidb64 = uidb64 or request.query_params.get('uid') or request.data.get('uid')
         token = token or request.query_params.get('token') or request.data.get('token')
 
         if not uidb64 or not token:
-            file_log("Missing UID or Token")
+            logger.warning("Missing UID or Token")
             return Response({"error": "Parâmetros UID e token são obrigatórios."}, status=status.HTTP_400_BAD_REQUEST)
 
-        file_log(f"UID: {uidb64}, Token: {token}")
+        logger.info(f"UID: {uidb64}, Token: {token}")
 
         serializer = PasswordResetConfirmSerializer(data=request.data, context={'request': request})
         if serializer.is_valid():
@@ -303,30 +298,30 @@ class PasswordResetConfirmView(APIView):
                 # Decodificar o UID do base64
                 uid = force_str(urlsafe_base64_decode(uidb64))
                 user = User.objects.get(pk=uid)
-                file_log(f"User found by Base64 decode: {user.email}")
+                logger.info(f"User found by Base64 decode: {user.email}")
             except (TypeError, ValueError, OverflowError, User.DoesNotExist) as e:
-                file_log(f"User lookup failed: {e}")
+                logger.warning(f"User lookup failed: {e}")
                 return Response({"error": "Link inválido - usuário não encontrado."}, status=status.HTTP_400_BAD_REQUEST)
 
             if user is not None:
                 token_valid = default_token_generator.check_token(user, token)
-                file_log(f"Token Valid? {token_valid}")
+                logger.info(f"Token Valid? {token_valid}")
 
                 if not token_valid:
                      current_token = default_token_generator.make_token(user)
-                     file_log(f"Expected token (current): {current_token}")
-                     file_log(f"User State - Password hash: {user.password[:20]}..., Last Login: {user.last_login}")
+                     logger.debug(f"Expected token (current): {current_token}")
+                     logger.debug(f"User State - Password hash: {user.password[:20]}..., Last Login: {user.last_login}")
                      return Response({"error": "Link inválido ou expirado."}, status=status.HTTP_400_BAD_REQUEST)
 
                 if token_valid:
                     user.set_password(serializer.validated_data['password'])
                     user.save()
-                    file_log("Password reset success!")
+                    logger.info("Password reset success!")
                     return Response({"message": "Senha redefinida com sucesso."}, status=status.HTTP_200_OK)
             else:
                  return Response({"error": "Link inválido usuário não encontrado."}, status=status.HTTP_400_BAD_REQUEST)
 
-        file_log(f"Serializer Errors: {serializer.errors}")
+        logger.warning(f"Serializer Errors: {serializer.errors}")
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['POST'])
@@ -417,104 +412,6 @@ def google_login_view(request):
         # e retornar uma mensagem genérica para evitar vazamento de informações
         print(f"Erro interno no login Google: {str(e)}")  # Log interno, não exposto ao usuário
         return Response({"error": "Erro interno no login Google"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-def dashboard_stats_view(request):
-    """
-    Retorna estatísticas para o dashboard do nutricionista.
-    """
-    from patients.models import PatientProfile
-    from diets.models import Diet
-    from appointments.models import Appointment
-    from django.utils import timezone
-    from django.db.models import Count, Q
-    from datetime import timedelta
-
-    user = request.user
-    today = timezone.now().date()
-    first_day_of_month = today.replace(day=1)
-    now = timezone.now()
-
-    # Otimizar todas as queries usando agregações e filtros combinados
-    # Pacientes Ativos e Novos este mês em uma única query
-    patient_stats = PatientProfile.objects.filter(nutritionist=user).aggregate(
-        active_patients=Count('id'),
-        new_patients_this_month=Count('id', filter=Q(created_at__date__gte=first_day_of_month))
-    )
-
-    # Consultas de hoje
-    appointments_today = Appointment.objects.filter(
-        user=user,
-        date__date=today
-    ).count()
-
-    # Próxima consulta (otimizada com select_related)
-    # Próxima consulta (otimizada com select_related)
-    next_appointment = Appointment.objects.filter(
-        user=user,
-        date__gte=now,
-        patient__is_active=True
-    ).select_related('patient', 'patient__user').order_by('date').first()
-
-    next_appointment_time = next_appointment.date.strftime('%H:%M') if next_appointment else None
-
-    # Dietas ativas (otimizada)
-    active_diets = Diet.objects.filter(
-        patient__nutritionist=user,
-        is_active=True
-    ).count()
-
-    return Response({
-        "active_patients": {
-            "value": patient_stats['active_patients'],
-            "trend": patient_stats['new_patients_this_month'],
-            "trend_label": "este mês"
-        },
-        "appointments_today": {
-            "value": appointments_today,
-            "next_at": next_appointment_time
-        },
-        "active_diets": {
-            "value": active_diets,
-            "expiring_soon": 0  # TODO: Implementar lógica de validade
-        }
-    })
-
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-def appointments_today_view(request):
-    """
-    Retorna a lista de consultas do dia.
-    """
-    from appointments.models import Appointment
-    from django.utils import timezone
-
-    user = request.user
-    today = timezone.now().date()
-
-    # Otimizado com select_related para evitar N+1 queries
-    appointments = Appointment.objects.filter(
-        user=user,
-        date__date=today,
-        patient__is_active=True
-    ).select_related('patient', 'patient__user').order_by('date')
-
-    # Usando list comprehension para maior eficiência
-    data = [
-        {
-            "id": app.id,
-            "patient_name": app.patient.user.name,
-            "time": app.date.strftime('%H:%M'),
-            "duration": app.duration or 60,  # Usar o campo real ou valor padrão
-            "type": app.type or "presencial",  # Usar o campo real ou valor padrão
-            "status": app.status or "agendada"  # Usar o campo real ou valor padrão
-        }
-        for app in appointments
-    ]
-
-    return Response(data)
-
 
 class AuthenticationLogView(APIView):
     """

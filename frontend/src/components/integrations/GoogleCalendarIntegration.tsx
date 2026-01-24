@@ -59,7 +59,7 @@ const GoogleCalendarIntegration = () => {
         setLoading(true);
         // Try to get existing integration
         try {
-          const response = await api.get('/integrations/google-calendar/sync/me/');
+          const response = await api.get('integrations/google-calendar/sync/me/');
           setIntegration(response.data);
         } catch (error) {
           // Integration doesn't exist, that's okay
@@ -89,7 +89,7 @@ const GoogleCalendarIntegration = () => {
 
   const connectToGoogle = async () => {
     try {
-      const response = await api.get('/integrations/google-calendar/auth/');
+      const response = await api.get('integrations/google-calendar/auth/');
 
       // Redirect to Google auth URL
       window.location.href = response.data.authorization_url;
@@ -105,7 +105,7 @@ const GoogleCalendarIntegration = () => {
 
   const disconnectGoogle = async () => {
     try {
-      await api.delete('/integrations/google-calendar/sync/disconnect/');
+      await api.delete('integrations/google-calendar/sync/disconnect/');
       setIntegration(null);
       toast({
         title: 'Sucesso',
@@ -123,7 +123,7 @@ const GoogleCalendarIntegration = () => {
 
   const loadCalendars = async () => {
     try {
-      const response = await api.get('/integrations/google-calendar/sync/get_calendars/');
+      const response = await api.get('integrations/google-calendar/sync/get_calendars/');
       setAvailableCalendars(response.data.calendars);
 
       // Set the primary calendar as default if available
@@ -144,7 +144,7 @@ const GoogleCalendarIntegration = () => {
   const syncAppointment = async (appointmentId: number) => {
     try {
       setSyncing(true);
-      await api.post('/integrations/google-calendar/sync/sync_appointment/', {
+      await api.post('integrations/google-calendar/sync/sync_appointment/', {
         appointment_id: appointmentId,
         calendar_id: selectedCalendar
       });
@@ -168,7 +168,7 @@ const GoogleCalendarIntegration = () => {
   const syncAllAppointments = async () => {
     try {
       setSyncing(true);
-      const response = await api.post('/integrations/google-calendar/sync/sync_all_appointments/', {
+      const response = await api.post('integrations/google-calendar/sync/sync_all_appointments/', {
         calendar_id: selectedCalendar
       });
 

@@ -37,7 +37,7 @@ export default function PatientSchedulePage({ params }: { params: { id: string }
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await api.get(`/appointments/available-slots/${params.id}/`)
+        const response = await api.get(`appointments/available-slots/${params.id}/`)
         setData(response.data)
       } catch (error) {
         console.error("Erro ao buscar horários disponíveis:", error)
@@ -65,7 +65,7 @@ export default function PatientSchedulePage({ params }: { params: { id: string }
         status: 'agendada'  // Pode ser definido como 'agendada' inicialmente
       };
 
-      const response = await api.post('/appointments/', scheduleData);
+      const response = await api.post('appointments/', scheduleData);
 
       toast.success(`Consulta agendada para ${format(parseISO(selectedSlot.date), 'dd/MM/yyyy', { locale: ptBR })} às ${selectedSlot.time}`)
       console.log("Agendamento realizado com sucesso:", response.data);

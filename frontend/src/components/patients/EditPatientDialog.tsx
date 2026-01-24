@@ -47,7 +47,7 @@ interface EditPatientDialogProps {
         id: number
         name: string
         email: string
-        phone: string
+        phone?: string
         birth_date?: string
         gender?: string
         service_type?: "ONLINE" | "PRESENCIAL"
@@ -76,7 +76,7 @@ export function EditPatientDialog({ open, onOpenChange, patient }: EditPatientDi
     const [formData, setFormData] = React.useState({
         name: patient.name,
         email: patient.email,
-        phone: patient.phone,
+        phone: patient.phone || "",
         birth_date: patient.birth_date || "",
         gender: patient.gender || "F",
         service_type: patient.service_type || "ONLINE",
@@ -91,7 +91,7 @@ export function EditPatientDialog({ open, onOpenChange, patient }: EditPatientDi
             setFormData({
                 name: patient.name,
                 email: patient.email,
-                phone: patient.phone,
+                phone: patient.phone || "",
                 birth_date: patient.birth_date || "",
                 gender: patient.gender || "F",
                 service_type: patient.service_type || "ONLINE",

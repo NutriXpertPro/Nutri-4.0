@@ -78,16 +78,16 @@ export function SkinfoldForm({ patientId, onBack }: SkinfoldFormProps) {
         date: new Date().toISOString().split('T')[0],
         method: 'ADIPOMETRO',
         body_measurements: {
-          tricipital: measurements.tricipital,
-          subscapular: measurements.subscapular,
-          bicipital: measurements.bicipital,
-          suprailiac: measurements.suprailiac,
-          abdominal: measurements.abdominal,
-          axilarMedia: measurements.axilarMedia,
-          toracica: measurements.toracica,
-          peitoral: measurements.peitoral,
-          midaxilar: measurements.midaxilar,
-          suprasselar: measurements.suprasselar
+          tricipital: measurements.tricipital ?? 0,
+          subscapular: measurements.subscapular ?? 0,
+          bicipital: measurements.bicipital ?? 0,
+          suprailiac: measurements.suprailiac ?? 0,
+          abdominal: measurements.abdominal ?? 0,
+          axilarMedia: measurements.axilarMedia ?? 0,
+          toracica: measurements.toracica ?? 0,
+          peitoral: measurements.peitoral ?? 0,
+          midaxilar: measurements.midaxilar ?? 0,
+          suprasselar: measurements.suprasselar ?? 0
         }
       }
 

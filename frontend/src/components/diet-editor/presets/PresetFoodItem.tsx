@@ -36,7 +36,7 @@ export function PresetFoodItem({ food, className }: PresetFoodItemProps) {
           {getFoodIcon(food.food_name)}
         </div>
         <div className="min-w-0">
-          <div className="text-sm font-medium text-foreground truncate max-w-[140px]">{food.food_name}</div>
+          <div className="text-sm font-normal text-foreground truncate max-w-[140px]">{food.food_name}</div>
         </div>
       </div>
     </div>

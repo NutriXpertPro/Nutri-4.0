@@ -78,7 +78,7 @@ export function AgendaDoDia({ appointments = mockAppointments, className, hideVi
     const handleOpenMessage = async (appointment: Appointment) => {
         try {
             // Primeiro, tentamos encontrar uma conversa existente com o paciente
-            const response = await api.get('/messages/conversations/');
+            const response = await api.get('messages/conversations/');
             const conversations = response.data;
 
             // Procurar uma conversa que contenha o paciente como participante
@@ -90,11 +90,11 @@ export function AgendaDoDia({ appointments = mockAppointments, className, hideVi
             if (!conversation) {
                 // Para criar uma nova conversa, precisamos do ID do paciente
                 // Isso exigiria uma chamada adicional para obter o ID do paciente pelo nome
-                const patientsResponse = await api.get('/patients/');
+                const patientsResponse = await api.get('patients/');
                 const patient = patientsResponse.data.find((p: any) => p.user.name === appointment.patientName);
 
                 if (patient) {
-                    const newConversationResponse = await api.post('/messages/conversations/', {
+                    const newConversationResponse = await api.post('messages/conversations/', {
                         participants: [patient.id]
                     });
                     conversation = newConversationResponse.data;

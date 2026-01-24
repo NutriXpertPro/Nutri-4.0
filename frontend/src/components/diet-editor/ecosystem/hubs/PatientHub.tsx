@@ -84,7 +84,7 @@ export function PatientHub() {
                             <GlassPanel className="p-4 border-l-2 border-l-red-500">
                                 <h4 className="text-xs font-bold text-red-400 mb-2 uppercase tracking-wide">Restrições</h4>
                                 <div className="flex flex-wrap gap-2">
-                                    {patient?.restrictions.map(r => (
+                                    {patient?.restrictions?.map(r => (
                                         <span key={r} className="text-[10px] bg-red-900/30 text-red-300 px-2 py-1 rounded border border-red-900/50">
                                             {r}
                                         </span>
@@ -95,7 +95,7 @@ export function PatientHub() {
                             <GlassPanel className="p-4 border-l-2 border-l-orange-500">
                                 <h4 className="text-xs font-bold text-orange-400 mb-2 uppercase tracking-wide">Alergias</h4>
                                 <div className="flex flex-wrap gap-2">
-                                    {patient?.allergies.map(a => (
+                                    {patient?.allergies?.map(a => (
                                         <span key={a} className="text-[10px] bg-orange-900/30 text-orange-300 px-2 py-1 rounded border border-orange-900/50">
                                             {a}
                                         </span>
