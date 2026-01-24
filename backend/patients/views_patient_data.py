@@ -23,6 +23,21 @@ from .serializers_patient_data import (
     ClinicalNoteSerializer,
     MealPhotoSerializer,
 )
+import unicodedata
+
+def normalize_text(text):
+    if not text:
+        return ""
+    text = (
+        unicodedata.normalize("NFKD", text)
+        .encode("ascii", "ignore")
+        .decode("utf8")
+    )
+    return text.lower().strip()
+
+def get_significant_words(text):
+    words = normalize_text(text).split()
+    return [w for w in words if len(w) > 3]
 
 
 class PatientMetricsViewSet(viewsets.ViewSet):
@@ -221,210 +236,113 @@ class PatientMealsViewSet(viewsets.ViewSet):
                     total_carbs += item_carbs
                     total_fats += item_fats
 
-                    # Find substitutions for this item
+
+
+                # === SUBSTITUTION LOGIC ===
+                    # 1. Prioritize Strict/Manual Substitutions from the Diet Plan
+                    # This ensures that what the nutritionist explicitly defined is what the patient sees.
+                    
                     sub_options = []
+                    found_manual_sub = False
 
-                    def normalize_text(text):
-                        if not text:
-                            return ""
-                        text = (
-                            unicodedata.normalize("NFKD", text)
-                            .encode("ascii", "ignore")
-                            .decode("utf8")
-                        )
-                        return text.lower().strip()
-
-                    def get_significant_words(text):
-                        words = normalize_text(text).split()
-                        return [w for w in words if len(w) > 3]
-
-                    item_name_normalized = normalize_text(item.food_name)
-                    item_words = get_significant_words(item.food_name)
-
+                    # Normalize current item name for matching
+                    item_name_norm = normalize_text(item.food_name)
+                    
                     for sub_group in diet_subs:
                         original_name = sub_group.get("original", "")
-                        original_normalized = normalize_text(original_name)
-                        original_words = get_significant_words(original_name)
-
+                        original_norm = normalize_text(original_name)
+                        
+                        # Check for exact match or robust containment (both ways)
+                        # We also check if the item is part of the original name or vice-versa
+                        # This handles cases like "Arroz Branco" matching "Arroz"
                         is_match = False
-                        if original_normalized and (
-                            original_normalized in item_name_normalized
-                            or item_name_normalized in original_normalized
+                        if original_norm and (
+                            original_norm == item_name_norm 
+                            or original_norm in item_name_norm
+                            or item_name_norm in original_norm
                         ):
                             is_match = True
-                        elif any(w in item_words for w in original_words):
-                            is_match = True
-
+                        
                         if is_match:
-                            print(
-                                f"DEBUG: MATCH ENCONTRADO para {item.food_name} com regra {original_name}!"
-                            )
-                            for opt in sub_group.get("options", []):
-                                sub_options.append(
-                                    {
+                            try:
+                                # Add manual options
+                                for opt in sub_group.get("options", []):
+                                    sub_options.append({
                                         "name": opt.get("name", ""),
                                         "quantity": float(opt.get("quantity", 0)),
                                         "unit": opt.get("unit", item.unit),
-                                    }
-                                )
-
-                    # === AUTO SUBSTITUTION LOGIC (If no manual subs found) ===
-                    if not sub_options:
+                                        "kcal": 0, # Frontend handles display or we could calc if DB link existed
+                                        "group": "Indicado pelo Nutri",
+                                        "source": "manual"
+                                    })
+                                found_manual_sub = True
+                                print(f"DEBUG: MATCH MANUAL ENCONTRADO para {item.food_name} com regra {original_name}!")
+                            except Exception as sub_err:
+                                print(f"Erro ao processar substituição manual: {sub_err}")
+                    
+                    # 2. Auto-Substitutions (Fallback)
+                    # This searches for similar foods in the same nutritional group
+                    if not found_manual_sub:
                         try:
+                            from diets.nutritional_substitution import identificar_grupo_nutricional, calcular_substituicao, NutricaoAlimento, GRUPOS_NUTRICIONAIS
                             from diets.models import AlimentoTACO
-                            from django.db.models import Q
-
-                            # 1. Find the food in TACO database - BETTER MATCHING
-                            clean_name = "".join(
-                                [
-                                    i
-                                    for i in item.food_name
-                                    if i.isalpha() or i.isspace() or i == ','
-                                ]
-                            ).strip()
                             
-                            # Try with full name first
-                            taco_match = AlimentoTACO.objects.filter(
-                                Q(nome__icontains=clean_name) | Q(nome__icontains=clean_name.split(',')[0])
-                            ).first()
-                            
-                            if not taco_match:
-                                words = [w for w in clean_name.replace(',', ' ').split() if len(w) > 2]
-                                if words:
-                                    search_term = " ".join(words[:2])
-                                    taco_match = AlimentoTACO.objects.filter(nome__icontains=search_term).first()
-
-                            if taco_match and item_calories > 0:
-                                # 2. Determine professional food group
-                                def get_professional_group(name, taco_group):
-                                    name = (
-                                        unicodedata.normalize("NFKD", name)
-                                        .encode("ascii", "ignore")
-                                        .decode("utf8")
-                                        .lower()
-                                    )
-
-                                    # Proteínas Magras
-                                    if any(x in name for x in ["frango", "peito", "peru", "peixe", "tilapia", "pescada", "atum", "clara", "patinho", "maminha", "lombo", "lagarto", "contra-filé"]):
-                                        return "PROTEIN_LEAN"
-                                    # Leguminosas
-                                    if "leguminosas" in taco_group or any(x in name for x in ["feijao", "feijão", "lentilha", "grao de bico", "grão de bico", "soja", "ervilha"]):
-                                        return "LEGUME"
-                                    # Carboidratos
-                                    if "cereais" in taco_group or "tuberculos" in taco_group or any(x in name for x in ["arroz", "batata", "mandioca", "aipim", "inhame", "cuscuz", "aveia", "milho", "quinoa", "macarrao", "macarrão", "trigo"]):
-                                        return "CARB"
-                                    # Vegetais Folhosos
-                                    if any(x in name for x in ["alface", "rucula", "espinafre", "couve", "acelga", "agriao", "repolho"]):
-                                        return "LEAFY"
-                                    # Hortaliças
-                                    if "verduras" in taco_group or any(x in name for x in ["tomate", "pepino", "abobora", "abobrinha", "brocolis", "vagem", "chuchu", "cenoura", "beterraba"]):
-                                        return "VEGGIE"
-                                    return "OTHER"
-
-                                item_group = get_professional_group(item.food_name, taco_match.grupo)
-                                print(
-                                    f"DEBUG: Item '{item.food_name}' classified as group '{item_group}' (TACO group: {taco_match.grupo})"
+                            group_name = identificar_grupo_nutricional(item.food_name)
+                            if group_name:
+                                # Create NutricaoAlimento for current item
+                                current_nutri = NutricaoAlimento(
+                                    nome=item.food_name,
+                                    energia_kcal=item_calories * (100.0/float(item.quantity)) if float(item.quantity) > 0 else 0,
+                                    proteina_g=item_protein * (100.0/float(item.quantity)) if float(item.quantity) > 0 else 0,
+                                    lipidios_g=item_fats * (100.0/float(item.quantity)) if float(item.quantity) > 0 else 0,
+                                    carboidrato_g=item_carbs * (100.0/float(item.quantity)) if float(item.quantity) > 0 else 0,
+                                    fibra_g=float(item.fiber or 0) * (100.0/float(item.quantity)) if float(item.quantity) > 0 else 0
                                 )
-
-                                # 3. Build candidate query
-                                candidates_qs = AlimentoTACO.objects.all()
-
-                                # Apply group-specific filters
-                                if item_group == "PROTEIN_LEAN":
-                                    candidates_qs = candidates_qs.filter(Q(grupo__icontains="carnes") | Q(grupo__icontains="pescados") | Q(grupo__icontains="ovos"))
-                                    candidates_qs = candidates_qs.exclude(Q(nome__icontains="picanha") | Q(nome__icontains="acem") | Q(nome__icontains="cupim") | Q(nome__icontains="costela") | Q(nome__icontains="gordura") | Q(nome__icontains="bacon") | Q(nome__icontains="presunto") | Q(nome__icontains="linguica"))
-                                elif item_group == "LEGUME":
-                                    candidates_qs = candidates_qs.filter(grupo__icontains="leguminosas")
-                                elif item_group == "CARB":
-                                    candidates_qs = candidates_qs.filter(Q(grupo__icontains="cereais") | Q(grupo__icontains="tuberculos") | Q(nome__icontains="batata") | Q(nome__icontains="mandioca"))
-                                elif item_group == "LEAFY":
-                                    candidates_qs = candidates_qs.filter(Q(nome__icontains="alface") | Q(nome__icontains="rucula") | Q(nome__icontains="couve"))
-                                elif item_group == "VEGGIE":
-                                    candidates_qs = candidates_qs.filter(grupo__icontains="verduras").exclude(nome__icontains="alface")
-                                else:
-                                    candidates_qs = candidates_qs.filter(grupo=taco_match.grupo)
-
-                                # General exclusions
-                                candidates_qs = candidates_qs.exclude(Q(nome__icontains="frito") | Q(nome__icontains="industrializado") | Q(nome__icontains="acucarados") | Q(nome__icontains="biscoito"))
-                                candidates_qs = candidates_qs.exclude(id=taco_match.id)
-
-                                # 4. Get candidates and Apply Diversity Filter
-                                candidates = candidates_qs.order_by("?")[:20]
-                                best_candidates = {} # {base_name: candidate}
                                 
-                                for cand in candidates:
-                                    base_name = cand.nome.split(',')[0].strip().lower()
-                                    if base_name not in best_candidates:
-                                        best_candidates[base_name] = cand
-                                    if len(best_candidates) >= 5:
-                                        break
+                                # Suggested items from the same group (Staples)
+                                # We pick a few staples to avoid overhead
+                                staples = GRUPOS_NUTRICIONAIS[group_name]["alimentos_recomendados"][:5]
                                 
-                                final_candidates = list(best_candidates.values())
-
-                                # 5. Inject Staples if missing
-                                staples = []
-                                if item_group == 'CARB':
-                                    staples = ['Arroz, integral, cozido', 'Feijão, carioca, cozido', 'Batata, inglesa, cozida']
-                                elif item_group == 'PROTEIN_LEAN':
-                                    staples = ['Frango, peito, sem pele, grelhado', 'Ovo, de galinha, cozido']
-                                
-                                for staple_name in staples:
-                                    if len(final_candidates) >= 8: break
-                                    if not any(staple_name.split(',')[0].lower() in c.nome.lower() for c in final_candidates):
-                                        st = AlimentoTACO.objects.filter(nome__icontains=staple_name).first()
-                                        if st: final_candidates.append(st)
-
-                                for cand in final_candidates:
-                                    # Determinar macro para equivalência
-                                    equiv_g = 100.0
-                                    
-                                    if item_group in ["CARB", "LEGUME", "LEAFY", "VEGGIE"] and cand.carboidrato_g > 1:
-                                        # Equivalência por Carboidrato
-                                        equiv_g = (item_carbs / cand.carboidrato_g) * 100
-                                    elif item_group == "PROTEIN_LEAN" and cand.proteina_g > 1:
-                                        # Equivalência por Proteína
-                                        equiv_g = (item_protein / cand.proteina_g) * 100
-                                    elif cand.energia_kcal > 0:
-                                        # Fallback por Calorias
-                                        equiv_g = (item_calories / cand.energia_kcal) * 100
+                                for st_name in staples:
+                                    if normalize_text(st_name) == item_name_norm:
+                                        continue
                                         
-                                    # Fallback se equiv_g for absurdo (ex: divisão por zero ou valor muito baixo)
-                                    if equiv_g <= 0:
-                                        equiv_g = (item_calories / cand.energia_kcal) * 100 if cand.energia_kcal > 0 else 0
-
-                                    # Calculate proportional macros
-                                    ratio = equiv_g / 100
-                                    sub_kcal = cand.energia_kcal * ratio
-                                    sub_protein = (cand.proteina_g or 0) * ratio
-                                    sub_carbs = (cand.carboidrato_g or 0) * ratio
-                                    sub_fats = (cand.lipidios_g or 0) * ratio
-
-                                    final_qty = equiv_g
-                                    final_unit = "g"
-
-                                    if cand.unidade_caseira and cand.peso_unidade_caseira_g:
-                                        qty_household = equiv_g / cand.peso_unidade_caseira_g
-                                        if qty_household >= 0.1:
-                                            final_qty = qty_household
-                                            final_unit = cand.unidade_caseira
-
-                                    sub_options.append({
-                                        "name": cand.nome,
-                                            "quantity": round(final_qty, 1),
-                                            "unit": final_unit,
-                                            "kcal": round(sub_kcal, 1),
-                                            "protein": round(sub_protein, 1),
-                                            "carbs": round(sub_carbs, 1),
-                                            "fats": round(sub_fats, 1),
-                                            "source": "auto_taco",
-                                            "group": cand.grupo,
+                                    st_food = AlimentoTACO.objects.filter(nome__icontains=st_name).first()
+                                    if st_food:
+                                        st_nutri = NutricaoAlimento(
+                                            nome=st_food.nome,
+                                            energia_kcal=st_food.energia_kcal,
+                                            proteina_g=st_food.proteina_g,
+                                            lipidios_g=st_food.lipidios_g,
+                                            carboidrato_g=st_food.carboidrato_g,
+                                            fibra_g=st_food.fibra_g
+                                        )
+                                        
+                                        res = calcular_substituicao(current_nutri, st_nutri, group_name, float(item.quantity))
+                                        
+                                        sub_options.append({
+                                            "name": res.alimento_substituto,
+                                            "quantity": res.quantidade_substituto_g,
+                                            "unit": "g",
+                                            "kcal": res.calorias_substituto,
+                                            "group": group_name.replace("_", " ").title(),
+                                            "source": "auto"
                                         })
-
-                        except Exception as auto_sub_error:
-                            print(
-                                f"Auto-Sub Error for {item.food_name}: {str(auto_sub_error)}"
-                            )
-                    # =========================================================
+                        except Exception as auto_err:
+                            print(f"Erro no fallback de substituição: {auto_err}")
+                            
+                    # ID e Fonte Técnica para Substituições Precisas
+                    item_food_id = None
+                    item_source = "TACO"
+                    if item.taco_food:
+                        item_food_id = item.taco_food.id
+                        item_source = "TACO"
+                    elif item.tbca_food:
+                        item_food_id = item.tbca_food.id
+                        item_source = "TBCA"
+                    elif item.usda_food:
+                        item_food_id = item.usda_food.id
+                        item_source = "USDA"
 
                     items.append(
                         {
@@ -435,6 +353,8 @@ class PatientMealsViewSet(viewsets.ViewSet):
                             "protein": item_protein,
                             "carbs": item_carbs,
                             "fats": item_fats,
+                            "food_id": item_food_id,
+                            "food_source": item_source,
                             "substitutions": sub_options,
                         }
                     )
@@ -461,9 +381,16 @@ class PatientMealsViewSet(viewsets.ViewSet):
             )
         except Exception as e:
             import traceback
-
             error_details = traceback.format_exc()
             print(f"CRITICAL ERROR IN MEALS VIEW: {error_details}")
+            
+            # Log to file for debugging
+            try:
+                with open("debug_errors.log", "a") as f:
+                    f.write(f"\nCRITICAL ERROR in MEALS VIEW at {datetime.now()}:\n{error_details}\n")
+            except:
+                pass
+
             return Response(
                 {
                     "error": "Internal Server Error",

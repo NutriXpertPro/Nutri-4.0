@@ -251,26 +251,30 @@ class DietSerializer(serializers.ModelSerializer):
         diet.meals_rel.all().delete()
 
         for meal_json in meals_data:
+            # Frontend sends keys in English matching the store structure
             meal_obj = Meal.objects.create(
                 diet=diet,
-                name=meal_json.get("nome", "Refeição"),
-                time=meal_json.get("horario", "00:00"),
-                order=meal_json.get("ordem", 0),
-                day_of_week=meal_json.get("dia_semana", 0),
-                notes=meal_json.get("observacao", ""),
+                name=meal_json.get("name", "Refeição"),
+                time=meal_json.get("time", "00:00"),
+                order=meal_json.get("order", 0),
+                day_of_week=meal_json.get("day_of_week", 0),
+                notes=meal_json.get("notes", ""),
             )
 
-            for food_json in meal_json.get("alimentos", []):
+            # Frontend sends 'items', not 'alimentos'
+            items_list = meal_json.get("items", [])
+            
+            for food_json in items_list:
                 FoodItem.objects.create(
                     meal=meal_obj,
-                    food_name=food_json.get("nome", "Alimento"),
-                    quantity=food_json.get("quantidade", 0),
-                    unit=food_json.get("unidade", "g"),
-                    calories=food_json.get("calorias", 0),
-                    protein=food_json.get("proteina", 0),
-                    carbs=food_json.get("carboidrato", 0),
-                    fats=food_json.get("lipidios", 0),
-                    fiber=food_json.get("fibra", 0),
+                    food_name=food_json.get("food_name", "Alimento"),
+                    quantity=food_json.get("quantity", 0),
+                    unit=food_json.get("unit", "g"),
+                    calories=food_json.get("calories", 0),
+                    protein=food_json.get("protein", 0),
+                    carbs=food_json.get("carbs", 0),
+                    fats=food_json.get("fats", 0),
+                    fiber=food_json.get("fiber", 0),
                 )
 
     def create(self, validated_data):
