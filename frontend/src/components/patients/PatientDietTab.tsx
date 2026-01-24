@@ -19,7 +19,7 @@ interface PatientDietTabProps {
 
 export function PatientDietTab({ patientId }: PatientDietTabProps) {
     const [showPDFPreview, setShowPDFPreview] = useState(false);
-    
+
     // 1. Buscar Dieta Real
     const { data: diet, isLoading: isDietLoading } = useQuery({
         queryKey: ['patient-diet', patientId],
@@ -117,9 +117,12 @@ export function PatientDietTab({ patientId }: PatientDietTabProps) {
                     )}
                     <Button
                         className="h-10 px-5 rounded-xl text-[10px] font-normal uppercase tracking-widest gap-2 shadow-lg shadow-primary/20"
+                        asChild
                     >
-                        <Plus className="h-3.5 w-3.5" />
-                        Editar Dieta
+                        <Link href={`/diets/create?patientId=${patientId}`}>
+                            <Plus className="h-3.5 w-3.5" />
+                            Editar Dieta
+                        </Link>
                     </Button>
                 </div>
             </div>

@@ -30,6 +30,7 @@ export function DietEcosystem() {
     const patient = useDietEditorPatient()
     const setPatient = useDietEditorStore(state => state.setPatient)
     const calculateMetabolics = useDietEditorStore(state => state.calculateMetabolics)
+    const loadPatientDiet = useDietEditorStore(state => state.loadPatientDiet)
 
     // ONLY use URL Patient ID - ignore localStorage to prevent stale ID issues
     // If no URL param, user must select a patient (no auto-load from store)
@@ -164,8 +165,11 @@ export function DietEcosystem() {
             }
 
             fetchPatientProfile()
+
+            // Also load the patient's current diet if it exists
+            loadPatientDiet(completePatient.id)
         }
-    }, [completePatient, isLoading, setPatient, setPatient, calculateMetabolics])
+    }, [completePatient, isLoading, setPatient, calculateMetabolics, loadPatientDiet])
 
     // Shared Drawer Animation Variants
     // Both the Diet Template and the Tabs use this "Drawer from Ceiling" effect

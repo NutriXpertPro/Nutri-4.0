@@ -342,6 +342,7 @@ interface DietEditorState {
 
     // Diet Persistence
     saveDiet: () => Promise<void>
+    loadPatientDiet: (patientId: number) => Promise<void>
 }
 
 // Helper: Generate unique ID
@@ -1340,6 +1341,71 @@ export const useDietEditorStore = create<DietEditorState>()(
                 } catch (error) {
                     console.error('Erro ao definir preset como padrão:', error);
                     throw error;
+                }
+            },
+
+            loadPatientDiet: async (patientId) => {
+                try {
+                    const dietService = (await import('@/services/diet-service')).default;
+                    const diet = await dietService.getActiveByPatient(patientId);
+
+                    if (diet) {
+                        // Map diet to workspaceMeals
+                        // Group by day to handle multi-day diets if any (taking first day available)
+                        const mealsByDay = diet.meals_rel.reduce((acc, meal) => {
+                            if (!acc[meal.day_of_week]) acc[meal.day_of_week] = [];
+                            acc[meal.day_of_week].push(meal);
+                            return acc;
+                        }, {} as Record<number, any[]>);
+
+                        const dayToUse = Object.keys(mealsByDay).sort()[0];
+                        const sourceMeals = mealsByDay[Number(dayToUse)] || [];
+
+                        const mappedWorkspaceMeals = sourceMeals.map((m: any, idx: number) => ({
+                            id: m.id || idx + 1,
+                            type: m.name,
+                            time: m.time.substring(0, 5),
+                            observation: m.notes || '',
+                            isCollapsed: false,
+                            foods: m.items.map((i: any) => ({
+                                id: i.id || Date.now() + Math.random(),
+                                name: i.food_name,
+                                qty: Number(i.quantity),
+                                unit: i.unit,
+                                ptn: Number(i.protein),
+                                cho: Number(i.carbs),
+                                fat: Number(i.fats),
+                                fib: Number(i.fiber || 0),
+                                preferred: false,
+                                source: 'CUSTOM'
+                            }))
+                        }));
+
+                        set({
+                            dietId: diet.id,
+                            dietName: diet.name,
+                            dietType: diet.diet_type as DietType,
+                            targetCalories: diet.target_calories,
+                            targetMacros: {
+                                carbs: Number(diet.target_carbs),
+                                protein: Number(diet.target_protein),
+                                fats: Number(diet.target_fats),
+                                fiber: 25
+                            },
+                            workspaceMeals: mappedWorkspaceMeals.length > 0 ? mappedWorkspaceMeals : initialState.workspaceMeals,
+                            isDirty: false
+                        });
+                    } else {
+                        // Reset if no diet found to avoid showing previous patient's diet
+                        set({
+                            dietId: null,
+                            dietName: '',
+                            workspaceMeals: initialState.workspaceMeals,
+                            isDirty: false
+                        });
+                    }
+                } catch (error) {
+                    console.error('Erro ao carregar dieta do paciente:', error);
                 }
             }
         }),

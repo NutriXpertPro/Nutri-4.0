@@ -209,29 +209,36 @@ class MealPresetSerializer(serializers.ModelSerializer):
 
 
 class DietSerializer(serializers.ModelSerializer):
+    meals_rel = MealSerializer(many=True, read_only=True)
+    nutritionist = serializers.ReadOnlyField(source="patient.nutritionist.name")
+
     class Meta:
         model = Diet
         fields = [
             "id",
-            "title",
-            "description",
-            "start_date",
-            "end_date",
+            "name",
+            "goal",
+            "instructions",
+            "diet_type",
+            "calculation_method",
+            "target_calories",
+            "target_protein",
+            "target_carbs",
+            "target_fats",
+            "tmb",
+            "gcdt",
+            "pdf_file",
             "is_active",
             "patient",
             "nutritionist",
             "meals",
+            "meals_rel",
             "created_at",
             "updated_at",
-            "pdf_file",
         ]
-        read_only_fields = ["created_at", "updated_at", "nutritionist"]
+        read_only_fields = ["created_at", "updated_at"]
 
     def create(self, validated_data):
-        # O nutricionista será definido automaticamente no viewset
-        request = self.context.get("request")
-        if request:
-            validated_data["nutritionist"] = request.user
         return super().create(validated_data)
 
 

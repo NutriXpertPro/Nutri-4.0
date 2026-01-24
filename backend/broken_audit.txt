@@ -1,0 +1,5 @@
+TOTAL_BROKEN: 3
+--------------------------------------------------
+BROKEN: 1627 | Pavê, baunilha, (leite, leite condensado, amido de | Kcal: 85.0 | Calc: 106.2 | Diff: 21.2
+BROKEN: 2047 | Peixe, água doce, pintado, grelhado, s/ óleo, s/ s | Kcal: 88.0 | Calc: 123.2 | Diff: 35.2
+BROKEN: 3131 | Peixe, água doce, Pirarucu, dessalgado, desfiado,  | Kcal: 177.0 | Calc: 197.6 | Diff: 20.6
