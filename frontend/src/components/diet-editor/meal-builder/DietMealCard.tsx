@@ -12,6 +12,7 @@ import { useDebounce } from '@/hooks/use-debounce'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { cn } from "@/lib/utils"
 import { getFoodIcon } from './DietTopBar'
+import { FoodIcon } from '@/components/ui/FoodIcon'
 import { ExpressSelectorModal } from './ExpressSelectorModal'
 import { SubstitutionModal } from './SubstitutionModal'
 import { SmartQuantitySelector } from './SmartQuantitySelector'
@@ -64,7 +65,7 @@ export function DietMealCard({
     const [searchQuery, setSearchQuery] = useState('')
     const [sourceFilter, setSourceFilter] = useState<string | null>(null)
     const [isSearchFocused, setIsSearchFocused] = useState(false)
-    const [expanded, setExpanded] = useState(!compact)
+    const [expanded, setExpanded] = useState(true)
     const [lastAddedFoodId, setLastAddedFoodId] = useState<number | null>(null)
 
     const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false)
@@ -500,59 +501,64 @@ export function DietMealCard({
                                     ) : searchResults?.results?.length ? (
                                         <div className="space-y-1 max-h-[450px] overflow-y-auto pb-20 custom-scrollbar relative z-10">
                                             <div className="px-4 py-2 text-[9px] text-muted-foreground uppercase tracking-[0.2em] opacity-50 border-b border-border/5 mb-2">Resultados Encontrados</div>
-                                            {searchResults?.results?.map((food: Food) => {
-                                                const isFavorite = food.is_favorite;
-                                                const sourceColor = food.source === 'TACO' ? 'text-emerald-500 border-emerald-500/20' :
-                                                    food.source === 'TBCA' ? 'text-orange-500 border-orange-500/20' :
-                                                        food.source === 'USDA' ? 'text-blue-500 border-blue-500/20' :
-                                                            'text-violet-500 border-violet-500/20';
+                                            {[...searchResults.results]
+                                                .sort((a, b) => (b.is_favorite ? 1 : 0) - (a.is_favorite ? 1 : 0))
+                                                .map((food: Food) => {
+                                                    const isFavorite = food.is_favorite;
+                                                    const sourceColor = food.source === 'TACO' ? 'text-emerald-500 border-emerald-500/20' :
+                                                        food.source === 'TBCA' ? 'text-orange-500 border-orange-500/20' :
+                                                            food.source === 'USDA' ? 'text-blue-500 border-blue-500/20' :
+                                                                'text-violet-500 border-violet-500/20';
 
-                                                return (
-                                                    <div
-                                                        key={`${food.source}-${food.id}`}
-                                                        className="w-full px-4 py-3.5 text-left hover:bg-white/[0.03] flex items-center justify-between text-sm group transition-all rounded-2xl border border-transparent hover:border-white/5 hover:shadow-lg active:scale-[0.98] cursor-pointer"
-                                                        onClick={() => handleSelectFood(food)}
-                                                    >
-                                                        <div className="flex items-center gap-4 min-w-0 flex-1">
-                                                            <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center text-[10px] border shrink-0 transition-transform group-hover:scale-110 shadow-sm bg-transparent", sourceColor)}>
-                                                                {food.source}
-                                                            </div>
-                                                            <div className="min-w-0 pr-4 flex-1">
-                                                                <div className="flex items-center gap-2 relative z-20">
-                                                                    <button
-                                                                        onClick={(e) => {
-                                                                            e.stopPropagation();
-                                                                            toggleFavorite(food);
-                                                                        }}
-                                                                        className="shrink-0 hover:scale-125 transition-all focus:outline-none relative z-30 p-1 -m-1"
-                                                                        title={isFavorite ? "Remover dos favoritos" : "Adicionar aos favoritos"}
-                                                                    >
-                                                                        <Star className={cn("w-3.5 h-3.5 transition-colors", isFavorite ? "fill-amber-400 text-amber-400" : "text-amber-400 hover:text-amber-300")} />
-                                                                    </button>
-                                                                    <div className="text-foreground transition-colors truncate text-sm tracking-tight">{food.nome}</div>
+                                                    return (
+                                                        <div
+                                                            key={`${food.source}-${food.id}`}
+                                                            className="w-full px-4 py-3.5 text-left hover:bg-white/[0.03] flex items-center justify-between text-sm group transition-all rounded-2xl border border-transparent hover:border-white/5 hover:shadow-lg active:scale-[0.98] cursor-pointer"
+                                                            onClick={() => handleSelectFood(food)}
+                                                        >
+                                                            <div className="flex items-center gap-4 min-w-0 flex-1">
+                                                                <div className="relative shrink-0">
+                                                                    <FoodIcon name={food.nome} group={food.grupo} size="lg" />
+                                                                    <div className={cn("absolute -bottom-1 -right-1 w-5 h-5 rounded-md flex items-center justify-center text-[7px] font-bold border shadow-sm bg-background", sourceColor)}>
+                                                                        {food.source}
+                                                                    </div>
                                                                 </div>
-                                                                <div className="text-[10px] text-muted-foreground uppercase tracking-tight flex items-center gap-3 mt-1 opacity-70">
-                                                                    <div className="flex items-center gap-1">
-                                                                        <Folder className="w-3 h-3 text-muted-foreground/60" />
-                                                                        <span className="truncate max-w-[120px]">{food.grupo}</span>
+                                                                <div className="min-w-0 pr-4 flex-1">
+                                                                    <div className="flex items-center gap-2 relative z-20">
+                                                                        <button
+                                                                            onClick={(e) => {
+                                                                                e.stopPropagation();
+                                                                                toggleFavorite(food);
+                                                                            }}
+                                                                            className="shrink-0 hover:scale-125 transition-all focus:outline-none relative z-30 p-1 -m-1"
+                                                                            title={isFavorite ? "Remover dos favoritos" : "Adicionar aos favoritos"}
+                                                                        >
+                                                                            <Star className={cn("w-3.5 h-3.5 transition-colors", isFavorite ? "fill-amber-400 text-amber-400" : "text-amber-400 hover:text-amber-300")} />
+                                                                        </button>
+                                                                        <div className="text-foreground transition-colors truncate text-sm tracking-tight">{food.nome}</div>
                                                                     </div>
-                                                                    <span className="w-1 h-1 rounded-full bg-border" />
-                                                                    <div className="flex items-center gap-1 text-foreground/80">
-                                                                        <Flame className="w-3 h-3 text-orange-500/70" />
-                                                                        <span className="tabular-nums">{Math.round(food.energia_kcal)} kcal</span>
-                                                                        <span className="text-[8px]">/100g</span>
+                                                                    <div className="text-[10px] text-muted-foreground uppercase tracking-tight flex items-center gap-3 mt-1 opacity-70">
+                                                                        <div className="flex items-center gap-1">
+                                                                            <Folder className="w-3 h-3 text-muted-foreground/60" />
+                                                                            <span className="truncate max-w-[120px]">{food.grupo}</span>
+                                                                        </div>
+                                                                        <span className="w-1 h-1 rounded-full bg-border" />
+                                                                        <div className="flex items-center gap-1 text-foreground/80">
+                                                                            <Flame className="w-3 h-3 text-orange-500/70" />
+                                                                            <span className="tabular-nums">{Math.round(food.energia_kcal)} kcal</span>
+                                                                            <span className="text-[8px]">/100g</span>
+                                                                        </div>
                                                                     </div>
+                                                                </div>
+                                                            </div>
+                                                            <div className="flex items-center gap-3 opacity-0 group-hover:opacity-100 transition-all transform translate-x-4 group-hover:translate-x-0">
+                                                                <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-lg shadow-primary/30">
+                                                                    <ArrowRight className="w-4 h-4" />
                                                                 </div>
                                                             </div>
                                                         </div>
-                                                        <div className="flex items-center gap-3 opacity-0 group-hover:opacity-100 transition-all transform translate-x-4 group-hover:translate-x-0">
-                                                            <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-lg shadow-primary/30">
-                                                                <ArrowRight className="w-4 h-4" />
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                )
-                                            })}
+                                                    )
+                                                })}
                                         </div>
                                     ) : (
                                         <div className="p-16 text-center flex flex-col items-center gap-4">
@@ -623,31 +629,35 @@ export function DietMealCard({
                                                                     energia_kcal: (food.ptn * 4 + food.cho * 4 + food.fat * 9),
                                                                     unidade_caseira: food.unidade_caseira,
                                                                     peso_unidade_caseira_g: food.peso_unidade_caseira_g,
-                                                                    medidas: food.medidas,
+                                                                    medidas: food.medidas || [],
                                                                     is_favorite: false
                                                                 };
                                                                 await addFavorite(foodToFav);
                                                             } else {
                                                                 try {
-                                                                    const searchRes = await foodService.search(food.name, undefined);
-                                                                    const firstMatch = searchRes.results.find((f: any) => f.nome === food.name);
-                                                                    if (firstMatch) {
-                                                                        addFavorite(firstMatch);
+                                                                    // Se não tem ID original (ex: veio de um preset ou custom), busca pelo nome exato
+                                                                    const searchRes = await foodService.search(food.name, { limit: 5 });
+                                                                    const exactMatch = searchRes.results.find((f: any) => f.nome.trim().toLowerCase() === food.name.trim().toLowerCase());
+
+                                                                    if (exactMatch) {
+                                                                        await addFavorite(exactMatch);
+                                                                    } else if (searchRes.results.length > 0) {
+                                                                        // Se não achou exato mas tem resultados, pega o primeiro como melhor tentativa
+                                                                        await addFavorite(searchRes.results[0]);
                                                                     } else {
-                                                                        alert("Food ID not found.");
+                                                                        alert("Não foi possível encontrar o ID original deste alimento para favoritar.");
                                                                     }
                                                                 } catch (err) {
-                                                                    console.error(err);
+                                                                    console.error("Erro ao favoritar alimento da lista:", err);
                                                                 }
                                                             }
+
                                                         }}
                                                     >
                                                         <Star className={cn("w-4 h-4 transition-colors", favorites.some(fav => (food.originalId && String(fav.id) === String(food.originalId) && fav.source === food.source) || (!food.originalId && fav.nome.trim().toLowerCase() === food.name.trim().toLowerCase())) ? "fill-amber-400 text-amber-400" : "")} />
                                                     </button>
 
-                                                    <div className="w-8 h-8 rounded-lg bg-primary/5 flex items-center justify-center text-lg shrink-0 border border-primary/10">
-                                                        {getFoodIcon(food.name, food.prep || '')}
-                                                    </div>
+                                                    <FoodIcon name={food.name} group={food.prep || ''} size="md" />
                                                     <div className="min-w-0">
                                                         <div className="text-sm text-foreground truncate max-w-[280px] transition-colors">{food.name}</div>
                                                         <div className="text-[10px] text-muted-foreground uppercase tracking-tight flex items-center gap-1.5 mt-0.5">

@@ -22,6 +22,7 @@ import { PatientAnamnesisTab } from "@/components/patients/PatientAnamnesisTab"
 const MOCK_PATIENT = { id: 1, name: 'Paciente Exemplo' }
 
 export function DietEcosystem() {
+    const scrollContainerRef = React.useRef<HTMLDivElement>(null)
     const searchParams = useSearchParams()
     const urlPatientId = searchParams.get('patientId')
 
@@ -31,6 +32,23 @@ export function DietEcosystem() {
     const setPatient = useDietEditorStore(state => state.setPatient)
     const calculateMetabolics = useDietEditorStore(state => state.calculateMetabolics)
     const loadPatientDiet = useDietEditorStore(state => state.loadPatientDiet)
+
+    // Ensure page starts at the top when loaded
+    useEffect(() => {
+        const forceScroll = () => {
+            // Scroll internal container
+            if (scrollContainerRef.current) {
+                scrollContainerRef.current.scrollTop = 0;
+            }
+            // Scroll window just in case
+            window.scrollTo(0, 0);
+        };
+
+        // Execute immediately and after a short delay to override any autofocus
+        forceScroll();
+        const timer = setTimeout(forceScroll, 100);
+        return () => clearTimeout(timer);
+    }, []);
 
     // ONLY use URL Patient ID - ignore localStorage to prevent stale ID issues
     // If no URL param, user must select a patient (no auto-load from store)
@@ -273,7 +291,7 @@ export function DietEcosystem() {
             </div>
 
             {/* AREA: WORKSPACE / TABS CONTENT */}
-            <div className="flex-1 relative overflow-y-auto">
+            <div className="flex-1 relative overflow-y-auto" ref={scrollContainerRef}>
                 {/* Backdrop Layer */}
                 <AnimatePresence>
                     {activeTab && activeTab !== 'diet' && (
