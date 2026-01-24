@@ -167,6 +167,18 @@ class PatientMealsViewSet(viewsets.ViewSet):
                 .order_by("time")
             )
 
+            # FALLBACK: Se não houver refeições para hoje, tentar dia 0 (padrão)
+            # ou o primeiro dia disponível na dieta.
+            if not meals.exists():
+                available_days = Meal.objects.filter(diet=active_diet).values_list('day_of_week', flat=True).distinct()
+                if available_days.exists():
+                    fallback_day = 0 if 0 in available_days else sorted(list(available_days))[0]
+                    meals = (
+                        Meal.objects.filter(diet=active_diet, day_of_week=fallback_day)
+                        .prefetch_related("items")
+                        .order_by("time")
+                    )
+
             result = []
             for meal in meals:
                 # Determine status based on time
@@ -472,6 +484,21 @@ class PatientMealsViewSet(viewsets.ViewSet):
 
             # Create check-in record
             MealCheckIn.objects.create(patient=patient, meal=meal)
+
+            # Criar notificação para o nutricionista
+            try:
+                from notifications.models import Notification
+                from django.utils import timezone
+                
+                Notification.objects.create(
+                    user=patient.nutritionist,
+                    title="Novo Check-in de Refeição! 🥗",
+                    message=f"Seu paciente {patient.user.name} registrou a refeição: {meal.name}.",
+                    notification_type="meal_checkin",
+                    sent_at=timezone.now()
+                )
+            except Exception as e:
+                print(f"Erro ao criar notificação de check-in: {e}")
 
             return Response({"status": "checked_in"}, status=status.HTTP_200_OK)
         except PatientProfile.DoesNotExist:

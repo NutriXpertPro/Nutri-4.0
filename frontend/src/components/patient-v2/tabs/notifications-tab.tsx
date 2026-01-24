@@ -93,12 +93,11 @@ export function NotificationsTab({ onNavigate, onBack }: { onNavigate: (tab: str
     }
 
     const getIcon = (type: string) => {
-        switch (type) {
-            case 'message': return <MessageSquare className="w-5 h-5 text-blue-500" />
-            case 'appointment': return <Calendar className="w-5 h-5 text-amber-500" />
-            case 'diet': return <UtensilsCrossed className="w-5 h-5 text-green-500" />
-            default: return <Bell className="w-5 h-5 text-primary" />
-        }
+        const t = type.toLowerCase()
+        if (t === 'message' || t === 'new_message') return <MessageSquare className="w-5 h-5 text-blue-500" />
+        if (t === 'appointment' || t === 'appointment_reminder') return <Calendar className="w-5 h-5 text-amber-500" />
+        if (t === 'diet' || t === 'new_diet' || t === 'diet_expiry') return <UtensilsCrossed className="w-5 h-5 text-green-500" />
+        return <Bell className="w-5 h-5 text-primary" />
     }
 
     if (loading) {

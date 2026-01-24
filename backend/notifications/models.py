@@ -10,6 +10,8 @@ class Notification(models.Model):
     NOTIFICATION_TYPES = [
         ('appointment_reminder', 'Lembrete de Consulta'),
         ('diet_expiry', 'Dieta Próxima ao Vencimento'),
+        ('new_diet', 'Novo Plano Alimentar'),
+        ('meal_checkin', 'Registro de Refeição'),
         ('new_message', 'Nova Mensagem'),
         ('system', 'Notificação do Sistema'),
         ('payment', 'Notificação de Pagamento'),

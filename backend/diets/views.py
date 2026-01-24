@@ -1084,7 +1084,50 @@ class DietViewSet(viewsets.ModelViewSet):
                 is_active=False
             )
 
-        serializer.save()
+        diet = serializer.save()
+
+        # Criar notificação para o paciente
+        if is_active:
+            try:
+                from notifications.models import Notification
+                from django.utils import timezone
+                
+                Notification.objects.create(
+                    user=diet.patient.user,
+                    title="Novo Plano Alimentar! 🍎",
+                    message=f"Seu nutricionista acabou de enviar seu novo plano: {diet.name}. Confira agora!",
+                    notification_type="new_diet",
+                    sent_at=timezone.now()
+                )
+            except Exception as e:
+                print(f"Erro ao criar notificação de dieta: {e}")
+    def perform_update(self, serializer):
+        # Se a dieta atualizada for ativa, desative as outras
+        is_active = self.request.data.get("is_active", True)
+        patient_id = self.request.data.get("patient")
+
+        if is_active and patient_id:
+            Diet.objects.filter(patient_id=patient_id, is_active=True).exclude(pk=serializer.instance.pk).update(
+                is_active=False
+            )
+
+        diet = serializer.save()
+
+        # Criar notificação para o paciente
+        if is_active:
+            try:
+                from notifications.models import Notification
+                from django.utils import timezone
+                
+                Notification.objects.create(
+                    user=diet.patient.user,
+                    title="Plano Alimentar Atualizado! 🍎",
+                    message=f"Seu plano '{diet.name}' foi atualizado. Dê uma olhada nas novidades!",
+                    notification_type="new_diet",
+                    sent_at=timezone.now()
+                )
+            except Exception as e:
+                print(f"Erro ao criar notificação de atualização: {e}")
 
     @action(detail=True, methods=["POST"], parser_classes=[MultiPartParser, FormParser])
     def upload_pdf(self, request, pk=None):

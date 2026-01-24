@@ -1,14 +1,28 @@
-// Simplified version of use-toast for immediate fix
-import * as React from "react"
+import { toast as sonnerToast } from "sonner"
 
 export const useToast = () => {
     return {
         toast: (props: any) => {
-            console.log("Toast:", props)
-            if (props.variant === "destructive") {
-                alert(`Erro: ${props.title}\n${props.description}`)
+            const { title, description, variant, duration = 5000, className, ...rest } = props
+
+            if (variant === "destructive") {
+                sonnerToast.error(title, {
+                    description: description,
+                    duration: duration,
+                    ...rest
+                })
+            } else if (className?.includes("bg-green") || variant === "success") {
+                sonnerToast.success(title, {
+                    description: description,
+                    duration: duration,
+                    ...rest
+                })
             } else {
-                alert(`${props.title}\n${props.description}`)
+                sonnerToast(title, {
+                    description: description,
+                    duration: duration,
+                    ...rest
+                })
             }
         },
         dismiss: (dismissId?: string) => { },
@@ -16,5 +30,9 @@ export const useToast = () => {
 }
 
 export const toast = (props: any) => {
-    console.log("Toast:", props)
+    const { title, description, duration = 5000 } = props
+    sonnerToast(title, {
+        description: description,
+        duration: duration
+    })
 }

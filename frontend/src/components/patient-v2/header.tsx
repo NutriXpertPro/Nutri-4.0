@@ -25,13 +25,17 @@ export function PatientHeaderV2({ onNavigate }: { onNavigate?: (tab: string) => 
   const { logout } = useAuth()
   const totalUnread = conversations.reduce((acc: number, conv: any) => acc + (conv.unread || 0), 0)
   const hasUnread = totalUnread > 0
+  const isFirstLoad = useRef(true)
   const prevUnreadRef = useRef(totalUnread)
 
   // Tocar som quando houver novas mensagens não lidas
   useEffect(() => {
-    if (totalUnread > prevUnreadRef.current) {
+    // Só toca se não for a primeira carga E se a contagem aumentou
+    if (!isFirstLoad.current && totalUnread > prevUnreadRef.current) {
       notificationService.playNotificationSound()
     }
+
+    isFirstLoad.current = false
     prevUnreadRef.current = totalUnread
   }, [totalUnread])
 

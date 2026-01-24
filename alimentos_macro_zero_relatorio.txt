@@ -1,0 +1,1257 @@
+RELATÓRIO DE ALIMENTOS COM MACRONUTRIENTES ZERADOS DE FORMA INADEQUADA
+======================================================================
+
+Total de alimentos identificados: 313
+
+  1. Milho, amido, cru
+     Fonte: TACO
+     Macronutriente: lipidio = 0g
+
+  2. Abóbora, menina brasileira, crua
+     Fonte: TACO
+     Macronutriente: lipidio = 0g
+
+  3. Batata, inglesa, cozida
+     Fonte: TACO
+     Macronutriente: lipidio = 0g
+
+  4. Batata, inglesa, crua
+     Fonte: TACO
+     Macronutriente: lipidio = 0g
+
+  5. Chuchu, cozido
+     Fonte: TACO
+     Macronutriente: lipidio = 0g
+
+  6. Pepino, cru
+     Fonte: TACO
+     Macronutriente: lipidio = 0g
+
+  7. Polvilho, doce
+     Fonte: TACO
+     Macronutriente: lipidio = 0g
+
+  8. Tomate, purê
+     Fonte: TACO
+     Macronutriente: lipidio = 0g
+
+  9. Tomate, salada
+     Fonte: TACO
+     Macronutriente: lipidio = 0g
+
+ 10. Acerola, polpa, congelada
+     Fonte: TACO
+     Macronutriente: lipidio = 0g
+
+ 11. Ameixa, calda, enlatada
+     Fonte: TACO
+     Macronutriente: lipidio = 0g
+
+ 12. Ameixa, crua
+     Fonte: TACO
+     Macronutriente: lipidio = 0g
+
+ 13. Cajá-Manga, cru
+     Fonte: TACO
+     Macronutriente: lipidio = 0g
+
+ 14. Goiaba, doce em pasta
+     Fonte: TACO
+     Macronutriente: lipidio = 0g
+
+ 15. Laranja, baía, suco
+     Fonte: TACO
+     Macronutriente: lipidio = 0g
+
+ 16. Limão, cravo, suco
+     Fonte: TACO
+     Macronutriente: lipidio = 0g
+
+ 17. Maçã, Fuji, com casca, crua
+     Fonte: TACO
+     Macronutriente: lipidio = 0g
+
+ 18. Melancia, crua
+     Fonte: TACO
+     Macronutriente: lipidio = 0g
+
+ 19. Melão, cru
+     Fonte: TACO
+     Macronutriente: lipidio = 0g
+
+ 20. Nêspera, crua
+     Fonte: TACO
+     Macronutriente: lipidio = 0g
+
+ 21. Pêssego, Aurora, cru
+     Fonte: TACO
+     Macronutriente: lipidio = 0g
+
+ 22. Pêssego, enlatado, em calda
+     Fonte: TACO
+     Macronutriente: lipidio = 0g
+
+ 23. Romã, crua
+     Fonte: TACO
+     Macronutriente: lipidio = 0g
+
+ 24. Tangerina, Poncã, suco
+     Fonte: TACO
+     Macronutriente: lipidio = 0g
+
+ 25. Umbu, cru
+     Fonte: TACO
+     Macronutriente: lipidio = 0g
+
+ 26. Uva, suco concentrado, envasado
+     Fonte: TACO
+     Macronutriente: proteina = 0g
+
+ 27. Uva, suco concentrado, envasado
+     Fonte: TACO
+     Macronutriente: lipidio = 0g
+
+ 28. Azeite, de dendê
+     Fonte: TACO
+     Macronutriente: proteina = 0g
+
+ 29. Azeite, de dendê
+     Fonte: TACO
+     Macronutriente: carboidrato = 0g
+
+ 30. Azeite, de oliva, extra virgem
+     Fonte: TACO
+     Macronutriente: proteina = 0g
+
+ 31. Azeite, de oliva, extra virgem
+     Fonte: TACO
+     Macronutriente: carboidrato = 0g
+
+ 32. Abadejo, filé, congelado, assado
+     Fonte: TACO
+     Macronutriente: carboidrato = 0g
+
+ 33. Abadejo, filé, congelado,cozido
+     Fonte: TACO
+     Macronutriente: carboidrato = 0g
+
+ 34. Abadejo, filé, congelado, cru
+     Fonte: TACO
+     Macronutriente: carboidrato = 0g
+
+ 35. Abadejo, filé, congelado, grelhado
+     Fonte: TACO
+     Macronutriente: carboidrato = 0g
+
+ 36. Atum, fresco, cru
+     Fonte: TACO
+     Macronutriente: carboidrato = 0g
+
+ 37. Bacalhau, salgado, cru
+     Fonte: TACO
+     Macronutriente: carboidrato = 0g
+
+ 38. Cação, posta, cozida
+     Fonte: TACO
+     Macronutriente: carboidrato = 0g
+
+ 39. Cação, posta, crua
+     Fonte: TACO
+     Macronutriente: carboidrato = 0g
+
+ 40. Camarão, Rio Grande, grande, cozido
+     Fonte: TACO
+     Macronutriente: carboidrato = 0g
+
+ 41. Camarão, Rio Grande, grande, cru
+     Fonte: TACO
+     Macronutriente: carboidrato = 0g
+
+ 42. Caranguejo, cozido
+     Fonte: TACO
+     Macronutriente: carboidrato = 0g
+
+ 43. Corimbatá, assado
+     Fonte: TACO
+     Macronutriente: carboidrato = 0g
+
+ 44. Corimbatá, cozido
+     Fonte: TACO
+     Macronutriente: carboidrato = 0g
+
+ 45. Corvina de água doce, crua
+     Fonte: TACO
+     Macronutriente: carboidrato = 0g
+
+ 46. Corvina do mar, crua
+     Fonte: TACO
+     Macronutriente: carboidrato = 0g
+
+ 47. Corvina grande, assada
+     Fonte: TACO
+     Macronutriente: carboidrato = 0g
+
+ 48. Corvina grande, cozida
+     Fonte: TACO
+     Macronutriente: carboidrato = 0g
+
+ 49. Dourada de água doce, fresca
+     Fonte: TACO
+     Macronutriente: carboidrato = 0g
+
+ 50. Lambari, congelado, cru
+     Fonte: TACO
+     Macronutriente: carboidrato = 0g
+
+ 51. Lambari, congelado, frito
+     Fonte: TACO
+     Macronutriente: carboidrato = 0g
+
+ 52. Lambari, fresco,cru
+     Fonte: TACO
+     Macronutriente: carboidrato = 0g
+
+ 53. Manjuba, frita
+     Fonte: TACO
+     Macronutriente: carboidrato = 0g
+
+ 54. Merluza, filé, assado
+     Fonte: TACO
+     Macronutriente: carboidrato = 0g
+
+ 55. Merluza, filé, cru
+     Fonte: TACO
+     Macronutriente: carboidrato = 0g
+
+ 56. Merluza, filé, frito
+     Fonte: TACO
+     Macronutriente: carboidrato = 0g
+
+ 57. Pescada, branca, crua
+     Fonte: TACO
+     Macronutriente: carboidrato = 0g
+
+ 58. Pescada, branca, frita
+     Fonte: TACO
+     Macronutriente: carboidrato = 0g
+
+ 59. Pescada, filé, cru
+     Fonte: TACO
+     Macronutriente: carboidrato = 0g
+
+ 60. Pescada, filé, frito
+     Fonte: TACO
+     Macronutriente: carboidrato = 0g
+
+ 61. Pescadinha, crua
+     Fonte: TACO
+     Macronutriente: carboidrato = 0g
+
+ 62. Pintado, assado
+     Fonte: TACO
+     Macronutriente: carboidrato = 0g
+
+ 63. Pintado, cru
+     Fonte: TACO
+     Macronutriente: carboidrato = 0g
+
+ 64. Pintado, grelhado
+     Fonte: TACO
+     Macronutriente: carboidrato = 0g
+
+ 65. Porquinho, cru
+     Fonte: TACO
+     Macronutriente: carboidrato = 0g
+
+ 66. Salmão, filé, com pele, fresco,  grelhado
+     Fonte: TACO
+     Macronutriente: carboidrato = 0g
+
+ 67. Salmão, sem pele, fresco, cru
+     Fonte: TACO
+     Macronutriente: carboidrato = 0g
+
+ 68. Salmão, sem pele, fresco, grelhado
+     Fonte: TACO
+     Macronutriente: carboidrato = 0g
+
+ 69. Sardinha, assada
+     Fonte: TACO
+     Macronutriente: carboidrato = 0g
+
+ 70. Sardinha, frita
+     Fonte: TACO
+     Macronutriente: carboidrato = 0g
+
+ 71. Sardinha, inteira, crua
+     Fonte: TACO
+     Macronutriente: carboidrato = 0g
+
+ 72. Lingüiça, porco, crua
+     Fonte: TACO
+     Macronutriente: carboidrato = 0g
+
+ 73. Lingüiça, porco, frita
+     Fonte: TACO
+     Macronutriente: carboidrato = 0g
+
+ 74. Lingüiça, porco, grelhada
+     Fonte: TACO
+     Macronutriente: carboidrato = 0g
+
+ 75. Peru, congelado, assado
+     Fonte: TACO
+     Macronutriente: carboidrato = 0g
+
+ 76. Peru, congelado, cru
+     Fonte: TACO
+     Macronutriente: carboidrato = 0g
+
+ 77. Porco, bisteca, crua
+     Fonte: TACO
+     Macronutriente: carboidrato = 0g
+
+ 78. Porco, bisteca, frita
+     Fonte: TACO
+     Macronutriente: carboidrato = 0g
+
+ 79. Porco, bisteca, grelhada
+     Fonte: TACO
+     Macronutriente: carboidrato = 0g
+
+ 80. Porco, costela, assada
+     Fonte: TACO
+     Macronutriente: carboidrato = 0g
+
+ 81. Porco, costela, crua
+     Fonte: TACO
+     Macronutriente: carboidrato = 0g
+
+ 82. Porco, lombo, assado
+     Fonte: TACO
+     Macronutriente: carboidrato = 0g
+
+ 83. Porco, lombo, cru
+     Fonte: TACO
+     Macronutriente: carboidrato = 0g
+
+ 84. Porco, orelha, salgada, crua
+     Fonte: TACO
+     Macronutriente: carboidrato = 0g
+
+ 85. Porco, pernil, assado
+     Fonte: TACO
+     Macronutriente: carboidrato = 0g
+
+ 86. Porco, pernil, cru
+     Fonte: TACO
+     Macronutriente: carboidrato = 0g
+
+ 87. Porco, rabo, salgado, cru
+     Fonte: TACO
+     Macronutriente: carboidrato = 0g
+
+ 88. Toucinho, cru
+     Fonte: TACO
+     Macronutriente: carboidrato = 0g
+
+ 89. Toucinho, frito
+     Fonte: TACO
+     Macronutriente: carboidrato = 0g
+
+ 90. Iogurte, sabor abacaxi
+     Fonte: TACO
+     Macronutriente: proteina = 0g
+
+ 91. Iogurte, sabor abacaxi
+     Fonte: TACO
+     Macronutriente: lipidio = 0g
+
+ 92. Iogurte, sabor abacaxi
+     Fonte: TACO
+     Macronutriente: carboidrato = 0g
+
+ 93. Leite, de vaca, desnatado, UHT
+     Fonte: TACO
+     Macronutriente: proteina = 0g
+
+ 94. Leite, de vaca, desnatado, UHT
+     Fonte: TACO
+     Macronutriente: lipidio = 0g
+
+ 95. Leite, de vaca, desnatado, UHT
+     Fonte: TACO
+     Macronutriente: carboidrato = 0g
+
+ 96. Leite, de vaca, integral
+     Fonte: TACO
+     Macronutriente: proteina = 0g
+
+ 97. Leite, de vaca, integral
+     Fonte: TACO
+     Macronutriente: lipidio = 0g
+
+ 98. Leite, de vaca, integral
+     Fonte: TACO
+     Macronutriente: carboidrato = 0g
+
+ 99. Bebida isotônica, sabores variados
+     Fonte: TACO
+     Macronutriente: proteina = 0g
+
+100. Bebida isotônica, sabores variados
+     Fonte: TACO
+     Macronutriente: lipidio = 0g
+
+101. Cana, aguardente 1
+     Fonte: TACO
+     Macronutriente: proteina = 0g
+
+102. Cana, aguardente 1
+     Fonte: TACO
+     Macronutriente: lipidio = 0g
+
+103. Cana, aguardente 1
+     Fonte: TACO
+     Macronutriente: carboidrato = 0g
+
+104. Cana, caldo de
+     Fonte: TACO
+     Macronutriente: proteina = 0g
+
+105. Cana, caldo de
+     Fonte: TACO
+     Macronutriente: lipidio = 0g
+
+106. Cerveja, pilsen 2
+     Fonte: TACO
+     Macronutriente: lipidio = 0g
+
+107. Chá, erva-doce, infusão 5%
+     Fonte: TACO
+     Macronutriente: proteina = 0g
+
+108. Chá, erva-doce, infusão 5%
+     Fonte: TACO
+     Macronutriente: lipidio = 0g
+
+109. Chá, mate, infusão 5%
+     Fonte: TACO
+     Macronutriente: proteina = 0g
+
+110. Chá, preto, infusão 5%
+     Fonte: TACO
+     Macronutriente: proteina = 0g
+
+111. Chá, preto, infusão 5%
+     Fonte: TACO
+     Macronutriente: lipidio = 0g
+
+112. Coco, água de
+     Fonte: TACO
+     Macronutriente: proteina = 0g
+
+113. Coco, água de
+     Fonte: TACO
+     Macronutriente: lipidio = 0g
+
+114. Refrigerante, tipo água tônica
+     Fonte: TACO
+     Macronutriente: proteina = 0g
+
+115. Refrigerante, tipo água tônica
+     Fonte: TACO
+     Macronutriente: lipidio = 0g
+
+116. Refrigerante, tipo cola
+     Fonte: TACO
+     Macronutriente: proteina = 0g
+
+117. Refrigerante, tipo cola
+     Fonte: TACO
+     Macronutriente: lipidio = 0g
+
+118. Refrigerante, tipo guaraná
+     Fonte: TACO
+     Macronutriente: proteina = 0g
+
+119. Refrigerante, tipo guaraná
+     Fonte: TACO
+     Macronutriente: lipidio = 0g
+
+120. Refrigerante, tipo laranja
+     Fonte: TACO
+     Macronutriente: proteina = 0g
+
+121. Refrigerante, tipo laranja
+     Fonte: TACO
+     Macronutriente: lipidio = 0g
+
+122. Refrigerante, tipo limão
+     Fonte: TACO
+     Macronutriente: proteina = 0g
+
+123. Refrigerante, tipo limão
+     Fonte: TACO
+     Macronutriente: lipidio = 0g
+
+124. Ovo, de galinha, clara, cozida/10minutos
+     Fonte: TACO
+     Macronutriente: carboidrato = 0g
+
+125. Açúcar, cristal
+     Fonte: TACO
+     Macronutriente: lipidio = 0g
+
+126. Açúcar, refinado
+     Fonte: TACO
+     Macronutriente: lipidio = 0g
+
+127. Glicose de milho
+     Fonte: TACO
+     Macronutriente: lipidio = 0g
+
+128. Mel, de abelha
+     Fonte: TACO
+     Macronutriente: proteina = 0g
+
+129. Mel, de abelha
+     Fonte: TACO
+     Macronutriente: lipidio = 0g
+
+130. Melado
+     Fonte: TACO
+     Macronutriente: proteina = 0g
+
+131. Melado
+     Fonte: TACO
+     Macronutriente: lipidio = 0g
+
+132. Gelatina, sabores variados, pó
+     Fonte: TACO
+     Macronutriente: lipidio = 0g
+
+133. Sal, dietético
+     Fonte: TACO
+     Macronutriente: proteina = 0g
+
+134. Sal, dietético
+     Fonte: TACO
+     Macronutriente: lipidio = 0g
+
+135. Sal, dietético
+     Fonte: TACO
+     Macronutriente: carboidrato = 0g
+
+136. Sal, grosso
+     Fonte: TACO
+     Macronutriente: proteina = 0g
+
+137. Sal, grosso
+     Fonte: TACO
+     Macronutriente: lipidio = 0g
+
+138. Sal, grosso
+     Fonte: TACO
+     Macronutriente: carboidrato = 0g
+
+139. Bife à cavalo, com contra filé
+     Fonte: TACO
+     Macronutriente: carboidrato = 0g
+
+140. Dobradinha
+     Fonte: TACO
+     Macronutriente: carboidrato = 0g
+
+141. Coco, verde, cru
+     Fonte: TACO
+     Macronutriente: proteina = 0g
+
+142. Coco, verde, cru
+     Fonte: TACO
+     Macronutriente: lipidio = 0g
+
+143. Coco, verde, cru
+     Fonte: TACO
+     Macronutriente: carboidrato = 0g
+
+144. Sagu, morango, mistura p/, preparada,
+     Fonte: TBCA
+     Macronutriente: proteina = 0.0g
+
+145. Bebida, infusão, mentrasto, planta, folha, s/ açúcar, Ageratum conyzoides L.,
+     Fonte: TBCA
+     Macronutriente: lipidio = 0.0g
+
+146. Bebida, infusão, malva-santa, planta, folha, s/ açúcar, Plectranthus barbatus Andr.,
+     Fonte: TBCA
+     Macronutriente: lipidio = 0.0g
+
+147. Bebida, chá, lata/garrafa, limão, light, Lipton,
+     Fonte: TBCA
+     Macronutriente: proteina = 0.0g
+
+148. Bebida, chá, lata/garrafa, limão, light, Lipton,
+     Fonte: TBCA
+     Macronutriente: lipidio = 0.0g
+
+149. Azeite, oliva, assado, Olea europaea L.,
+     Fonte: TBCA
+     Macronutriente: proteina = 0.0g
+
+150. Bebida, chá, erva-doce, infusão 5%, c/ açúcar, Pimpinela anisum,
+     Fonte: TBCA
+     Macronutriente: lipidio = 0.0g
+
+151. Sagu, maracujá, mistura p/, Ducoco,
+     Fonte: TBCA
+     Macronutriente: lipidio = 0.0g
+
+152. Bebida, chá, infusão, eparema, planta, folha, s/ açúcar, Costus aff. Discolor Roscoe,
+     Fonte: TBCA
+     Macronutriente: lipidio = 0.0g
+
+153. Azeite, dendê, Elaeis guineensis Jacq.,
+     Fonte: TBCA
+     Macronutriente: proteina = 0.0g
+
+154. Bebida alcoólica, vinho, tinto, Merlot,
+     Fonte: TBCA
+     Macronutriente: lipidio = 0.0g
+
+155. Bala, dura,
+     Fonte: TBCA
+     Macronutriente: proteina = 0.0g
+
+156. Bombom, chocolate ao leite, recheado c/ coco, It de coco, Garoto,
+     Fonte: TBCA
+     Macronutriente: proteina = 0.0g
+
+157. Calda, chocolate,
+     Fonte: TBCA
+     Macronutriente: proteina = 0.0g
+
+158. Calda, chocolate,
+     Fonte: TBCA
+     Macronutriente: lipidio = 0.0g
+
+159. Picolé, industrializado, c/ suco de fruta (média de diferentes sabores),
+     Fonte: TBCA
+     Macronutriente: proteina = 0.0g
+
+160. Gelatina, abacaxi, em pó, Ducoco,
+     Fonte: TBCA
+     Macronutriente: lipidio = 0.0g
+
+161. Tapioca, sem manteiga, sem recheio,
+     Fonte: TBCA
+     Macronutriente: lipidio = 0.0g
+
+162. Glicose,  milho,
+     Fonte: TBCA
+     Macronutriente: lipidio = 0.0g
+
+163. Bebida, chá, lata/garrafa, pêssego, light, Lipton,
+     Fonte: TBCA
+     Macronutriente: proteina = 0.0g
+
+164. Bebida, chá, lata/garrafa, pêssego, light, Lipton,
+     Fonte: TBCA
+     Macronutriente: lipidio = 0.0g
+
+165. Bebida, infusão, malvariço, planta, folha, s/ açúcar, Plectraanthus amboinicus (Lour.) Spreng.,
+     Fonte: TBCA
+     Macronutriente: lipidio = 0.0g
+
+166. Bebida alcóolica, licor, cointreau,
+     Fonte: TBCA
+     Macronutriente: proteina = 0.0g
+
+167. Refrigerante, tipo guaraná, c/ adoçante,
+     Fonte: TBCA
+     Macronutriente: lipidio = 0.0g
+
+168. Bebida, chá, infusão, cidreira, planta, folha, c/ açúcar, Lippia alba (Mill.) N.E. Brown,
+     Fonte: TBCA
+     Macronutriente: lipidio = 0.0g
+
+169. Sagu, mistura p/, preparada (média de diferentes sabores),
+     Fonte: TBCA
+     Macronutriente: proteina = 0.0g
+
+170. Bebida alcóolica, margarita (tequila, cointreau, suco de limão e sal),
+     Fonte: TBCA
+     Macronutriente: proteina = 0.0g
+
+171. Gelatina, limão, em pó, diet, Ducocco,
+     Fonte: TBCA
+     Macronutriente: lipidio = 0.0g
+
+172. Refrigerante, regular, c/ açúcar (média de diferentes amostras),
+     Fonte: TBCA
+     Macronutriente: lipidio = 0.0g
+
+173. Refrigerante, tipo água tônica, regular, c/ açúcar,
+     Fonte: TBCA
+     Macronutriente: lipidio = 0.0g
+
+174. Vinagre, balsâmico,
+     Fonte: TBCA
+     Macronutriente: lipidio = 0.0g
+
+175. Calda de frutas,
+     Fonte: TBCA
+     Macronutriente: proteina = 0.0g
+
+176. Calda de frutas,
+     Fonte: TBCA
+     Macronutriente: lipidio = 0.0g
+
+177. Azeite, oliva, frito, Olea europaea L.,
+     Fonte: TBCA
+     Macronutriente: proteina = 0.0g
+
+178. Bebida, chá, infusão, capim-santo (capim-cidreira, capim-limão), planta, folha, s/ açúcar, Cymbopogon citratus Stapf.,
+     Fonte: TBCA
+     Macronutriente: lipidio = 0.0g
+
+179. Refrigerante, tipo limão, regular, c/ açúcar,
+     Fonte: TBCA
+     Macronutriente: lipidio = 0.0g
+
+180. Sagu, uva, mistura p/, Ducoco,
+     Fonte: TBCA
+     Macronutriente: lipidio = 0.0g
+
+181. Bebida, infusão, hortelã rasteira, planta, folha, c/ açúcar, Mentha x vilosa Huds,
+     Fonte: TBCA
+     Macronutriente: lipidio = 0.0g
+
+182. Refrigerante, tipo laranja, c/ adoçante,
+     Fonte: TBCA
+     Macronutriente: lipidio = 0.0g
+
+183. Bebida, chá, infusão, capim-santo (capim-cidreira, capim-limão), planta, folha, c/ açúcar, Cymbopogon citratus Stapf.,
+     Fonte: TBCA
+     Macronutriente: lipidio = 0.0g
+
+184. Bebida alcoólica, vinho, tinto, Isabel,
+     Fonte: TBCA
+     Macronutriente: lipidio = 0.0g
+
+185. Coco, água,
+     Fonte: TBCA
+     Macronutriente: proteina = 0.0g
+
+186. Coco, água,
+     Fonte: TBCA
+     Macronutriente: lipidio = 0.0g
+
+187. Bebida, chá, infusão, anador grande, planta, folha, s/ açúcar, Justicia gendarussa L.,
+     Fonte: TBCA
+     Macronutriente: lipidio = 0.0g
+
+188. Bebida alcoólica, vinho (média diferentes amostras),
+     Fonte: TBCA
+     Macronutriente: lipidio = 0.0g
+
+189. Bebida, infusão, erva-mate, chimarrão, (70g de matéria seca - 30% de ramos e 70% de folhas - em 1 L de água), Ilex paraguariensis St. Hil.,
+     Fonte: TBCA
+     Macronutriente: lipidio = 0.0g
+
+190. Bebida alcoólica, vinho, rose (média diferentes amostras),
+     Fonte: TBCA
+     Macronutriente: lipidio = 0.0g
+
+191. Bala, diet (média de diferentes sabores),
+     Fonte: TBCA
+     Macronutriente: proteina = 0.0g
+
+192. Vinagre, arroz,
+     Fonte: TBCA
+     Macronutriente: lipidio = 0.0g
+
+193. Gelatina, pêssego, em pó, Oetker,
+     Fonte: TBCA
+     Macronutriente: lipidio = 0.0g
+
+194. Refrigerante, tipo cola, regular, c/ açúcar,
+     Fonte: TBCA
+     Macronutriente: lipidio = 0.0g
+
+195. Bebida, infusão, hortelã rasteira, planta, folha, s/ açúcar, Mentha x vilosa Huds,
+     Fonte: TBCA
+     Macronutriente: lipidio = 0.0g
+
+196. Refrigerante, tipo cola, c/ adoçante,
+     Fonte: TBCA
+     Macronutriente: proteina = 0.0g
+
+197. Refrigerante, tipo cola, c/ adoçante,
+     Fonte: TBCA
+     Macronutriente: lipidio = 0.0g
+
+198. Sagu, morango, mistura p/, Ducoco,
+     Fonte: TBCA
+     Macronutriente: lipidio = 0.0g
+
+199. Banha, suína,
+     Fonte: TBCA
+     Macronutriente: proteina = 0.0g
+
+200. Gelatina, cereja, em pó, Ducoco,
+     Fonte: TBCA
+     Macronutriente: lipidio = 0.0g
+
+201. Pudim, chocolate, mistura p/, diet, Ducoco,
+     Fonte: TBCA
+     Macronutriente: lipidio = 0.0g
+
+202. Sal rosa, Himalaia,
+     Fonte: TBCA
+     Macronutriente: proteina = 0.0g
+
+203. Sal rosa, Himalaia,
+     Fonte: TBCA
+     Macronutriente: lipidio = 0.0g
+
+204. Pudim, baunilha, mistura p/, diet,
+     Fonte: TBCA
+     Macronutriente: lipidio = 0.0g
+
+205. Gelatina, uva, em pó, diet, Ducocco,
+     Fonte: TBCA
+     Macronutriente: lipidio = 0.0g
+
+206. Bebida, chá, preto, infusão 5%, s/ açúcar,
+     Fonte: TBCA
+     Macronutriente: lipidio = 0.0g
+
+207. Adoçante, aspartame, em pó,
+     Fonte: TBCA
+     Macronutriente: lipidio = 0.0g
+
+208. Bebida, água, rede pública, torneira,
+     Fonte: TBCA
+     Macronutriente: proteina = 0.0g
+
+209. Bebida, água, rede pública, torneira,
+     Fonte: TBCA
+     Macronutriente: lipidio = 0.0g
+
+210. Xarope, frutas,
+     Fonte: TBCA
+     Macronutriente: lipidio = 0.0g
+
+211. Algodão, doce,
+     Fonte: TBCA
+     Macronutriente: proteina = 0.0g
+
+212. Sagu, framboesa, mistura p/, preparada,
+     Fonte: TBCA
+     Macronutriente: proteina = 0.0g
+
+213. Suspiro, merengue, caseiro,
+     Fonte: TBCA
+     Macronutriente: lipidio = 0.0g
+
+214. Bebida, chá, lata/garrafa, pêssego,
+     Fonte: TBCA
+     Macronutriente: proteina = 0.0g
+
+215. Bebida, chá, lata/garrafa, pêssego,
+     Fonte: TBCA
+     Macronutriente: lipidio = 0.0g
+
+216. Molho, pimenta, Kenko,
+     Fonte: TBCA
+     Macronutriente: lipidio = 0.0g
+
+217. Gelatina, limão, em pó, Ducoco,
+     Fonte: TBCA
+     Macronutriente: lipidio = 0.0g
+
+218. Bebida alcoólica, destilada (gim, rum, vodka, whisky) (teor alcoólico 39%),
+     Fonte: TBCA
+     Macronutriente: proteina = 0.0g
+
+219. Bebida alcoólica, destilada (gim, rum, vodka, whisky) (teor alcoólico 39%),
+     Fonte: TBCA
+     Macronutriente: lipidio = 0.0g
+
+220. Bala, frutas,
+     Fonte: TBCA
+     Macronutriente: proteina = 0.0g
+
+221. Refrigerante, tipo guaraná, regular, c/ açúcar,
+     Fonte: TBCA
+     Macronutriente: lipidio = 0.0g
+
+222. Flor de sal,
+     Fonte: TBCA
+     Macronutriente: proteina = 0.0g
+
+223. Flor de sal,
+     Fonte: TBCA
+     Macronutriente: lipidio = 0.0g
+
+224. Molho, inglês,
+     Fonte: TBCA
+     Macronutriente: proteina = 0.0g
+
+225. Molho, inglês,
+     Fonte: TBCA
+     Macronutriente: lipidio = 0.0g
+
+226. Refrigerante, c/ adoçante (média de diferentes sabores),
+     Fonte: TBCA
+     Macronutriente: proteina = 0.0g
+
+227. Refrigerante, c/ adoçante (média de diferentes sabores),
+     Fonte: TBCA
+     Macronutriente: lipidio = 0.0g
+
+228. Bebida alcoólica, conhaque,
+     Fonte: TBCA
+     Macronutriente: proteina = 0.0g
+
+229. Bebida alcoólica, conhaque,
+     Fonte: TBCA
+     Macronutriente: lipidio = 0.0g
+
+230. Bebida alcoólica, vinho, branco (média diferentes amostras),
+     Fonte: TBCA
+     Macronutriente: lipidio = 0.0g
+
+231. Gelatina, morango, em pó, Oetker,
+     Fonte: TBCA
+     Macronutriente: lipidio = 0.0g
+
+232. Gelatina, abacaxi, em pó, Oetker,
+     Fonte: TBCA
+     Macronutriente: lipidio = 0.0g
+
+233. Gelatina, maracujá, em pó, Ducoco,
+     Fonte: TBCA
+     Macronutriente: lipidio = 0.0g
+
+234. Refrigerante, tipo laranja, regular, c/ açúcar,
+     Fonte: TBCA
+     Macronutriente: lipidio = 0.0g
+
+235. Goma de mascar, diet (média de diferentes sabores),
+     Fonte: TBCA
+     Macronutriente: proteina = 0.0g
+
+236. Achocolatado,  "Ovomaltine", Ovomaltine,
+     Fonte: TBCA
+     Macronutriente: proteina = 0.0g
+
+237. Achocolatado,  "Ovomaltine", Ovomaltine,
+     Fonte: TBCA
+     Macronutriente: lipidio = 0.0g
+
+238. Gelatina, framboesa, em pó, Ducoco,
+     Fonte: TBCA
+     Macronutriente: lipidio = 0.0g
+
+239. Sal, refinado,
+     Fonte: TBCA
+     Macronutriente: proteina = 0.0g
+
+240. Sal, refinado,
+     Fonte: TBCA
+     Macronutriente: lipidio = 0.0g
+
+241. Sagu, uva, mistura p/, preparada,
+     Fonte: TBCA
+     Macronutriente: proteina = 0.0g
+
+242. Bebida, refresco, em pó, preparado, c/ água,
+     Fonte: TBCA
+     Macronutriente: lipidio = 0.0g
+
+243. Bebida alcoólica, vinho, espumante, brut,
+     Fonte: TBCA
+     Macronutriente: lipidio = 0.0g
+
+244. Maçã , verde, s/ casca, in natura, Malus domestica,
+     Fonte: TBCA
+     Macronutriente: lipidio = 0.0g
+
+245. Gelatina, abacaxi, em pó, diet, Ducocco,
+     Fonte: TBCA
+     Macronutriente: lipidio = 0.0g
+
+246. Bebida alcoólica, arroz, saquê,
+     Fonte: TBCA
+     Macronutriente: lipidio = 0.0g
+
+247. Bebida alcoólica, vermute,
+     Fonte: TBCA
+     Macronutriente: lipidio = 0.0g
+
+248. Bebida alcoólica, vinho, tinto, mosto, petite syrah, Vitis vinifera,
+     Fonte: TBCA
+     Macronutriente: lipidio = 0.0g
+
+249. Goiaba, doce, em pasta,
+     Fonte: TBCA
+     Macronutriente: lipidio = 0.0g
+
+250. Bebida isotônica (diversos sabores),
+     Fonte: TBCA
+     Macronutriente: proteina = 0.0g
+
+251. Bebida isotônica (diversos sabores),
+     Fonte: TBCA
+     Macronutriente: lipidio = 0.0g
+
+252. Mel, de abelha, Apis melifera,
+     Fonte: TBCA
+     Macronutriente: lipidio = 0.0g
+
+253. Sagu, cereja, mistura p/, preparada,
+     Fonte: TBCA
+     Macronutriente: proteina = 0.0g
+
+254. Bebida láctea, morango, light, Corpus,
+     Fonte: TBCA
+     Macronutriente: lipidio = 0.0g
+
+255. Gelatina, uva, em pó, Ducoco,
+     Fonte: TBCA
+     Macronutriente: lipidio = 0.0g
+
+256. Bebida, refresco, groselha, c/ xarope , s/ açúcar,
+     Fonte: TBCA
+     Macronutriente: lipidio = 0.0g
+
+257. Melado, cana,
+     Fonte: TBCA
+     Macronutriente: proteina = 0.0g
+
+258. Melado, cana,
+     Fonte: TBCA
+     Macronutriente: lipidio = 0.0g
+
+259. Geleia, s/ açúcar (média de diferentes sabores),
+     Fonte: TBCA
+     Macronutriente: lipidio = 0.0g
+
+260. Bebida alcoólica, destilada (gim, rum, vodka, whisky) (teor alcoólico 33%),
+     Fonte: TBCA
+     Macronutriente: proteina = 0.0g
+
+261. Bebida alcoólica, destilada (gim, rum, vodka, whisky) (teor alcoólico 33%),
+     Fonte: TBCA
+     Macronutriente: lipidio = 0.0g
+
+262. Vinagre, maçã,
+     Fonte: TBCA
+     Macronutriente: proteina = 0.0g
+
+263. Vinagre, maçã,
+     Fonte: TBCA
+     Macronutriente: lipidio = 0.0g
+
+264. Bebida alcóolica, cuba libre, (rum, suco de limão, refrigerante tipo cola),
+     Fonte: TBCA
+     Macronutriente: lipidio = 0.0g
+
+265. Bebida alcoólica, destilada (gim, rum, vodka, whisky) (teor alcoólico 42%),
+     Fonte: TBCA
+     Macronutriente: proteina = 0.0g
+
+266. Bebida alcoólica, destilada (gim, rum, vodka, whisky) (teor alcoólico 42%),
+     Fonte: TBCA
+     Macronutriente: lipidio = 0.0g
+
+267. Bebida alcoólica, vinho, tinto (média diferentes amostras),
+     Fonte: TBCA
+     Macronutriente: lipidio = 0.0g
+
+268. Gelatina, maracujá, em pó, Ducoco,
+     Fonte: TBCA
+     Macronutriente: lipidio = 0.0g
+
+269. Bebida, chá, infusão, cidreira, planta, folha, s/ açúcar, Lippia alba (Mill.) N.E. Brown,
+     Fonte: TBCA
+     Macronutriente: lipidio = 0.0g
+
+270. Bebida, infusão, mastruço, planta, folha, s/ açúcar, Chenopodium ambrosioides L.,
+     Fonte: TBCA
+     Macronutriente: lipidio = 0.0g
+
+271. Maria mole, morango, em pó, Ducoco,
+     Fonte: TBCA
+     Macronutriente: lipidio = 0.0g
+
+272. Bebida, chá, preto, infusão 5%, c/ açúcar,
+     Fonte: TBCA
+     Macronutriente: lipidio = 0.0g
+
+273. Gelatina, morango, em pó, diet, Ducocco,
+     Fonte: TBCA
+     Macronutriente: lipidio = 0.0g
+
+274. Bebida, chá, infusão, colônia, planta, folha, s/ açúcar, Alpinia speciosa Schum,
+     Fonte: TBCA
+     Macronutriente: lipidio = 0.0g
+
+275. Bebida alcoólica, aguardente, cachaça,
+     Fonte: TBCA
+     Macronutriente: proteina = 0.0g
+
+276. Bebida alcoólica, aguardente, cachaça,
+     Fonte: TBCA
+     Macronutriente: lipidio = 0.0g
+
+277. Adoçante, sacarina, em pó,
+     Fonte: TBCA
+     Macronutriente: proteina = 0.0g
+
+278. Adoçante, sacarina, em pó,
+     Fonte: TBCA
+     Macronutriente: lipidio = 0.0g
+
+279. Maria mole, coco, em pó, Ducoco,
+     Fonte: TBCA
+     Macronutriente: lipidio = 0.0g
+
+280. Bebida, chá, erva-doce, infusão 5%, s/ açúcar, Pimpinela anisum,
+     Fonte: TBCA
+     Macronutriente: lipidio = 0.0g
+
+281. Flan, baunilha, em pó, Ducoco,
+     Fonte: TBCA
+     Macronutriente: lipidio = 0.0g
+
+282. Azeite, oliva, Olea europaea L.,
+     Fonte: TBCA
+     Macronutriente: proteina = 0.0g
+
+283. Bebida energética,
+     Fonte: TBCA
+     Macronutriente: lipidio = 0.0g
+
+284. Manjar, coco, em pó, Ducoco,
+     Fonte: TBCA
+     Macronutriente: proteina = 0.0g
+
+285. Bebida alcoólica, grappa,
+     Fonte: TBCA
+     Macronutriente: proteina = 0.0g
+
+286. Bebida alcoólica, grappa,
+     Fonte: TBCA
+     Macronutriente: lipidio = 0.0g
+
+287. Azeite, oliva, cozido, Olea europaea L.,
+     Fonte: TBCA
+     Macronutriente: proteina = 0.0g
+
+288. Maria mole, coco queimado, em pó, Ducoco,
+     Fonte: TBCA
+     Macronutriente: lipidio = 0.0g
+
+289. Sagu, framboesa, mistura p/, Ducoco,
+     Fonte: TBCA
+     Macronutriente: lipidio = 0.0g
+
+290. Bebida alcoólica, destilada (gim, rum, vodka, whisky) (teor alcoólico 36%),
+     Fonte: TBCA
+     Macronutriente: proteina = 0.0g
+
+291. Bebida alcoólica, destilada (gim, rum, vodka, whisky) (teor alcoólico 36%),
+     Fonte: TBCA
+     Macronutriente: lipidio = 0.0g
+
+292. Gelatina, cereja, em pó, diet, Ducocco,
+     Fonte: TBCA
+     Macronutriente: lipidio = 0.0g
+
+293. Refrigerante, tipo água tônica, c/ adoçante,
+     Fonte: TBCA
+     Macronutriente: lipidio = 0.0g
+
+294. Bebida alcóolica, tequila,
+     Fonte: TBCA
+     Macronutriente: proteina = 0.0g
+
+295. Bebida alcóolica, tequila,
+     Fonte: TBCA
+     Macronutriente: lipidio = 0.0g
+
+296. Adoçante, sucralose, em pó,
+     Fonte: TBCA
+     Macronutriente: proteina = 0.0g
+
+297. Adoçante, sucralose, em pó,
+     Fonte: TBCA
+     Macronutriente: lipidio = 0.0g
+
+298. Refrigerante, tipo limão, c/ adoçante,
+     Fonte: TBCA
+     Macronutriente: lipidio = 0.0g
+
+299. Bebida alcoólica, vinho, meio doce/doce, espumante, Vitis vinifera,
+     Fonte: TBCA
+     Macronutriente: lipidio = 0.0g
+
+300. Gelatina, framboesa, em pó, diet, Ducocco,
+     Fonte: TBCA
+     Macronutriente: lipidio = 0.0g
+
+301. Bebida, chá, lata/garrafa, limão, Lipton,
+     Fonte: TBCA
+     Macronutriente: proteina = 0.0g
+
+302. Salmão, atlântico, cozido
+     Fonte: USDA
+     Macronutriente: carboidrato = 0g
+
+303. Atum, albacora, cozido
+     Fonte: USDA
+     Macronutriente: carboidrato = 0g
+
+304. Bacalhau, atlântico, cozido
+     Fonte: USDA
+     Macronutriente: carboidrato = 0g
+
+305. Camarão, cozido
+     Fonte: USDA
+     Macronutriente: carboidrato = 0g
+
+306. Peru, peito, assado
+     Fonte: USDA
+     Macronutriente: carboidrato = 0g
+
+307. Cordeiro, lombo, grelhado
+     Fonte: USDA
+     Macronutriente: carboidrato = 0g
+
+308. Coelho, assado
+     Fonte: USDA
+     Macronutriente: carboidrato = 0g
+
+309. Chá verde, preparado
+     Fonte: USDA
+     Macronutriente: proteina = 0g
+
+310. Chá verde, preparado
+     Fonte: USDA
+     Macronutriente: lipidio = 0g
+
+311. Chá verde, preparado
+     Fonte: USDA
+     Macronutriente: carboidrato = 0g
+
+312. Chá preto, preparado
+     Fonte: USDA
+     Macronutriente: proteina = 0g
+
+313. Chá preto, preparado
+     Fonte: USDA
+     Macronutriente: lipidio = 0g
+

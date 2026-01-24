@@ -210,6 +210,7 @@ class MealPresetSerializer(serializers.ModelSerializer):
 
 class DietSerializer(serializers.ModelSerializer):
     meals_rel = MealSerializer(many=True, read_only=True)
+    meals_data = serializers.ListField(write_only=True, required=False)
     nutritionist = serializers.ReadOnlyField(source="patient.nutritionist.name")
 
     class Meta:
@@ -233,13 +234,58 @@ class DietSerializer(serializers.ModelSerializer):
             "nutritionist",
             "meals",
             "meals_rel",
+            "meals_data",
             "created_at",
             "updated_at",
         ]
         read_only_fields = ["created_at", "updated_at"]
 
+    def _process_meals_data(self, diet, meals_data):
+        """Helper para criar/atualizar refeições e itens a partir do JSON."""
+        if not meals_data:
+            return
+
+        # Para simplificar e garantir consistência, vamos recriar as refeições
+        # (Em apps reais, poderíamos fazer diffing, mas para dietas completas
+        #  recriar é mais seguro para evitar itens órfãos).
+        diet.meals_rel.all().delete()
+
+        for meal_json in meals_data:
+            meal_obj = Meal.objects.create(
+                diet=diet,
+                name=meal_json.get("nome", "Refeição"),
+                time=meal_json.get("horario", "00:00"),
+                order=meal_json.get("ordem", 0),
+                day_of_week=meal_json.get("dia_semana", 0),
+                notes=meal_json.get("observacao", ""),
+            )
+
+            for food_json in meal_json.get("alimentos", []):
+                FoodItem.objects.create(
+                    meal=meal_obj,
+                    food_name=food_json.get("nome", "Alimento"),
+                    quantity=food_json.get("quantidade", 0),
+                    unit=food_json.get("unidade", "g"),
+                    calories=food_json.get("calorias", 0),
+                    protein=food_json.get("proteina", 0),
+                    carbs=food_json.get("carboidrato", 0),
+                    fats=food_json.get("lipidios", 0),
+                    fiber=food_json.get("fibra", 0),
+                )
+
     def create(self, validated_data):
-        return super().create(validated_data)
+        meals_data = validated_data.pop("meals_data", None)
+        diet = super().create(validated_data)
+        if meals_data:
+            self._process_meals_data(diet, meals_data)
+        return diet
+
+    def update(self, instance, validated_data):
+        meals_data = validated_data.pop("meals_data", None)
+        diet = super().update(instance, validated_data)
+        if meals_data:
+            self._process_meals_data(diet, meals_data)
+        return diet
 
 
 class DefaultPresetSerializer(serializers.ModelSerializer):

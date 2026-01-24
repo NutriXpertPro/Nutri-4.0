@@ -156,10 +156,12 @@ export function Header({ className, sidebarCollapsed }: HeaderProps) {
                 const unread = allNotifications.filter((n: any) => !n.is_read).length;
 
                 // Tocar som se houver NOVAS notificações não lidas (aumento na contagem)
-                if (unread > previousUnreadCountRef.current) {
+                // Usamos isFirstLoad para evitar tocar na primeira carga/navegação
+                if (!isFirstLoad.current && unread > previousUnreadCountRef.current) {
                     notificationService.playNotificationSound();
                 }
 
+                isFirstLoad.current = false;
                 previousUnreadCountRef.current = unread;
                 setUnreadCount(unread);
 
@@ -175,8 +177,8 @@ export function Header({ className, sidebarCollapsed }: HeaderProps) {
         if (user) {
             fetchNotifications();
 
-            // Configurar polling para atualizações (a cada 30 segundos)
-            const interval = setInterval(fetchNotifications, 30000);
+            // Configurar polling para atualizações (a cada 10 segundos para maior fluidez)
+            const interval = setInterval(fetchNotifications, 10000);
 
             return () => clearInterval(interval);
         }
@@ -195,19 +197,19 @@ export function Header({ className, sidebarCollapsed }: HeaderProps) {
             }
 
             // Navegação baseada no tipo
-            if (notification.type === 'new_message' && notification.patient_id) {
-                router.push(`/patient-dashboard-v2?patientId=${notification.patient_id}&tab=messages`);
-            } else if (notification.type === 'appointment_reminder') {
-                router.push('/appointments');
-            } else if (notification.type === 'diet_expiry') {
+            if (notification.type === 'new_message' || notification.notification_type === 'new_message') {
+                router.push(`/messages?conversation=${notification.conversation_id}`);
+            } else if (notification.notification_type === 'meal_checkin') {
+                router.push(`/patient-dashboard-v2?patientId=${notification.patient_id || ''}&tab=analysis`);
+            } else if (notification.notification_type === 'new_diet' || notification.type === 'diet_expiry') {
                 if (notification.patient_id) {
-                    // Redireciona para a dieta do paciente ou perfil
-                    router.push(`/patients/${notification.patient_id}`);
+                    router.push(`/patients/${notification.patient_id}?tab=diet`);
                 } else {
                     router.push('/diets');
                 }
+            } else if (notification.type === 'appointment_reminder') {
+                router.push('/appointments');
             } else {
-                // Default fallback
                 router.push('/notifications');
             }
         } catch (error) {
