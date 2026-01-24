@@ -5,6 +5,7 @@ interface MealItem {
     name: string
     quantity: number
     unit: string
+    kcal?: number
     substitutions: any[]
 }
 

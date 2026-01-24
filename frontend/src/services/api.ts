@@ -10,12 +10,9 @@ export const getBaseURL = () => {
 
     // Fallback for local development
     if (typeof window !== 'undefined') {
-        const hostname = window.location.hostname;
-        if (hostname === 'localhost' || hostname === '127.0.0.1') {
-            return 'http://localhost:8000/api/v1/';
-        }
-        // If no env var and not localhost, we return a fallback based on hostname
-        return `http://${hostname}:8000/api/v1/`;
+        // Prefer localhost for dev to avoid LAN binding/firewall issues.
+        // If you need to target another host, set NEXT_PUBLIC_API_BASE_URL in env.
+        return 'http://localhost:8000/api/v1/';
     }
 
     return 'http://localhost:8000/api/v1/';
