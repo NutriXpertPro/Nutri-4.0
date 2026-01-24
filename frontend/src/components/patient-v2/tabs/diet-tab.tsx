@@ -4,6 +4,7 @@ import { Clock, Check, MoreHorizontal, Utensils, Coffee, Apple, Moon, Loader2, A
 import { motion } from "framer-motion"
 import { useMeals } from "@/hooks/useMeals"
 import { Button } from "@/components/ui/button"
+import { SubstitutionDrawer } from "@/components/patient-v2/substitution-drawer"
 
 export function DietTab() {
     const { meals, loading, error, checkInMeal, checkInAll } = useMeals()
@@ -118,22 +119,26 @@ export function DietTab() {
                                                         </div>
                                                         <span className="text-xs font-medium text-emerald-500">{item.quantity}{item.unit}</span>
                                                     </div>
-                                                    {item.substitutions && item.substitutions.length > 0 ? (
-                                                        <div className="pl-3 mt-1">
-                                                            <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1 font-bold">Opções de Troca:</p>
-                                                            <div className="flex flex-wrap gap-2">
-                                                                {item.substitutions.map((s: any, idx: number) => (
-                                                                    <span key={idx} className="text-xs bg-muted px-2 py-1 rounded-md border border-border text-foreground flex items-center gap-1">
-                                                                        {s.name} <span className="text-primary font-bold">({s.quantity}{s.unit})</span>
-                                                                        {s.kcal && <span className="text-[10px] text-muted-foreground ml-1">{s.kcal} kcal</span>}
-                                                                    </span>
-                                                                ))}
-                                                            </div>
-                                                        </div>
-                                                    ) : (
-                                                        /* Placeholder Debug - Remover em produção se visualmente poluído */
-                                                        <div className="pl-3 mt-1 opacity-40 text-[10px] italic text-muted-foreground hidden">
-                                                            Sem trocas diretas.
+                                                    {item.substitutions && item.substitutions.length > 0 && (
+                                                        <div className="mt-2">
+                                                            <SubstitutionDrawer
+                                                                originalFood={{
+                                                                    name: item.name,
+                                                                    quantity: item.quantity,
+                                                                    unit: item.unit,
+                                                                    kcal: item.kcal || 0
+                                                                }}
+                                                                substitutions={item.substitutions.map((s: any) => ({
+                                                                    name: s.name,
+                                                                    quantity: s.quantity,
+                                                                    unit: s.unit,
+                                                                    kcal: s.kcal,
+                                                                    protein: s.protein || 0,
+                                                                    carbs: s.carbs || 0,
+                                                                    fats: s.fats || 0,
+                                                                    group: s.group
+                                                                }))}
+                                                            />
                                                         </div>
                                                     )}
                                                 </div>

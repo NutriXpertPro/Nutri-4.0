@@ -56,9 +56,9 @@ function SubtotalMetric({ label, value, color, bgColor, dotColor }: { label: str
     )
 }
 
- export function DietMealCard({
+export function DietMealCard({
     meal, index, onUpdate, onDelete, onCopy, onAddFood, onRemoveFood, compact = false, dietType
- }: DietMealCardProps) {
+}: DietMealCardProps) {
     const queryClient = useQueryClient()
     const { addFavorite, removeFavorite, favorites } = useDietEditorStore()
     const [searchQuery, setSearchQuery] = useState('')
@@ -66,14 +66,14 @@ function SubtotalMetric({ label, value, color, bgColor, dotColor }: { label: str
     const [isSearchFocused, setIsSearchFocused] = useState(false)
     const [expanded, setExpanded] = useState(!compact)
     const [lastAddedFoodId, setLastAddedFoodId] = useState<number | null>(null)
-    
+
     const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false)
     const [isSubstitutionDrawerOpen, setIsSubstitutionDrawerOpen] = useState(false)
     const [selectedFoodForSub, setSelectedFoodForSub] = useState<WorkspaceMealFood | null>(null)
 
     const handleSubstituteFood = (food: Food, quantity: number) => {
         if (!selectedFoodForSub) return
-        
+
         const newFood: WorkspaceMealFood = {
             id: Date.now(),
             name: food.nome,
@@ -264,7 +264,7 @@ function SubtotalMetric({ label, value, color, bgColor, dotColor }: { label: str
         return quantityInputRefs.current.get(foodId)!
     }
 
-    const debouncedQuery = useDebounce(searchQuery, 300)
+    const debouncedQuery = useDebounce(searchQuery, 150)
 
     // Cálculo dos totais
     const totals = meal.foods.reduce((acc, f) => {
@@ -462,11 +462,11 @@ function SubtotalMetric({ label, value, color, bgColor, dotColor }: { label: str
                                         )
                                     })}
 
-                                     <Button variant="outline" size="sm" className="h-8 rounded-xl px-3 gap-2 text-[10px] uppercase tracking-widest text-muted-foreground border-border/40 hover:border-primary/40 whitespace-nowrap" onClick={onCopy}>
+                                    <Button variant="outline" size="sm" className="h-8 rounded-xl px-3 gap-2 text-[10px] uppercase tracking-widest text-muted-foreground border-border/40 hover:border-primary/40 whitespace-nowrap" onClick={onCopy}>
                                         <Copy className="w-3.5 h-3.5 text-primary" />
                                         <span className="hidden sm:inline">Copiar</span>
                                     </Button>
-                                    
+
                                     <Button variant="outline" size="sm" className="h-8 rounded-xl px-3 gap-2 text-[10px] uppercase tracking-widest text-muted-foreground border-border/40 hover:border-primary/40 whitespace-nowrap" onClick={handlePreview}>
                                         <Eye className="w-3.5 h-3.5 text-primary" />
                                         <span className="hidden sm:inline">Preview</span>
@@ -620,7 +620,7 @@ function SubtotalMetric({ label, value, color, bgColor, dotColor }: { label: str
                                                                     carboidrato_g: food.cho,
                                                                     lipidios_g: food.fat,
                                                                     fibra_g: food.fib,
-                                                                    energia_kcal: (food.ptn *4 + food.cho *4 + food.fat * 9),
+                                                                    energia_kcal: (food.ptn * 4 + food.cho * 4 + food.fat * 9),
                                                                     unidade_caseira: food.unidade_caseira,
                                                                     peso_unidade_caseira_g: food.peso_unidade_caseira_g,
                                                                     medidas: food.medidas,
@@ -644,7 +644,7 @@ function SubtotalMetric({ label, value, color, bgColor, dotColor }: { label: str
                                                     >
                                                         <Star className={cn("w-4 h-4 transition-colors", favorites.some(fav => (food.originalId && String(fav.id) === String(food.originalId) && fav.source === food.source) || (!food.originalId && fav.nome.trim().toLowerCase() === food.name.trim().toLowerCase())) ? "fill-amber-400 text-amber-400" : "")} />
                                                     </button>
-                                                    
+
                                                     <div className="w-8 h-8 rounded-lg bg-primary/5 flex items-center justify-center text-lg shrink-0 border border-primary/10">
                                                         {getFoodIcon(food.name, food.prep || '')}
                                                     </div>
@@ -694,19 +694,17 @@ function SubtotalMetric({ label, value, color, bgColor, dotColor }: { label: str
                                             <td className="p-3 text-center">
                                                 <div className="flex justify-center transition-all gap-1 transform">
                                                     {/* Botão de Substituição */}
-                                                    {food.originalId && food.source ? (
-                                                        <button
-                                                            className="p-1.5 rounded-lg hover:bg-blue-100/10 text-muted-foreground hover:text-blue-500 transition-colors"
-                                                            title="Substituir alimento"
-                                                            onClick={() => {
-                                                                setSelectedFoodForSub(food)
-                                                                setIsSubstitutionDrawerOpen(true)
-                                                            }}
-                                                        >
-                                                            <RefreshCw className="w-3.5 h-3.5" />
-                                                        </button>
-                                                    ) : null}
-                                                    
+                                                    <button
+                                                        className="p-1.5 rounded-lg hover:bg-blue-100/10 text-muted-foreground hover:text-blue-500 transition-colors"
+                                                        title="Substituir alimento"
+                                                        onClick={() => {
+                                                            setSelectedFoodForSub(food)
+                                                            setIsSubstitutionDrawerOpen(true)
+                                                        }}
+                                                    >
+                                                        <RefreshCw className="w-3.5 h-3.5" />
+                                                    </button>
+
                                                     {/* Botão de Excluir */}
                                                     <button className="p-1.5 rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors" title="Remover" onClick={() => onRemoveFood(meal.id, food.id)}>
                                                         <Trash2 className="w-3.5 h-3.5" />
@@ -789,7 +787,7 @@ function SubtotalMetric({ label, value, color, bgColor, dotColor }: { label: str
                 onApplyPreset={handleApplyPreset}
                 mealId={meal.id.toString()}
             />
-            
+
             {/* Drawer de Substituição */}
             {selectedFoodForSub && (
                 <SubstitutionDrawer

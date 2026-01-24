@@ -68,12 +68,23 @@ export function SubstitutionDrawer({
     const fetchSubstitutions = async () => {
         setLoading(true)
         try {
+            // Calcular o alvo real baseado no que está na tela (evita desvios do banco)
+            const ratio = (originalQuantity || 100) / 100
+            const targetPtn = originalFood.proteina_g * ratio
+            const targetCho = originalFood.carboidrato_g * ratio
+            const targetFat = originalFood.lipidios_g * ratio
+
             const response = await api.get('diets/substitutions/suggest/', {
                 params: {
                     food_id: originalFood.id,
+                    food_name: originalFood.nome,
                     food_source: originalFood.source || 'TACO',
                     quantity: originalQuantity,
-                    diet_type: dietType
+                    diet_type: dietType,
+                    // Passar targets explícitos para cálculo blindado
+                    orig_ptn: targetPtn.toFixed(2),
+                    orig_cho: targetCho.toFixed(2),
+                    orig_fat: targetFat.toFixed(2)
                 }
             })
 
