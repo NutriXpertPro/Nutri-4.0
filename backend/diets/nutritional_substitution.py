@@ -12,7 +12,8 @@ Data: 2025
 
 from typing import Dict, List, Tuple, Optional
 from dataclasses import dataclass
-
+from unidecode import unidecode
+from .search_utils import calcular_score_radical, normalizar_para_scoring
 
 # =============================================================================
 # DEFINIÇÃO DE GRUPOS NUTRICIONAIS
@@ -265,10 +266,31 @@ def identificar_grupo_nutricional(alimento_nome: str) -> Optional[str]:
     Returns:
         Nome do grupo nutricional ou None se não encontrado
     """
-    nome_normalizado = alimento_nome.lower().strip()
+    if not alimento_nome:
+        return None
+        
+    nome_normalizado = unidecode(alimento_nome.lower().strip())
 
+    # 1. CASOS ESPECIAIS DE BLOQUEIO OU RESTRICAO TOTAL
+
+    # Água de Coco e Sucos -> Retornar grupo específico para bloqueio
+    if ("coco" in nome_normalizado and "agua" in nome_normalizado) or "suco" in nome_normalizado or "nectar" in nome_normalizado:
+        return "agua_de_coco"
+    
+    # Iogurtes -> Grupo exclusivo
+    if "iogurte" in nome_normalizado or "yogurte" in nome_normalizado:
+        return "iogurtes"
+    
+    # 2. VERIFICAÇÃO DE GRUPOS PADRÃO (Refinados)
+    
+    # Laticínios Gerais (Leite, Queijo) - Só cai aqui se NÃO for iogurte
+    if "leite" in nome_normalizado and not any(x in nome_normalizado for x in ["coco", "condensado", "creme", "doce"]):
+         return "laticinios"
+
+    # Resto dos grupos
     for grupo, dados in GRUPOS_NUTRICIONAIS.items():
-        alimentos_grupo = [a.lower() for a in dados["alimentos_recomendados"]]
+        # Normalizar também os alimentos da lista para comparação
+        alimentos_grupo = [unidecode(a.lower()) for a in dados["alimentos_recomendados"]]
 
         # Busca exata primeiro
         if nome_normalizado in alimentos_grupo:
@@ -276,10 +298,55 @@ def identificar_grupo_nutricional(alimento_nome: str) -> Optional[str]:
 
         # Busca por contém
         for alimento in alimentos_grupo:
-            if nome_normalizado in alimento or alimento in nome_normalizado:
+            alimento_tokens = alimento.split(",")[0].strip() # Pega só o nome base ex "Arroz"
+            if alimento_tokens in nome_normalizado:
                 return grupo
 
     return None
+
+
+# ... existing code ...
+
+def alimento_taco_para_nutricao(alimento_taco) -> NutricaoAlimento:
+    """Converte um objeto AlimentoTACO para NutricaoAlimento"""
+    return NutricaoAlimento(
+        nome=alimento_taco.nome or "Alimento sem nome",
+        energia_kcal=safe_val(alimento_taco.energia_kcal),
+        proteina_g=safe_val(alimento_taco.proteina_g),
+        lipidios_g=safe_val(alimento_taco.lipidios_g),
+        carboidrato_g=safe_val(alimento_taco.carboidrato_g),
+        fibra_g=safe_val(alimento_taco.fibra_g),
+        grupo=alimento_taco.grupo or "",
+        fonte="TACO",
+    )
+
+
+def alimento_tbca_para_nutricao(alimento_tbca) -> NutricaoAlimento:
+    """Converte um objeto AlimentoTBCA para NutricaoAlimento"""
+    return NutricaoAlimento(
+        nome=alimento_tbca.nome or "Alimento sem nome",
+        energia_kcal=safe_val(alimento_tbca.energia_kcal),
+        proteina_g=safe_val(alimento_tbca.proteina_g),
+        lipidios_g=safe_val(alimento_tbca.lipidios_g),
+        carboidrato_g=safe_val(alimento_tbca.carboidrato_g),
+        fibra_g=safe_val(alimento_tbca.fibra_g),
+        grupo=alimento_tbca.grupo or "",
+        fonte="TBCA",
+    )
+
+
+def alimento_usda_para_nutricao(alimento_usda) -> NutricaoAlimento:
+    """Converte um objeto AlimentoUSDA para NutricaoAlimento"""
+    return NutricaoAlimento(
+        nome=alimento_usda.nome or "Alimento sem nome",
+        energia_kcal=safe_val(alimento_usda.energia_kcal),
+        proteina_g=safe_val(alimento_usda.proteina_g),
+        lipidios_g=safe_val(alimento_usda.lipidios_g),
+        carboidrato_g=safe_val(alimento_usda.carboidrato_g),
+        fibra_g=safe_val(alimento_usda.fibra_g),
+        grupo=alimento_usda.categoria or "",
+        fonte="USDA",
+    )
 
 
 def calcular_substituicao(
@@ -305,14 +372,20 @@ def calcular_substituicao(
     macro_preponderante = dados_grupo.get("macronutriente_preponderante")
 
     if not macro_preponderante:
-        # Fallback: Detectar macro predominante no alimento original se o grupo não definir
-        p, c, g = alimento_original.proteina_g, alimento_original.carboidrato_g, alimento_original.lipidios_g
-        if c >= p and c >= g:
-            macro_preponderante = "carboidrato"
-        elif p >= c and p >= g:
-            macro_preponderante = "proteína"
+        # Casos Especiais sem grupo definido na lista
+        if grupo == "iogurtes":
+             macro_preponderante = "proteína"
+        elif grupo == "agua_de_coco":
+             macro_preponderante = "carboidrato"
         else:
-            macro_preponderante = "gordura"
+            # Fallback: Detectar macro predominante no alimento original
+            p, c, g = alimento_original.proteina_g, alimento_original.carboidrato_g, alimento_original.lipidios_g
+            if c >= p and c >= g:
+                macro_preponderante = "carboidrato"
+            elif p >= c and p >= g:
+                macro_preponderante = "proteína"
+            else:
+                macro_preponderante = "gordura"
 
     # Calcular valores do alimento original na quantidade especificada
     cal_original = (alimento_original.energia_kcal * quantidade_original_g) / 100
@@ -406,8 +479,16 @@ def sugerir_substitucoes(
 
     if not grupo:
         return []
+    
+    # REGRA ESPECIAL: Água de Coco -> SEM SUBSTITUIÇÕES (BLOQUEIO TOTAL)
+    if grupo == "agua_de_coco":
+        return []
 
-    resultados = []
+    # REGRA ESPECIAL: Iogurtes -> SEM SUBSTITUIÇÕES (BLOQUEIO TOTAL A PEDIDO DO USUÁRIO)
+    if grupo == "iogurtes":
+        return []
+
+    candidatos_validos = []
 
     for substituto in lista_substitutos:
         grupo_substituto = identificar_grupo_nutricional(substituto.nome)
@@ -451,16 +532,26 @@ def formatar_resultado(resultado: ResultadoSubstituicao) -> str:
 # =============================================================================
 
 
+def safe_val(v):
+    """Converte valor para float tratando None com segurança"""
+    try:
+        if v is None:
+            return 0.0
+        return float(v)
+    except (ValueError, TypeError):
+        return 0.0
+
+
 def alimento_taco_para_nutricao(alimento_taco) -> NutricaoAlimento:
     """Converte um objeto AlimentoTACO para NutricaoAlimento"""
     return NutricaoAlimento(
         nome=alimento_taco.nome,
-        energia_kcal=alimento_taco.energia_kcal,
-        proteina_g=alimento_taco.proteina_g,
-        lipidios_g=alimento_taco.lipidios_g,
-        carboidrato_g=alimento_taco.carboidrato_g,
-        fibra_g=alimento_taco.fibra_g,
-        grupo=alimento_taco.grupo,
+        energia_kcal=safe_val(alimento_taco.energia_kcal),
+        proteina_g=safe_val(alimento_taco.proteina_g),
+        lipidios_g=safe_val(alimento_taco.lipidios_g),
+        carboidrato_g=safe_val(alimento_taco.carboidrato_g),
+        fibra_g=safe_val(alimento_taco.fibra_g),
+        grupo=alimento_taco.grupo or "",
         fonte="TACO",
     )
 
@@ -469,12 +560,12 @@ def alimento_tbca_para_nutricao(alimento_tbca) -> NutricaoAlimento:
     """Converte um objeto AlimentoTBCA para NutricaoAlimento"""
     return NutricaoAlimento(
         nome=alimento_tbca.nome,
-        energia_kcal=alimento_tbca.energia_kcal,
-        proteina_g=alimento_tbca.proteina_g,
-        lipidios_g=alimento_tbca.lipidios_g,
-        carboidrato_g=alimento_tbca.carboidrato_g,
-        fibra_g=alimento_tbca.fibra_g,
-        grupo=alimento_tbca.grupo,
+        energia_kcal=safe_val(alimento_tbca.energia_kcal),
+        proteina_g=safe_val(alimento_tbca.proteina_g),
+        lipidios_g=safe_val(alimento_tbca.lipidios_g),
+        carboidrato_g=safe_val(alimento_tbca.carboidrato_g),
+        fibra_g=safe_val(alimento_tbca.fibra_g),
+        grupo=alimento_tbca.grupo or "",
         fonte="TBCA",
     )
 
@@ -483,11 +574,11 @@ def alimento_usda_para_nutricao(alimento_usda) -> NutricaoAlimento:
     """Converte um objeto AlimentoUSDA para NutricaoAlimento"""
     return NutricaoAlimento(
         nome=alimento_usda.nome,
-        energia_kcal=alimento_usda.energia_kcal,
-        proteina_g=alimento_usda.proteina_g,
-        lipidios_g=alimento_usda.lipidios_g,
-        carboidrato_g=alimento_usda.carboidrato_g,
-        fibra_g=alimento_usda.fibra_g,
+        energia_kcal=safe_val(alimento_usda.energia_kcal),
+        proteina_g=safe_val(alimento_usda.proteina_g),
+        lipidios_g=safe_val(alimento_usda.lipidios_g),
+        carboidrato_g=safe_val(alimento_usda.carboidrato_g),
+        fibra_g=safe_val(alimento_usda.fibra_g),
         grupo=alimento_usda.categoria,
         fonte="USDA",
     )

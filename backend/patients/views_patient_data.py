@@ -284,11 +284,23 @@ class PatientMealsViewSet(viewsets.ViewSet):
                     # This searches for similar foods in the same nutritional group
                     if not found_manual_sub:
                         try:
-                            from diets.nutritional_substitution import identificar_grupo_nutricional, calcular_substituicao, NutricaoAlimento, GRUPOS_NUTRICIONAIS
+                            from diets.nutritional_substitution import (
+                                sugerir_substitucoes, 
+                                identificar_grupo_nutricional, 
+                                NutricaoAlimento,
+                                alimento_taco_para_nutricao
+                            )
                             from diets.models import AlimentoTACO
                             
+                            # Use logic centralizada e estrita
+                            # 1. Identificar se vale a pena buscar (se for agua de coco, já volta vazio ou grupo de bloqueio)
                             group_name = identificar_grupo_nutricional(item.food_name)
-                            if group_name:
+                            
+                            # Se for grupo de bloqueio (agua_de_coco), nem busca candidatos
+                            if group_name == "agua_de_coco":
+                                # Logica de bloqueio explícito
+                                pass
+                            elif group_name:
                                 # Create NutricaoAlimento for current item
                                 current_nutri = NutricaoAlimento(
                                     nome=item.food_name,
@@ -299,35 +311,21 @@ class PatientMealsViewSet(viewsets.ViewSet):
                                     fibra_g=float(item.fiber or 0) * (100.0/float(item.quantity)) if float(item.quantity) > 0 else 0
                                 )
                                 
-                                # Suggested items from the same group (Staples)
-                                # We pick a few staples to avoid overhead
-                                staples = GRUPOS_NUTRICIONAIS[group_name]["alimentos_recomendados"][:5]
+                                # Fetch candidates (optimized slice)
+                                candidates_taco = [alimento_taco_para_nutricao(f) for f in AlimentoTACO.objects.all()[:1000]]
                                 
-                                for st_name in staples:
-                                    if normalize_text(st_name) == item_name_norm:
-                                        continue
-                                        
-                                    st_food = AlimentoTACO.objects.filter(nome__icontains=st_name).first()
-                                    if st_food:
-                                        st_nutri = NutricaoAlimento(
-                                            nome=st_food.nome,
-                                            energia_kcal=st_food.energia_kcal,
-                                            proteina_g=st_food.proteina_g,
-                                            lipidios_g=st_food.lipidios_g,
-                                            carboidrato_g=st_food.carboidrato_g,
-                                            fibra_g=st_food.fibra_g
-                                        )
-                                        
-                                        res = calcular_substituicao(current_nutri, st_nutri, group_name, float(item.quantity))
-                                        
-                                        sub_options.append({
-                                            "name": res.alimento_substituto,
-                                            "quantity": res.quantidade_substituto_g,
-                                            "unit": "g",
-                                            "kcal": res.calorias_substituto,
-                                            "group": group_name.replace("_", " ").title(),
-                                            "source": "auto"
-                                        })
+                                # Call the STRICT engine
+                                suggestions = sugerir_substitucoes(current_nutri, candidates_taco, float(item.quantity), limit_resultados=5)
+                                
+                                for res in suggestions:
+                                    sub_options.append({
+                                        "name": res.alimento_substituto,
+                                        "quantity": res.quantidade_substituto_g,
+                                        "unit": "g",
+                                        "kcal": res.calorias_substituto,
+                                        "group": res.grupo.replace("_", " ").title(),
+                                        "source": "auto"
+                                    })
                         except Exception as auto_err:
                             print(f"Erro no fallback de substituição: {auto_err}")
                             

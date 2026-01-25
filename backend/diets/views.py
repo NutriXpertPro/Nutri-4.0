@@ -1308,96 +1308,113 @@ class FoodSubstitutionRuleViewSet(viewsets.ModelViewSet):
             search_name = food_name.split(',')[0].strip()
             original_food = AlimentoTACO.objects.filter(nome__icontains=search_name).first()
 
-        # VIRTUAL FOOD FALLBACK (Zero 404s)
         if not original_food:
-            print(f">>> [DEBUG] Creating Virtual Food for: {food_name}")
-            class VirtualFood:
-                def __init__(self, name):
-                    self.id = None
-                    self.nome = name
-                    self.grupo = ""
-                    # Macros base estimados para identificação de grupo se targets não existirem
-                    self.proteina_g = float(t_ptn or 0) / (original_quantity/100.0) if original_quantity > 0 else 0
-                    self.carboidrato_g = float(t_cho or 0) / (original_quantity/100.0) if original_quantity > 0 else 0
-                    self.lipidios_g = float(t_fat or 0) / (original_quantity/100.0) if original_quantity > 0 else 0
-                    self.energia_kcal = 1 # Dummy
-            original_food = VirtualFood(food_name or "Alimento")
+            return Response({"error": "Alimento não encontrado"}, status=404)
 
-        orig_norm = normalize(original_food.nome)
-        prof_group = self._get_professional_group(original_food)
-        predominant = self._identify_predominant_nutrient(original_food)
-        
-        print(f">>> [SUGGEST] Orig: {original_food.nome} (Group: {prof_group}) TargetCHO: {t_cho}")
+        # Usar Motor Centralizado de Substituição
+        from .nutritional_substitution import (
+            sugerir_substitucoes, 
+            NutricaoAlimento, 
+            identificar_grupo_nutricional,
+            alimento_taco_para_nutricao,
+            alimento_tbca_para_nutricao,
+            alimento_usda_para_nutricao
+        )
+        from .models import AlimentoTACO, AlimentoTBCA, AlimentoUSDA
 
-        # 3. Conjuntos de Bloqueio
-        seen_names = {orig_norm}
-        seen_ids = set()
-        if food_id and food_id != 'undefined':
-            try: seen_ids.add(int(float(food_id)))
-            except: pass
-        if hasattr(original_food, "id") and original_food.id: seen_ids.add(original_food.id)
-
-        results = []
-
-        # 4. Staples (Prioridade Máxima para Qualidade)
-        ST_LISTS = {
-            "LEGUME": [(561, "Carioca"), (577, "Lentilha"), (570, "Grão-de-bico"), (565, "Ervilha"), (563, "Fradinho"), (560, "Branco"), (567, "Preto")],
-            "CARB": [(1, "Integral"), (3, "Arroz Tipo 1"), (91, "Inglesa"), (88, "Doce"), (129, "Mandioca"), (86, "Baroa"), (102, "Cara")],
-            "PROTEIN_LEAN": [(410, "Frango peito"), (377, "Patinho"), (358, "File mignon"), (488, "Ovo cozido"), (432, "Lombo"), (277, "Atum")],
-            "FRUIT": [(154, "Banana"), (222, "Maçã"), (213, "Laranja"), (227, "Mamão"), (233, "Manga"), (145, "Abacaxi")],
-            "VEGGIE": [(95, "Alface"), (123, "Tomate"), (100, "Brócolis"), (104, "Cenoura"), (98, "Beterraba"), (113, "Chuchu")]
-        }
-        
-        staples_pool = ST_LISTS.get(prof_group, [])
-
-        def process_food(sub_food, score):
-            if sub_food.id in seen_ids: return False
-            sub_norm = normalize(sub_food.nome)
-            if sub_norm in seen_names: return False
-            if any(k in sub_food.nome.lower() for k in ["cru", "pó"]): return False
+        try:
+            # 1. Identificar Grupo e Bloqueios
+            group_name = identificar_grupo_nutricional(original_food.nome)
             
-            # Cálculo de Equivalência Blindado
-            if t_cho and prof_group in ["CARB", "LEGUME", "FRUIT"]:
-                target_val, sub_val = float(t_cho), sub_food.carboidrato_g
-            elif t_ptn and prof_group == "PROTEIN_LEAN":
-                target_val, sub_val = float(t_ptn), sub_food.proteina_g
-            else:
-                p_attr = "carboidrato_g" if predominant == "carb" else "proteina_g"
-                target_val = (original_quantity / 100.0) * getattr(original_food, p_attr)
-                sub_val = getattr(sub_food, p_attr)
+            # LOG DEBUG
+            print(f">>> [SUGGEST NEW] Orig: {original_food.nome} | Group: {group_name}")
+
+            results = []
             
-            if not sub_val or sub_val < 0.1: return False
-            qty = (target_val / sub_val) * 100.0
+            # Se for grupo BLOQUEADO (agua_de_coco), retornamos vazio imediatamente
+            if group_name == "agua_de_coco":
+                 return Response({"substitutions": [], "predominant": "blocked"})
 
-            results.append({
-                "id": f"sub_{sub_food.id}",
-                "food": UnifiedFoodSerializer(sub_food).data,
-                "suggested_quantity": round(qty, 1),
-                "similarity_score": score,
-                "notes": f"Equivalência por {predominant}"
-            })
-            seen_names.add(sub_norm)
-            seen_ids.add(sub_food.id)
-            return True
+            if group_name:
+                # Converter original_food para NutricaoAlimento
+                # Precisa lidar com diferentes tipos de objetos (Virtual, TACO, TBCA)
+                if hasattr(original_food, 'proteina_g'):
+                    # Safely get and convert values (handle None/Null in DB)
+                    def safe_float(val):
+                        try:
+                            return float(val) if val is not None else 0.0
+                        except (ValueError, TypeError):
+                            return 0.0
 
-        # Phase 1: Staples
-        for sid, _ in staples_pool:
-            if len(results) >= 7: break
-            sub = self._get_food_data("TACO", sid)
-            if sub: process_food(sub, 0.95)
+                    # Já é um objeto compatível ou Model
+                    current_nutri = NutricaoAlimento(
+                        nome=original_food.nome,
+                        energia_kcal=safe_float(original_food.energia_kcal),
+                        proteina_g=safe_float(original_food.proteina_g),
+                        lipidios_g=safe_float(original_food.lipidios_g),
+                        carboidrato_g=safe_float(original_food.carboidrato_g),
+                        fibra_g=safe_float(getattr(original_food, 'fibra_g', 0))
+                    )
+                else:
+                    # Fallback genérico
+                    current_nutri = NutricaoAlimento(name=food_name, energia_kcal=0, proteina_g=0, lipidios_g=0, carboidrato_g=0)
 
-        # Phase 2: Global Fallback (Garante cobertura total)
-        if len(results) < 7:
-            from .models import AlimentoTACO
-            # Buscar outros alimentos do mesmo grupo profissional ou grupo taco
-            global_pool = AlimentoTACO.objects.filter(carboidrato_g__gt=1 if predominant == "carb" else 0).order_by('?')[:50]
-            for sub in global_pool:
-                if len(results) >= 10: break
-                sub_prof = self._get_professional_group(sub)
-                if sub_prof == prof_group:
-                    process_food(sub, 0.80)
+                # Buscar Candidatos (Melhor performance)
+                # Idealmente buscaríamos de todas as fontes, mas vamos focar no TACO/TBCA para velocidade
+                candidates = []
+                
+                # TACO Slice
+                for f in AlimentoTACO.objects.all()[:1500]:
+                    try:
+                        candidates.append(alimento_taco_para_nutricao(f))
+                    except Exception as e:
+                        # Skip bad records silently
+                        pass
+                
+                # TBCA Slice (se necessário, pode descomentar)
+                # for f in AlimentoTBCA.objects.all()[:1000]:
+                #    candidates.append(alimento_tbca_para_nutricao(f))
 
-        return Response({"substitutions": results, "predominant": predominant})
+                # CHAMADA CORE: Motor de Substituição
+                suggestions = sugerir_substitucoes(
+                    current_nutri, 
+                    candidates, 
+                    quantidade_original_g=original_quantity, 
+                    limite_resultados=10
+                )
+
+                # Mapear para Formato de Resposta do Frontend
+                for res in suggestions:
+                    # Tentar recuperar objeto original p/ ID se possível, ou usar nada
+                    # O frontend precisa de 'food' object serializado ou similar
+                    # Vamos simplificar devolvendo o UnifiedFoodSerializer estruturado manualmente
+                    
+                    results.append({
+                        "id": f"sub_auto_{res.alimento_substituto}", # Fake ID único
+                        "food": {
+                            "nome": res.alimento_substituto,
+                            "grupo": res.grupo,
+                            "energia_kcal": res.calorias_por_100g_substituto, # Aprox
+                            "proteina_g": 0, # Não temos detalhe aqui sem query
+                            "carboidrato_g": 0,
+                            "lipidios_g": 0,
+                            "source": "AUTO"
+                        },
+                        "suggested_quantity": res.quantidade_substituto_g,
+                        "similarity_score": 0.95, # Fixo por enquanto, pois passou no filtro
+                        "notes": f"Equivalência por {res.macronutriente_igualizado}"
+                    })
+
+            return Response({"substitutions": results, "predominant": "auto"})
+        except Exception as e:
+            import traceback
+            error_details = traceback.format_exc()
+            print(f">>> [CRITICAL ERROR] Suggestion logic crashed:\n{error_details}")
+            # Em debug mode, retornamos o erro para o frontend ver
+            return Response(
+                {"error": "Internal Server Error during suggestion", "details": str(e)}, 
+                status=500
+            )
 
     @action(detail=False, methods=["POST"])
     def toggle_favorite(self, request):
