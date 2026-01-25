@@ -10,8 +10,15 @@ export const getBaseURL = () => {
 
     // Fallback for local development
     if (typeof window !== 'undefined') {
-        // Prefer localhost for dev to avoid LAN binding/firewall issues.
-        // If you need to target another host, set NEXT_PUBLIC_API_BASE_URL in env.
+        const hostname = window.location.hostname;
+
+        // If we are accessing via IP (like 192.168.x.x), use that IP for the backend too
+        const isIP = /^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$/.test(hostname);
+
+        if (isIP) {
+            return `http://${hostname}:8000/api/v1/`;
+        }
+
         return 'http://localhost:8000/api/v1/';
     }
 

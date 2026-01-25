@@ -47,7 +47,7 @@ PASSWORD_RESET_TIMEOUT = 86400
 
 # CORS Configuration
 # Isso permite TODAS as origens. Deve ser removido após identificar o problema.
-CORS_ALLOW_ALL_ORIGINS = config('CORS_ALLOW_ALL_ORIGINS', default=False, cast=bool)
+CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
 
 INSTALLED_APPS = [
@@ -101,33 +101,36 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-# CORS Configuration
-origins_env = config('CORS_ALLOWED_ORIGINS', default="", cast=Csv())
+# CORS Configuration - PERMISSIVE MODE FOR DEBUGGING
+CORS_ALLOW_ALL_ORIGINS = True  # Force allow all for local dev debugging
+CORS_ALLOW_CREDENTIALS = True
 
-# Inicializa as origens permitidas com localhost e URLs do Render (hardcoded para garantir funcionamento)
+# Inicializa as origens permitidas com localhost e URLs do Render
 origins = [
-    "http://localhost:3000", 
-    "http://127.0.0.1:3000", 
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "http://localhost:3001",  # Frontend alternates
+    "http://127.0.0.1:3001",
+    "http://localhost:3002",
     "http://localhost:8000",
-    "https://nutri-frontend-1wzv.onrender.com",  # Frontend do Render
-    "https://nutri-4-0-9t8a.onrender.com",       # Backend do Render (para self-requests)
+    "http://127.0.0.1:8000",
 ]
 
-# Adiciona origens da variável de ambiente, removendo barras finais
+# (Mantém a lógica de adição via env, mas o ALLOW_ALL acima tem precedência no django-cors-headers se configurado assim)
+# Na verdade, django-cors-headers usa ALLOW_ALL_ORIGINS se True, ignorando a lista.
+
+origins_env = config('CORS_ALLOWED_ORIGINS', default="", cast=Csv())
 for o in origins_env:
     if o.strip():
         origins.append(o.strip().rstrip('/'))
 
-# Garante que a FRONTEND_URL principal esteja incluída e formatada corretamente
 if FRONTEND_URL:
     clean_frontend_url = FRONTEND_URL.strip().rstrip('/')
     if clean_frontend_url and clean_frontend_url not in origins:
         origins.append(clean_frontend_url)
 
-# Remove duplicatas e valores vazios
 CORS_ALLOWED_ORIGINS = list(set([o for o in origins if o]))
 CSRF_TRUSTED_ORIGINS = CORS_ALLOWED_ORIGINS
-# CORS_ALLOW_ALL_ORIGINS já está definido como True no topo do arquivo para debug
 
 print(f"DEBUG: CORS_ALLOW_ALL_ORIGINS = {CORS_ALLOW_ALL_ORIGINS}")
 print(f"DEBUG: CORS_ALLOWED_ORIGINS = {CORS_ALLOWED_ORIGINS}")

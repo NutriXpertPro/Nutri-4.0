@@ -36,7 +36,7 @@ export function DietTopBar() {
     const activeMealId = workspaceMeals.length > 0 ? workspaceMeals[0].id : null
 
     return (
-        <div className="glass-header sticky top-0 z-30 border-b border-border/50 shadow-sm backdrop-blur-md">
+        <div className="sticky top-0 z-30 bg-transparent">
             <div className="px-6 py-2 flex flex-col gap-3">
 
                 {/* Unified Toolbar */}
@@ -45,7 +45,7 @@ export function DietTopBar() {
                 </div>
 
                 {/* 3. Favorites Quick Bar - Premium Carousel */}
-                <div className="flex items-center gap-4 pt-2 border-t border-border/5 translate-y-[35px]">
+                <div className="flex items-center gap-4 pt-2 translate-y-[35px]">
                     <div className="flex items-center gap-2 min-w-max text-[10px] font-black text-amber-500/80 mx-1 uppercase tracking-widest">
                         <Star className="w-4 h-4 fill-amber-500/20" />
                         Favoritos
