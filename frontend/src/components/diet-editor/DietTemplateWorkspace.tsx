@@ -10,7 +10,7 @@ import { Card } from "@/components/ui/card"
 import { DietTopBar } from './meal-builder/DietTopBar'
 import { DietMealCard } from './meal-builder/DietMealCard'
 
- export function DietTemplateWorkspace() {
+export function DietTemplateWorkspace() {
     const {
         workspaceMeals,
         addWorkspaceMeal,
@@ -48,7 +48,7 @@ import { DietMealCard } from './meal-builder/DietMealCard'
         const defaultTime = workspaceMeals.length > 0 ? "00:00" : "07:00"
         addWorkspaceMeal({
             id: newId,
-            type: 'Nova Refeição',
+            type: '',
             time: defaultTime,
             observation: '',
             foods: [],

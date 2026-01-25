@@ -7,7 +7,8 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
-import { Trash2, Plus, GripVertical, Check, ChevronsUpDown, Search, Loader2, Utensils, RefreshCw, X, ChevronDown, ChevronUp, Copy, Maximize2, Minimize2, Flame, Folder, ArrowRight, Star, Clock, Coffee, Salad, Apple, Soup, Moon, PieChart, FileText, Eye, Settings } from 'lucide-react'
+import { Trash2, Plus, GripVertical, Check, ChevronsUpDown, Search, Loader2, Utensils, RefreshCw, X, ChevronDown, ChevronUp, Copy, Maximize2, Minimize2, Flame, Folder, ArrowRight, Star, Clock, Coffee, Salad, Apple, Soup, Moon, PieChart, FileText, Eye, Settings, Edit2, Menu } from 'lucide-react'
+import { motion, AnimatePresence, Reorder } from 'framer-motion'
 import { useDebounce } from '@/hooks/use-debounce'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { cn } from "@/lib/utils"
@@ -71,6 +72,61 @@ export function DietMealCard({
     const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false)
     const [isSubstitutionDrawerOpen, setIsSubstitutionDrawerOpen] = useState(false)
     const [selectedFoodForSub, setSelectedFoodForSub] = useState<WorkspaceMealFood | null>(null)
+
+    // States for inline editing
+    const [editingFoodId, setEditingFoodId] = useState<number | null>(null)
+    const [editingName, setEditingName] = useState('')
+    const editInputRef = useRef<HTMLInputElement>(null)
+
+    const startEditing = (food: WorkspaceMealFood) => {
+        setEditingFoodId(food.id)
+        setEditingName(food.name)
+        setTimeout(() => editInputRef.current?.focus(), 0)
+    }
+
+    const saveEditing = () => {
+        if (editingFoodId === null) return
+        onUpdate({
+            foods: meal.foods.map(f => f.id === editingFoodId ? { ...f, name: editingName } : f)
+        })
+        setEditingFoodId(null)
+    }
+
+    const debouncedEditingName = useDebounce(editingName, 300)
+    const { data: inlineSearchResults, isLoading: isInlineSearching } = useQuery({
+        queryKey: ['food-search-inline', debouncedEditingName],
+        queryFn: () => foodService.search(debouncedEditingName, { limit: 5 }),
+        enabled: !!editingFoodId && debouncedEditingName.length >= 2,
+    })
+
+    const handleReplaceFood = (oldFoodId: number, newFood: Food) => {
+        const updatedFoods: WorkspaceMealFood[] = meal.foods.map(f => {
+            if (f.id === oldFoodId) {
+                return {
+                    ...f,
+                    id: Date.now(),
+                    name: newFood.nome,
+                    qty: '' as const, // Use constant to match 'number | ""'
+                    ptn: newFood.proteina_g,
+                    cho: newFood.carboidrato_g,
+                    fat: newFood.lipidios_g,
+                    fib: newFood.fibra_g || 0,
+                    unidade_caseira: newFood.unidade_caseira ?? undefined,
+                    peso_unidade_caseira_g: newFood.peso_unidade_caseira_g ?? undefined,
+                    medidas: newFood.medidas,
+                    originalId: newFood.id,
+                    source: newFood.source,
+                    prep: '',
+                    measure: 'g', // Default to grams for new food
+                    unit: 'g',
+                    preferred: false
+                }
+            }
+            return f
+        })
+        onUpdate({ foods: updatedFoods })
+        setEditingFoodId(null)
+    }
 
     const handleSubstituteFood = (food: Food, quantity: number) => {
         if (!selectedFoodForSub) return
@@ -359,31 +415,57 @@ export function DietMealCard({
                 {/* Cabeçalho de Identificação da Refeição - Alinhamento Perfeito */}
                 <div className="flex items-center justify-between px-4 py-1.5 border-b border-border/10 bg-background/50 relative z-30">
                     <div className="flex items-center gap-4">
-                        <Input
-                            type="time"
-                            value={meal.time}
-                            onChange={(e) => onUpdate({ time: e.target.value })}
-                            className="h-8 w-24 text-[10px] bg-background border-border/20 rounded-xl text-center text-foreground shadow-sm"
-                        />
-                        <Input
-                            value={meal.type}
-                            onChange={(e) => {
-                                if (e.target.value.length <= 30) {
-                                    onUpdate({ type: e.target.value });
-                                }
-                            }}
-                            className="h-8 w-44 text-[10px] bg-background border-border/20 px-3 rounded-xl transition-all focus:border-primary focus:bg-background text-foreground truncate shadow-sm"
-                            placeholder="Nome da Refeição"
-                        />
+                        <div className="flex items-center bg-muted/20 px-2 py-1 rounded-xl border border-border/10 h-8 min-w-[80px]">
+                            <Input
+                                type="time"
+                                value={meal.time}
+                                onChange={(e) => onUpdate({ time: e.target.value })}
+                                className="h-6 w-full text-[10px] bg-transparent border-0 p-0 rounded-none text-center text-foreground font-normal focus-visible:ring-0 shadow-none"
+                            />
+                        </div>
+
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <div className="relative group cursor-pointer h-8">
+                                    <Input
+                                        value={meal.type}
+                                        onChange={(e) => {
+                                            if (e.target.value.length <= 40) {
+                                                onUpdate({ type: e.target.value });
+                                            }
+                                        }}
+                                        onClick={(e) => e.stopPropagation()}
+                                        className="h-8 w-44 bg-background border-border/20 px-3 rounded-xl transition-all focus:border-primary focus:bg-background text-[10px] text-foreground truncate shadow-sm"
+                                        placeholder="Nome da Refeição"
+                                    />
+                                    <div className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-50 transition-opacity pointer-events-none">
+                                        <ChevronDown className="w-3 h-3 text-muted-foreground" />
+                                    </div>
+                                </div>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="start" className="w-56 p-1 rounded-2xl border-border/40 shadow-2xl bg-card/95 backdrop-blur-xl">
+                                <div className="px-3 py-2 text-[8px] uppercase tracking-[0.2em] text-muted-foreground/60 border-b border-border/5 mb-1 text-center font-normal">Sugestões</div>
+                                {['Desjejum', 'Café da manhã', 'Lanche da Manhã', 'Almoço', 'Lanche da Tarde', 'Jantar', 'Ceia', 'Pré-Treino', 'Pós-Treino'].map((option) => (
+                                    <DropdownMenuItem
+                                        key={option}
+                                        className="text-[11px] font-medium py-2 px-4 cursor-pointer focus:bg-primary/10 focus:text-primary rounded-xl transition-colors uppercase tracking-tight"
+                                        onClick={() => onUpdate({ type: option })}
+                                    >
+                                        {option}
+                                    </DropdownMenuItem>
+                                ))}
+                            </DropdownMenuContent>
+                        </DropdownMenu>
                     </div>
 
                     <Button
-                        variant="ghost"
+                        variant="secondary"
                         size="sm"
-                        className="h-8 px-3 bg-muted/40 text-foreground hover:bg-primary/20 transition-all border border-border/30 rounded-xl flex items-center justify-center shadow-sm text-[10px] uppercase tracking-wider"
+                        className="h-8 px-3 bg-secondary/30 hover:bg-secondary/80 text-secondary-foreground transition-all border border-border/10 rounded-xl flex items-center justify-center shadow-sm text-[10px] uppercase tracking-wider"
                         title="Presets"
                         onClick={() => setIsTemplateModalOpen(true)}
                     >
+                        <Menu className="w-3.5 h-3.5 mr-1.5 opacity-50 text-primary" />
                         Presets
                     </Button>
                 </div>
@@ -492,7 +574,7 @@ export function DietMealCard({
                                 onFocus={() => setIsSearchFocused(true)}
                             />
                             {isSearchFocused && searchQuery.length > 1 && (
-                                <Card className="absolute top-full left-0 right-0 mt-3 p-2 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.6)] max-h-[450px] overflow-y-auto z-[100] border-border/40 bg-card/98 backdrop-blur-3xl rounded-[2rem] ring-1 ring-white/10 animate-in fade-in slide-in-from-top-2 duration-300">
+                                <Card className="absolute top-full left-0 right-0 mt-3 p-2 shadow-[0_30px_70px_-10px_rgba(0,0,0,0.7)] max-h-[450px] overflow-y-auto z-[100] border-primary/20 bg-card/98 backdrop-blur-3xl rounded-[2rem] ring-2 ring-primary/20 animate-in fade-in slide-in-from-top-3 duration-300">
                                     {isSearching ? (
                                         <div className="flex flex-col items-center justify-center p-12 gap-3">
                                             <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -519,7 +601,7 @@ export function DietMealCard({
                                                             <div className="flex items-center gap-4 min-w-0 flex-1">
                                                                 <div className="relative shrink-0">
                                                                     <FoodIcon name={food.nome} group={food.grupo} size="lg" />
-                                                                    <div className={cn("absolute -bottom-1 -right-1 w-5 h-5 rounded-md flex items-center justify-center text-[7px] font-bold border shadow-sm bg-background", sourceColor)}>
+                                                                    <div className={cn("absolute -bottom-1 -right-1 w-5 h-5 rounded-md flex items-center justify-center text-[7px] font-normal border shadow-sm bg-background", sourceColor)}>
                                                                         {food.source}
                                                                     </div>
                                                                 </div>
@@ -592,151 +674,233 @@ export function DietMealCard({
                                     <th className="p-3 text-center w-12 text-muted-foreground/30 font-normal">...</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-border/5">
-                                {meal.foods.map((food) => {
-                                    const inputRef = getOrCreateRef(food.id)
-                                    const ratio = (typeof food.qty === 'number' ? food.qty : 0) / 100
-                                    return (
-                                        <tr key={food.id} className="group hover:bg-white/[0.03] transition-colors">
-                                            <td className="p-3 text-center">
-                                                <GripVertical className="w-4 h-4 text-muted-foreground/20 group-hover:text-primary transition-colors cursor-grab mx-auto" />
-                                            </td>
-                                            <td className="p-3">
-                                                <div className="flex items-center gap-3">
-                                                    {/* Botão de Favorito */}
-                                                    <button
-                                                        className="p-1.5 rounded-lg hover:bg-amber-100/10 text-muted-foreground hover:text-amber-500 transition-colors shrink-0"
-                                                        title={favorites.some(fav => (food.originalId && String(fav.id) === String(food.originalId) && fav.source === food.source) || (!food.originalId && fav.nome.trim().toLowerCase() === food.name.trim().toLowerCase())) ? "Remover dos favoritos" : "Adicionar aos favoritos"}
-                                                        onClick={async (e) => {
-                                                            e.stopPropagation();
-                                                            const match = favorites.find(fav =>
-                                                                (food.originalId && String(fav.id) === String(food.originalId) && fav.source === food.source) ||
-                                                                (!food.originalId && fav.nome.trim().toLowerCase() === food.name.trim().toLowerCase())
-                                                            );
+                            {meal.foods.length > 0 ? (
+                                <Reorder.Group
+                                    axis="y"
+                                    values={meal.foods}
+                                    onReorder={(newFoods) => onUpdate({ foods: newFoods })}
+                                    as="tbody"
+                                    className={cn("divide-y divide-border/5 transition-all duration-500", (isSearchFocused && searchQuery.length > 1) ? "blur-[2px] opacity-30 grayscale pointer-events-none" : "")}
+                                >
+                                    {meal.foods.map((food) => {
+                                        const inputRef = getOrCreateRef(food.id)
+                                        const ratio = (typeof food.qty === 'number' ? food.qty : 0) / 100
+                                        return (
+                                            <Reorder.Item
+                                                key={food.id}
+                                                value={food}
+                                                as="tr"
+                                                className="group hover:bg-white/[0.03] transition-colors relative"
+                                            >
+                                                <td className="p-3 text-center">
+                                                    <GripVertical className="w-4 h-4 text-muted-foreground/20 group-hover:text-primary transition-colors cursor-grab mx-auto focus:outline-none touch-none" />
+                                                </td>
+                                                <td className="p-3">
+                                                    <div className="flex items-center gap-3">
+                                                        {/* Botão de Favorito */}
+                                                        <button
+                                                            className="p-1.5 rounded-lg hover:bg-amber-100/10 text-muted-foreground hover:text-amber-500 transition-colors shrink-0"
+                                                            title={favorites.some(fav => (food.originalId && String(fav.id) === String(food.originalId) && fav.source === food.source) || (!food.originalId && fav.nome.trim().toLowerCase() === food.name.trim().toLowerCase())) ? "Remover dos favoritos" : "Adicionar aos favoritos"}
+                                                            onClick={async (e) => {
+                                                                e.stopPropagation();
+                                                                const match = favorites.find(fav =>
+                                                                    (food.originalId && String(fav.id) === String(food.originalId) && fav.source === food.source) ||
+                                                                    (!food.originalId && fav.nome.trim().toLowerCase() === food.name.trim().toLowerCase())
+                                                                );
 
-                                                            if (match) {
-                                                                await removeFavorite(match.id, match.source, match.nome);
-                                                            } else if (food.originalId && food.source) {
-                                                                const foodToFav: Food = {
-                                                                    id: food.originalId as any,
-                                                                    source: food.source as 'TACO' | 'TBCA' | 'USDA' | 'IBGE',
-                                                                    nome: food.name,
-                                                                    grupo: food.prep || '',
-                                                                    proteina_g: food.ptn,
-                                                                    carboidrato_g: food.cho,
-                                                                    lipidios_g: food.fat,
-                                                                    fibra_g: food.fib,
-                                                                    energia_kcal: (food.ptn * 4 + food.cho * 4 + food.fat * 9),
-                                                                    unidade_caseira: food.unidade_caseira,
-                                                                    peso_unidade_caseira_g: food.peso_unidade_caseira_g,
-                                                                    medidas: food.medidas || [],
-                                                                    is_favorite: false
-                                                                };
-                                                                await addFavorite(foodToFav);
-                                                            } else {
-                                                                try {
-                                                                    // Se não tem ID original (ex: veio de um preset ou custom), busca pelo nome exato
-                                                                    const searchRes = await foodService.search(food.name, { limit: 5 });
-                                                                    const exactMatch = searchRes.results.find((f: any) => f.nome.trim().toLowerCase() === food.name.trim().toLowerCase());
+                                                                if (match) {
+                                                                    await removeFavorite(match.id, match.source, match.nome);
+                                                                } else if (food.originalId && food.source) {
+                                                                    const foodToFav: Food = {
+                                                                        id: food.originalId as any,
+                                                                        source: food.source as 'TACO' | 'TBCA' | 'USDA' | 'IBGE',
+                                                                        nome: food.name,
+                                                                        grupo: food.prep || '',
+                                                                        proteina_g: food.ptn,
+                                                                        carboidrato_g: food.cho,
+                                                                        lipidios_g: food.fat,
+                                                                        fibra_g: food.fib,
+                                                                        energia_kcal: (food.ptn * 4 + food.cho * 4 + food.fat * 9),
+                                                                        unidade_caseira: food.unidade_caseira,
+                                                                        peso_unidade_caseira_g: food.peso_unidade_caseira_g,
+                                                                        medidas: food.medidas || [],
+                                                                        is_favorite: false
+                                                                    };
+                                                                    await addFavorite(foodToFav);
+                                                                } else {
+                                                                    try {
+                                                                        // Se não tem ID original (ex: veio de um preset ou custom), busca pelo nome exato
+                                                                        const searchRes = await foodService.search(food.name, { limit: 5 });
+                                                                        const exactMatch = searchRes.results.find((f: any) => f.nome.trim().toLowerCase() === food.name.trim().toLowerCase());
 
-                                                                    if (exactMatch) {
-                                                                        await addFavorite(exactMatch);
-                                                                    } else if (searchRes.results.length > 0) {
-                                                                        // Se não achou exato mas tem resultados, pega o primeiro como melhor tentativa
-                                                                        await addFavorite(searchRes.results[0]);
-                                                                    } else {
-                                                                        alert("Não foi possível encontrar o ID original deste alimento para favoritar.");
+                                                                        if (exactMatch) {
+                                                                            await addFavorite(exactMatch);
+                                                                        } else if (searchRes.results.length > 0) {
+                                                                            // Se não achou exato mas tem resultados, pega o primeiro como melhor tentativa
+                                                                            await addFavorite(searchRes.results[0]);
+                                                                        } else {
+                                                                            alert("Não foi possível encontrar o ID original deste alimento para favoritar.");
+                                                                        }
+                                                                    } catch (err) {
+                                                                        console.error("Erro ao favoritar alimento da lista:", err);
                                                                     }
-                                                                } catch (err) {
-                                                                    console.error("Erro ao favoritar alimento da lista:", err);
                                                                 }
-                                                            }
 
-                                                        }}
-                                                    >
-                                                        <Star className={cn("w-4 h-4 transition-colors", favorites.some(fav => (food.originalId && String(fav.id) === String(food.originalId) && fav.source === food.source) || (!food.originalId && fav.nome.trim().toLowerCase() === food.name.trim().toLowerCase())) ? "fill-amber-400 text-amber-400" : "")} />
-                                                    </button>
+                                                            }}
+                                                        >
+                                                            <Star className={cn("w-4 h-4 transition-colors", favorites.some(fav => (food.originalId && String(fav.id) === String(food.originalId) && fav.source === food.source) || (!food.originalId && fav.nome.trim().toLowerCase() === food.name.trim().toLowerCase())) ? "fill-amber-400 text-amber-400" : "")} />
+                                                        </button>
 
-                                                    <FoodIcon name={food.name} group={food.prep || ''} size="md" />
-                                                    <div className="min-w-0">
-                                                        <div className="text-sm text-foreground truncate max-w-[280px] transition-colors">{food.name}</div>
-                                                        <div className="text-[10px] text-muted-foreground uppercase tracking-tight flex items-center gap-1.5 mt-0.5">
-                                                            <Utensils className="w-3 h-3 opacity-30" />
-                                                            {food.prep || 'Natural'}
+                                                        <FoodIcon name={food.name} group={food.prep || ''} size="md" />
+
+                                                        {/* Editable Food Name */}
+                                                        <div className="min-w-0 flex-1 group/name relative">
+                                                            {editingFoodId === food.id ? (
+                                                                <div className="flex flex-col gap-1 relative">
+                                                                    <div className="flex items-center gap-2">
+                                                                        <Input
+                                                                            ref={editInputRef}
+                                                                            value={editingName}
+                                                                            onChange={(e) => setEditingName(e.target.value)}
+                                                                            onKeyDown={(e) => {
+                                                                                if (e.key === 'Enter') saveEditing()
+                                                                                if (e.key === 'Escape') setEditingFoodId(null)
+                                                                            }}
+                                                                            className="h-8 text-sm bg-muted/30 border-primary/30 focus:border-primary px-2 rounded-lg w-full"
+                                                                            placeholder="Digite para buscar ou renomear..."
+                                                                        />
+                                                                        <button onClick={saveEditing} className="p-1 hover:bg-primary/10 rounded text-primary shrink-0" title="Salvar nome atual">
+                                                                            <Check className="w-3.5 h-3.5" />
+                                                                        </button>
+                                                                        <button onClick={() => setEditingFoodId(null)} className="p-1 hover:bg-destructive/10 rounded text-destructive shrink-0" title="Cancelar">
+                                                                            <X className="w-3.5 h-3.5" />
+                                                                        </button>
+                                                                    </div>
+
+                                                                    {/* Inline Search Results Dropdown */}
+                                                                    {inlineSearchResults?.results && inlineSearchResults.results.length > 0 && (
+                                                                        <div className="absolute top-full left-0 right-0 mt-1 z-[110] bg-card border border-border/40 shadow-2xl rounded-xl overflow-hidden animate-in fade-in slide-in-from-top-1 duration-200">
+                                                                            <div className="px-2 py-1.5 text-[8px] uppercase tracking-widest text-muted-foreground bg-muted/20 border-b border-border/5">Sugestões de Substituição</div>
+                                                                            {inlineSearchResults.results.map((res: Food) => (
+                                                                                <button
+                                                                                    key={`${res.source}-${res.id}`}
+                                                                                    className="w-full text-left px-3 py-2 hover:bg-primary/5 flex flex-col gap-0.5 transition-colors border-b border-border/5 last:border-0"
+                                                                                    onClick={() => handleReplaceFood(food.id, res)}
+                                                                                >
+                                                                                    <div className="text-[11px] font-medium text-foreground truncate">{res.nome}</div>
+                                                                                    <div className="flex items-center gap-2 text-[9px] text-muted-foreground">
+                                                                                        <span className="text-primary/70 font-normal">{res.source}</span>
+                                                                                        <span>•</span>
+                                                                                        <span>{Math.round(res.energia_kcal)} kcal/100g</span>
+                                                                                    </div>
+                                                                                </button>
+                                                                            ))}
+                                                                        </div>
+                                                                    )}
+                                                                    {isInlineSearching && (
+                                                                        <div className="absolute top-full left-0 right-0 mt-1 z-[110] bg-card/80 backdrop-blur-sm border border-border/40 p-2 flex items-center justify-center gap-2 rounded-xl">
+                                                                            <Loader2 className="w-3 h-3 animate-spin text-primary" />
+                                                                            <span className="text-[10px] text-muted-foreground">Buscando...</span>
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            ) : (
+                                                                <div className="flex items-center gap-2">
+                                                                    <div
+                                                                        className="text-sm text-foreground truncate max-w-[280px] transition-colors cursor-pointer hover:text-primary"
+                                                                        onClick={() => startEditing(food)}
+                                                                    >
+                                                                        {food.name}
+                                                                    </div>
+                                                                    <button
+                                                                        onClick={() => startEditing(food)}
+                                                                        className="opacity-0 group-hover/name:opacity-50 hover:opacity-100 transition-opacity p-1"
+                                                                    >
+                                                                        <Edit2 className="w-3 h-3" />
+                                                                    </button>
+                                                                </div>
+                                                            )}
+                                                            <div className="text-[10px] text-muted-foreground uppercase tracking-tight flex items-center gap-1.5 mt-0.5">
+                                                                <Utensils className="w-3 h-3 opacity-30" />
+                                                                {food.prep || 'Natural'}
+                                                            </div>
                                                         </div>
                                                     </div>
-                                                </div>
-                                            </td>
+                                                </td>
 
-                                            {/* UNIFIED QUANTITY SELECTOR COLUMN */}
-                                            <td className="p-3">
-                                                <div className="w-full max-w-[200px] mx-auto">
-                                                    <SmartQuantitySelector
-                                                        food={food}
-                                                        onChange={(grams, measure) => {
-                                                            onUpdate({
-                                                                foods: meal.foods.map(f =>
-                                                                    f.id === food.id ? { ...f, qty: grams, measure: measure } : f
-                                                                )
-                                                            });
-                                                        }}
-                                                        inputRef={inputRef}
-                                                        onEnter={() => {
-                                                            searchInputRef.current?.focus()
-                                                        }}
-                                                    />
-                                                    {/* Optional: Show calculated grams subtly below if using a measure */}
-                                                    {food.measure && food.measure !== 'g' && typeof food.qty === 'number' && (
-                                                        <div className="text-[9px] text-muted-foreground/40 text-center mt-1 font-mono tracking-tight">
-                                                            ≈ {Math.round(food.qty)}g calculados
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </td>
+                                                {/* UNIFIED QUANTITY SELECTOR COLUMN */}
+                                                <td className="p-3">
+                                                    <div className="w-full max-w-[200px] mx-auto">
+                                                        <SmartQuantitySelector
+                                                            food={food}
+                                                            onChange={(grams, measure) => {
+                                                                onUpdate({
+                                                                    foods: meal.foods.map(f =>
+                                                                        f.id === food.id ? { ...f, qty: grams, measure: measure } : f
+                                                                    )
+                                                                });
+                                                            }}
+                                                            inputRef={inputRef}
+                                                            onEnter={() => {
+                                                                searchInputRef.current?.focus()
+                                                            }}
+                                                        />
+                                                        {/* Optional: Show calculated grams subtly below if using a measure */}
+                                                        {food.measure && food.measure !== 'g' && typeof food.qty === 'number' && (
+                                                            <div className="text-[9px] text-muted-foreground/40 text-center mt-1 font-mono tracking-tight">
+                                                                ≈ {Math.round(food.qty)}g calculados
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </td>
 
-                                            <td className="p-3 text-center text-foreground">{((food.ptn || 0) * ratio).toFixed(1)}</td>
-                                            <td className="p-3 text-center text-foreground">{((food.cho || 0) * ratio).toFixed(1)}</td>
-                                            <td className="p-3 text-center text-foreground">{((food.fat || 0) * ratio).toFixed(1)}</td>
-                                            <td className="p-3 text-center text-foreground">{((food.fib || 0) * ratio).toFixed(1)}</td>
-                                            <td className="p-3 text-center text-foreground">
-                                                {(((food.ptn || 0) * 4 + (food.cho || 0) * 4 + (food.fat || 0) * 9) * ratio).toFixed(0)}
-                                            </td>
-                                            <td className="p-3 text-center">
-                                                <div className="flex justify-center transition-all gap-1 transform">
-                                                    {/* Botão de Substituição */}
-                                                    <button
-                                                        className="p-1.5 rounded-lg hover:bg-blue-100/10 text-muted-foreground hover:text-blue-500 transition-colors"
-                                                        title="Substituir alimento"
-                                                        onClick={() => {
-                                                            setSelectedFoodForSub(food)
-                                                            setIsSubstitutionDrawerOpen(true)
-                                                        }}
-                                                    >
-                                                        <RefreshCw className="w-3.5 h-3.5" />
-                                                    </button>
+                                                <td className="p-3 text-center text-foreground font-normal">{food.qty === '' ? '-' : ((food.ptn || 0) * ratio).toFixed(1)}</td>
+                                                <td className="p-3 text-center text-foreground font-normal">{food.qty === '' ? '-' : ((food.cho || 0) * ratio).toFixed(1)}</td>
+                                                <td className="p-3 text-center text-foreground font-normal">{food.qty === '' ? '-' : ((food.fat || 0) * ratio).toFixed(1)}</td>
+                                                <td className="p-3 text-center text-foreground font-normal">{food.qty === '' ? '-' : ((food.fib || 0) * ratio).toFixed(1)}</td>
+                                                <td className="p-3 text-center text-foreground font-normal">
+                                                    {food.qty === '' ? '-' : (((food.ptn || 0) * 4 + (food.cho || 0) * 4 + (food.fat || 0) * 9) * ratio).toFixed(0)}
+                                                </td>
+                                                <td className="p-3 text-center">
+                                                    <div className="flex justify-center transition-all gap-1 transform">
+                                                        {/* Botão de Substituição */}
+                                                        <button
+                                                            className="p-1.5 rounded-lg hover:bg-blue-100/10 text-muted-foreground hover:text-blue-500 transition-colors"
+                                                            title="Substituir alimento"
+                                                            onClick={() => {
+                                                                setSelectedFoodForSub(food)
+                                                                setIsSubstitutionDrawerOpen(true)
+                                                            }}
+                                                        >
+                                                            <RefreshCw className="w-3.5 h-3.5" />
+                                                        </button>
 
-                                                    {/* Botão de Excluir */}
-                                                    <button className="p-1.5 rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors" title="Remover" onClick={() => onRemoveFood(meal.id, food.id)}>
-                                                        <Trash2 className="w-3.5 h-3.5" />
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    )
-                                })}
-                                {meal.foods.length === 0 && (
+                                                        {/* Botão de Excluir */}
+                                                        <button className="p-1.5 rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors" title="Remover" onClick={() => onRemoveFood(meal.id, food.id)}>
+                                                            <Trash2 className="w-3.5 h-3.5" />
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </Reorder.Item>
+                                        )
+                                    })}
+                                </Reorder.Group>
+                            ) : (
+                                <tbody>
                                     <tr>
-                                        <td colSpan={9} className="p-12 text-center">
-                                            <div className="flex flex-col items-center gap-2 opacity-30 group">
-                                                <Utensils className="w-10 h-10 mb-2 group-hover:scale-110 transition-transform" />
-                                                <span className="text-xs uppercase tracking-widest italic">Nenhum alimento na lista</span>
-                                                <span className="text-[10px]">Inicie uma busca acima para compor sua refeição</span>
-                                            </div>
+                                        <td colSpan={9} className="p-12 text-center text-muted-foreground/30 font-light italic">
+                                            <Utensils className="w-10 h-10 mb-2 mx-auto opacity-20" />
+                                            <span>Nenhum alimento na lista.</span>
                                         </td>
                                     </tr>
-                                )}
-                            </tbody>
-                            <tfoot className="bg-muted/20 border-t border-border/10 sticky bottom-0 z-20 shadow-[0_-5px_15px_-5px_rgba(0,0,0,0.1)]">
+                                </tbody>
+                            )}
+
+
+                            <tfoot className={cn(
+                                "bg-muted/20 border-t border-border/10 sticky bottom-0 z-20 shadow-[0_-5px_15px_-5px_rgba(0,0,0,0.1)] transition-all duration-300",
+                                (isSearchFocused && searchQuery.length > 0) ? "opacity-0 invisible pointer-events-none" : "opacity-100 visible"
+                            )}>
                                 <tr>
                                     <td className="p-3"></td>
                                     <td className="p-3" colSpan={2}>
@@ -768,7 +932,7 @@ export function DietMealCard({
                                     {/* Kcal Column */}
                                     <td className="p-3 text-center align-middle">
                                         <div className="flex flex-col items-center">
-                                            <span className="text-xl text-foreground tabular-nums tracking-tighter leading-none">{Math.round(totals.kcal)}</span>
+                                            <span className="text-xl text-foreground tabular-nums font-normal leading-none">{Math.round(totals.kcal)}</span>
                                             <span className="text-[8px] text-muted-foreground uppercase leading-none mt-0.5">kcal</span>
                                         </div>
                                     </td>
@@ -786,7 +950,7 @@ export function DietMealCard({
                         </Button>
                     </div>
                 </div>
-            </Card>
+            </Card >
             <ExpressSelectorModal
                 isOpen={isTemplateModalOpen}
                 onClose={() => setIsTemplateModalOpen(false)}
@@ -799,32 +963,34 @@ export function DietMealCard({
             />
 
             {/* Drawer de Substituição */}
-            {selectedFoodForSub && (
-                <SubstitutionDrawer
-                    isOpen={isSubstitutionDrawerOpen}
-                    onClose={() => {
-                        setIsSubstitutionDrawerOpen(false)
-                        setSelectedFoodForSub(null)
-                    }}
-                    originalFood={{
-                        id: selectedFoodForSub.originalId as any,
-                        source: selectedFoodForSub.source as any,
-                        nome: selectedFoodForSub.name,
-                        proteina_g: selectedFoodForSub.ptn,
-                        carboidrato_g: selectedFoodForSub.cho,
-                        lipidios_g: selectedFoodForSub.fat,
-                        fibra_g: selectedFoodForSub.fib,
-                        energia_kcal: (selectedFoodForSub.ptn * 4 + selectedFoodForSub.cho * 4 + selectedFoodForSub.fat * 9),
-                        grupo: selectedFoodForSub.prep || '',
-                        unidade_caseira: selectedFoodForSub.unidade_caseira,
-                        peso_unidade_caseira_g: selectedFoodForSub.peso_unidade_caseira_g,
-                        medidas: selectedFoodForSub.medidas || []
-                    }}
-                    originalQuantity={typeof selectedFoodForSub.qty === 'number' ? selectedFoodForSub.qty : 100}
-                    dietType={dietType || 'normocalorica'}
-                    onSubstitute={handleSubstituteFood}
-                />
-            )}
+            {
+                selectedFoodForSub && (
+                    <SubstitutionDrawer
+                        isOpen={isSubstitutionDrawerOpen}
+                        onClose={() => {
+                            setIsSubstitutionDrawerOpen(false)
+                            setSelectedFoodForSub(null)
+                        }}
+                        originalFood={{
+                            id: selectedFoodForSub.originalId as any,
+                            source: selectedFoodForSub.source as any,
+                            nome: selectedFoodForSub.name,
+                            proteina_g: selectedFoodForSub.ptn,
+                            carboidrato_g: selectedFoodForSub.cho,
+                            lipidios_g: selectedFoodForSub.fat,
+                            fibra_g: selectedFoodForSub.fib,
+                            energia_kcal: (selectedFoodForSub.ptn * 4 + selectedFoodForSub.cho * 4 + selectedFoodForSub.fat * 9),
+                            grupo: selectedFoodForSub.prep || '',
+                            unidade_caseira: selectedFoodForSub.unidade_caseira,
+                            peso_unidade_caseira_g: selectedFoodForSub.peso_unidade_caseira_g,
+                            medidas: selectedFoodForSub.medidas || []
+                        }}
+                        originalQuantity={typeof selectedFoodForSub.qty === 'number' ? selectedFoodForSub.qty : 100}
+                        dietType={dietType || 'normocalorica'}
+                        onSubstitute={handleSubstituteFood}
+                    />
+                )
+            }
         </>
     )
 }

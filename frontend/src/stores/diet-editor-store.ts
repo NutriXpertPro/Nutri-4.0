@@ -504,7 +504,7 @@ const initialState = {
     // Workspace state
     workspaceMeals: [{
         id: 1,
-        type: 'Café da Manhã',
+        type: '',
         time: '07:00',
         observation: '',
         foods: [],
@@ -928,7 +928,7 @@ export const useDietEditorStore = create<DietEditorState>()(
                         const newFood: WorkspaceMealFood = {
                             id: Date.now(),
                             name: food.nome,
-                            qty: 100,
+                            qty: '',
                             unit: 'g',
                             measure: 'default',
                             prep: '',

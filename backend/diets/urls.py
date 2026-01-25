@@ -19,6 +19,24 @@ urlpatterns = [
     path(
         "toggle-favorite/", views.ToggleFavoriteView.as_view(), name="toggle-favorite"
     ),
+    # Custom Foods (User's personal table)
+    path(
+        "custom-foods/",
+        views.CustomFoodViewSet.as_view({"get": "list", "post": "create"}),
+        name="custom-food-list",
+    ),
+    path(
+        "custom-foods/<int:pk>/",
+        views.CustomFoodViewSet.as_view(
+            {"get": "retrieve", "patch": "partial_update", "delete": "destroy"}
+        ),
+        name="custom-food-detail",
+    ),
+    path(
+        "custom-foods/groups/",
+        views.CustomFoodViewSet.as_view({"get": "groups"}),
+        name="custom-food-groups",
+    ),
     # Diet CRUD
     path(
         "",

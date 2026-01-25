@@ -280,7 +280,7 @@ export function SmartQuantitySelector({ food, onChange, inputRef, onEnter }: Sma
                 value={displayValue}
                 onChange={(e) => handleValueChange(e.target.value)}
                 onKeyDown={handleKeyDown}
-                className="h-9 w-[70px] border-0 bg-transparent text-center focus-visible:ring-0 px-1 font-medium text-foreground text-sm shadow-none"
+                className="h-9 w-[70px] border-0 bg-transparent text-center focus-visible:ring-0 px-1 font-normal text-foreground text-sm shadow-none"
                 placeholder="0"
             />
 
@@ -298,7 +298,7 @@ export function SmartQuantitySelector({ food, onChange, inputRef, onEnter }: Sma
                     {options.map((opt) => (
                         <SelectItem key={opt.value} value={opt.value} className="text-xs py-2">
                             <div className="flex items-center justify-between w-full gap-4 min-w-[120px]">
-                                <span className={cn((opt.value === 'g' || opt.value === 'ml') ? "font-bold" : "")}>{opt.fullLabel}</span>
+                                <span className={cn((opt.value === 'g' || opt.value === 'ml') ? "" : "")}>{opt.fullLabel}</span>
                                 {opt.weight !== 1 && (
                                     <span className="text-[9px] text-muted-foreground/50 font-mono bg-muted/30 px-1.5 py-0.5 rounded">
                                         {opt.weight}g

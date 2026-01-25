@@ -5,7 +5,7 @@ export interface Food {
     id: number | string
     nome: string
     grupo: string
-    source: 'TACO' | 'TBCA' | 'USDA' | 'IBGE' | 'CUSTOM'
+    source: 'TACO' | 'TBCA' | 'USDA' | 'IBGE' | 'CUSTOM' | 'Sua Tabela'
     energia_kcal: number
     proteina_g: number
     lipidios_g: number

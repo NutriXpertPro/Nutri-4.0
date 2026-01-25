@@ -12,6 +12,7 @@ from .models import (
     FoodSubstitution,
     FoodSubstitutionRule,
     NutritionistSubstitutionFavorite,
+    CustomFood,
 )
 
 
@@ -407,6 +408,36 @@ class NutritionistSubstitutionFavoriteSerializer(serializers.ModelSerializer):
         model = NutritionistSubstitutionFavorite
         fields = "__all__"
         read_only_fields = ["nutritionist", "created_at", "updated_at"]
+
+    def create(self, validated_data):
+        request = self.context.get("request")
+        if request:
+            validated_data["nutritionist"] = request.user
+        return super().create(validated_data)
+
+
+class CustomFoodSerializer(serializers.ModelSerializer):
+    source = serializers.ReadOnlyField(default="Sua Tabela")
+
+    class Meta:
+        model = CustomFood
+        fields = [
+            "id",
+            "nome",
+            "grupo",
+            "energia_kcal",
+            "proteina_g",
+            "lipidios_g",
+            "carboidrato_g",
+            "fibra_g",
+            "unidade_caseira",
+            "peso_unidade_caseira_g",
+            "source",
+            "is_active",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = ["created_at", "updated_at", "source"]
 
     def create(self, validated_data):
         request = self.context.get("request")

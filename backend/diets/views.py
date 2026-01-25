@@ -23,6 +23,7 @@ from .models import (
     FoodSubstitution,
     FoodSubstitutionRule,
     NutritionistSubstitutionFavorite,
+    CustomFood,
 )
 from .serializers import (
     AlimentoTACOSerializer,
@@ -37,8 +38,8 @@ from .serializers import (
     FoodSubstitutionGroupSerializer,
     FoodSubstitutionRuleSerializer,
     NutritionistSubstitutionFavoriteSerializer,
+    CustomFoodSerializer,
 )
-# Import search utilities directly to ensure latest logic is used
 from .search_utils import (
     normalizar_para_scoring,
     calcular_score_radical,
@@ -99,35 +100,40 @@ class FoodSearchViewSet(viewsets.ViewSet):
     def ensure_cache(cls):
         """Cache global para evitar N+1 queries no IBGE com dados nutricionais"""
         if not hasattr(cls, "IBGE_CACHE") or not cls.IBGE_CACHE:
+            cls.IBGE_CACHE = {}  # Initialize first
             try:
-                # Carrega medidas IBGE
+                # Import models inside method to avoid circular imports if any, but ensure they are available
                 from .models import AlimentoMedidaIBGE, MedidaCaseira, AlimentoTBCA
-
-                # Verificar se as tabelas existem e têm dados
+                
+                # Check if tables exist by querying safely
                 try:
-                    items = AlimentoMedidaIBGE.objects.select_related("medida").all()
-                except:
-                    items = []
+                    if not AlimentoMedidaIBGE.objects.exists():
+                        print("IBGE table empty, skipping cache.")
+                        return
+                except Exception:
+                    # Table might not exist yet
+                    print("IBGE table not found, skipping cache.")
+                    return
 
-                # Para dados nutricionais no IBGE, fazemos match com TBCA
+                items = AlimentoMedidaIBGE.objects.select_related("medida").all()
+                
+                tbca_lookup = {}
                 try:
-                    tbca_lookup = {
-                        item.nome.lower(): item
-                        for item in AlimentoTBCA.objects.all().only(
-                            "nome",
-                            "energia_kcal",
-                            "proteina_g",
-                            "lipidios_g",
-                            "carboidrato_g",
-                            "fibra_g",
-                        )
-                    }
-                except:
-                    tbca_lookup = {}
+                    # Optimize lookup
+                    tbca_qs = AlimentoTBCA.objects.all().values(
+                        "nome", "energia_kcal", "proteina_g", "lipidios_g", 
+                        "carboidrato_g", "fibra_g"
+                    )
+                    for item in tbca_qs:
+                        tbca_lookup[item["nome"].lower()] = item
+                except Exception as e:
+                    print(f"Error loading TBCA for lookup: {e}")
 
                 cache = {}
                 for item in items:
                     name = item.nome_alimento
+                    if not name: continue
+                    
                     md5_id = hashlib.md5(name.encode("utf-8")).hexdigest()
                     if md5_id not in cache:
                         name_lower = name.lower()
@@ -136,24 +142,30 @@ class FoodSearchViewSet(viewsets.ViewSet):
                             simplified = name_lower.split(",")[0]
                             nutri = tbca_lookup.get(simplified)
 
+                        # Helper to safely get value from dict or obj
+                        def get_val(obj, key, default=0):
+                            if isinstance(obj, dict):
+                                return obj.get(key, default)
+                            return getattr(obj, key, default)
+
                         cache[md5_id] = {
-                            "id": md5_id,  # Adicionado ID explícito
+                            "id": md5_id,
                             "nome": name,
                             "nome_lower": name_lower,
-                            "medida_nome": getattr(item.medida, 'nome', 'Medida'),
+                            "medida_nome": getattr(item.medida, 'nome', 'Medida') if item.medida else 'Medida',
                             "peso_g": getattr(item, 'peso_g', 0),
-                            "energia_kcal": getattr(nutri, 'energia_kcal', 0) if nutri else 0,
-                            "proteina_g": getattr(nutri, 'proteina_g', 0) if nutri else 0,
-                            "lipidios_g": getattr(nutri, 'lipidios_g', 0) if nutri else 0,
-                            "carboidrato_g": getattr(nutri, 'carboidrato_g', 0) if nutri else 0,
-                            "fibra_g": getattr(nutri, 'fibra_g', 0) if nutri else 0,
+                            "energia_kcal": get_val(nutri, 'energia_kcal') if nutri else 0,
+                            "proteina_g": get_val(nutri, 'proteina_g') if nutri else 0,
+                            "lipidios_g": get_val(nutri, 'lipidios_g') if nutri else 0,
+                            "carboidrato_g": get_val(nutri, 'carboidrato_g') if nutri else 0,
+                            "fibra_g": get_val(nutri, 'fibra_g') if nutri else 0,
                             "grupo": "Medida Caseira (IBGE)",
                         }
                 cls.IBGE_CACHE = cache
                 print(f"IBGE Cache loaded with nutrition: {len(cache)} items")
             except Exception as e:
                 print(f"Error loading IBGE cache: {e}")
-                cls.IBGE_CACHE = {}  # Garantir que o cache existe mesmo com erro
+                cls.IBGE_CACHE = {}
 
     def list(self, request):
         """
@@ -164,7 +176,7 @@ class FoodSearchViewSet(viewsets.ViewSet):
         source_filter = request.query_params.get("source", "").upper()
         grupo_filter = request.query_params.get("grupo", "")
 
-        if len(search_query) < 2:
+        if search_query and len(search_query) < 2:
             return Response(
                 {"error": "A busca deve ter pelo menos 2 caracteres."},
                 status=status.HTTP_400_BAD_REQUEST,
@@ -426,6 +438,30 @@ class FoodSearchViewSet(viewsets.ViewSet):
         # (que podem estar no fim da ordem alfabética) cheguem à fase de scoring.
         MAX_RESULTS_PER_SOURCE = 2000
 
+        # Search CustomFoods (User's own table)
+        if not source_filter or source_filter == "PERSONAL" or source_filter == "SUA TABELA":
+            custom_qs = CustomFood.objects.filter(nutritionist=request.user, is_active=True)
+            custom_qs = apply_search_filter(custom_qs, search_query)
+            
+            for item in custom_qs:
+                results.append(
+                    {
+                        "id": item.id,
+                        "nome": item.nome,
+                        "grupo": item.grupo or "Personalizado",
+                        "source": "Sua Tabela",
+                        "is_favorite": False, # Personal items are already 'special'
+                        "energia_kcal": item.energia_kcal,
+                        "proteina_g": item.proteina_g,
+                        "lipidios_g": item.lipidios_g,
+                        "carboidrato_g": item.carboidrato_g,
+                        "fibra_g": item.fibra_g,
+                        "unidade_caseira": item.unidade_caseira,
+                        "peso_unidade_caseira_g": item.peso_unidade_caseira_g,
+                        "medidas": [{"label": item.unidade_caseira, "weight": item.peso_unidade_caseira_g}] if item.unidade_caseira else [],
+                    }
+                )
+
         # Search TACO
         if not source_filter or source_filter == "TACO":
             taco_qs = AlimentoTACO.objects.all()
@@ -597,68 +633,10 @@ class FoodSearchViewSet(viewsets.ViewSet):
         #     # Prioritize Favorites
         #     ibge_favorites = ibge_qs.filter(nome_alimento__in=ibge_fav_names)
         #     ibge_others = ibge_qs.exclude(nome_alimento__in=ibge_fav_names)[
-        #         :MAX_RESULTS_PER_SOURCE
-        #     ]
-        #
-        #     ibge_qs = list(chain(ibge_favorites, ibge_others))
-        #
-        #     for item in ibge_qs:
-        #         name = item["nome_alimento"]
-        #         # Obter medidas para este alimento
-        #         mc_nome, mc_peso, mc_list = get_measure_data(name)
-        #
-        #         # Tentar encontrar dados nutricionais na TBCA (Melhor esforço)
-        #         # Como IBGE POF 2017 usa TBCA, os nomes são muito similares
-        #         nutri_data = {
-        #             "energia_kcal": 0,
-        #             "proteina_g": 0,
-        #             "lipidios_g": 0,
-        #             "carboidrato_g": 0,
-        #             "fibra_g": 0,
-        #         }
-        #
-        #         # Tenta match exato ou parcial relevante
-        #         # Otimização: Buscamos apenas 1 match para não pesar
-        #         tbca_match = AlimentoTBCA.objects.filter(nome__icontains=name).first()
-        #
-        #         if not tbca_match:
-        #             # Tentar match reverso (se nome IBGE for mais longo que TBCA)
-        #             # ex: "Arroz tipo 1 cozido" vs "Arroz cozido"
-        #             simplified_name = name.split(",")[0]
-        #             if len(simplified_name) > 3:
-        #                 tbca_match = AlimentoTBCA.objects.filter(
-        #                     nome__icontains=simplified_name
-        #                 ).first()
-        #
-        #         if tbca_match:
-        #             nutri_data["energia_kcal"] = tbca_match.energia_kcal
-        #             nutri_data["proteina_g"] = tbca_match.proteina_g
-        #             nutri_data["lipidios_g"] = tbca_match.lipidios_g
-        #             nutri_data["carboidrato_g"] = tbca_match.carboidrato_g
-        #             nutri_data["fibra_g"] = tbca_match.fibra_g
-        #
-        #         # Para IBGE usamos MD5(name) para garantir ID ESTÁVEL e ÚNICO entre requests
-        #         # hash() do Python é randomizado por processo e causa duplicatas na paginação
-        #         fake_id = hashlib.md5(name.encode("utf-8")).hexdigest()
-        #         is_fav = f"IBGE_{fake_id}" in user_fav_keys
-        #
-        #         results.append(
-        #             {
-        #                 "id": fake_id,
-        #                 "nome": name,
-        #                 "grupo": "Medida Caseira (IBGE)",
-        #                 "source": "IBGE",
-        #                 "is_favorite": is_fav,
-        #                 "energia_kcal": nutri_data["energia_kcal"],
-        #                 "proteina_g": nutri_data["proteina_g"],
-        #                 "lipidios_g": nutri_data["lipidios_g"],
-        #                 "carboidrato_g": nutri_data["carboidrato_g"],
-        #                 "fibra_g": nutri_data["fibra_g"],
-        #                 "unidade_caseira": mc_nome,
-        #                 "peso_unidade_caseira_g": mc_peso,
-        #                 "medidas": mc_list,
-        #             }
-        #         )
+        if not source_filter or source_filter == "IBGE":
+            # IBGE SEARCH BLOCK DISABLED TO PREVENT ERRORS
+            # Because IBGE lacks nutrition data, we focused on TACO/TBCA/USDA
+            pass
 
         # Aplicar scoring a todos os resultados (usar nome do alimento + tokens da query)
         for res in results:
@@ -2055,3 +2033,34 @@ class FoodSubstitutionsViewSet(viewsets.ViewSet):
         return Response(
             {"success": True, "food_item": FoodItemSerializer(food_item).data}
         )
+
+
+# =============================================================================
+# VIEWSET DE ALIMENTOS PERSONALIZADOS
+# =============================================================================
+
+class CustomFoodViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet para alimentos personalizados criados pelo nutricionista.
+    """
+    serializer_class = CustomFoodSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return CustomFood.objects.filter(nutritionist=self.request.user, is_active=True).order_by('nome')
+
+    def perform_create(self, serializer):
+        serializer.save(nutritionist=self.request.user)
+
+    def perform_destroy(self, instance):
+        instance.is_active = False
+        instance.save()
+
+    @action(detail=False, methods=['GET'])
+    def groups(self, request):
+        """Retorna os grupos usados nos alimentos personalizados"""
+        groups = CustomFood.objects.filter(
+            nutritionist=self.request.user, 
+            is_active=True
+        ).values_list('grupo', flat=True).distinct().order_by('grupo')
+        return Response(groups)

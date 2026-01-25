@@ -1144,6 +1144,58 @@ class DefaultPreset(models.Model):
         super().save(*args, **kwargs)
 
 
+class CustomFood(models.Model):
+    """
+    Modelo para alimentos personalizados criados pelos nutricionistas.
+    """
+    nutritionist = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="custom_foods",
+        help_text="Nutricionista proprietário do alimento"
+    )
+    nome = models.CharField(max_length=200, help_text="Nome do alimento personalizado")
+    grupo = models.CharField(max_length=100, blank=True, null=True, help_text="Grupo alimentar")
+
+    # Macronutrientes por 100g
+    energia_kcal = models.FloatField(default=0, help_text="Energia em kcal por 100g")
+    proteina_g = models.FloatField(default=0, help_text="Proteína em gramas por 100g")
+    lipidios_g = models.FloatField(default=0, help_text="Lipídios em gramas por 100g")
+    carboidrato_g = models.FloatField(default=0, help_text="Carboidrato em gramas por 100g")
+    fibra_g = models.FloatField(default=0, help_text="Fibra em gramas por 100g")
+
+    # Medida Caseira Padrão
+    unidade_caseira = models.CharField(max_length=100, blank=True, null=True, help_text="Ex: 1 Unidade, 1 Colher de sopa")
+    peso_unidade_caseira_g = models.FloatField(blank=True, null=True, help_text="Peso em gramas da unidade caseira")
+
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["nome"]
+        verbose_name = "Alimento Personalizado"
+        verbose_name_plural = "Alimentos Personalizados"
+        indexes = [
+            models.Index(fields=["nutritionist", "nome"]),
+        ]
+
+    def __str__(self):
+        return f"{self.nome} (Sua Tabela)"
+
+    def save(self, *args, **kwargs):
+        self.nome = sanitize_string(self.nome)
+        if self.grupo:
+            self.grupo = sanitize_string(self.grupo)
+        if self.unidade_caseira:
+            self.unidade_caseira = sanitize_string(self.unidade_caseira)
+        super().save(*args, **kwargs)
+
+    @property
+    def source(self):
+        return "Sua Tabela"
+
+
 # =============================================================================
 # MODELOS DE SUBSTITUIÇÃO DE ALIMENTOS
 # =============================================================================

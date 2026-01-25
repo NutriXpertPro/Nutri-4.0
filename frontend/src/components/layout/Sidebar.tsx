@@ -61,7 +61,7 @@ export function Sidebar({ className, collapsed, onToggle }: SidebarProps) {
     const isCollapsed = collapsed !== undefined ? collapsed : internalCollapsed
     const { color } = useColor()
     const [animateTrigger, setAnimateTrigger] = React.useState(0)
-    
+
     // Buscar estatísticas reais para a sidebar
     const stats = useSidebarStats()
 
@@ -138,6 +138,11 @@ export function Sidebar({ className, collapsed, onToggle }: SidebarProps) {
             icon: <UtensilsCrossed className="h-5 w-5" />,
             label: "Dietas",
             href: "/diets",
+        },
+        {
+            icon: <Activity className="h-5 w-5" />,
+            label: "Alimentos",
+            href: "/foods",
         },
         {
             icon: <Calendar className="h-5 w-5" />,

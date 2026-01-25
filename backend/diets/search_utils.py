@@ -120,8 +120,31 @@ def calcular_score_radical(item_nome: str, q_tokens: list) -> float:
     # Ex: "Arroz integral" vs "Arroz integral com vegetais e molho especial"
     if len(item_palavras) <= 3:
         score += 50.0
-    
-    # 8. LEI DA BREVIDADE EXTREMA
+
+    # 8. BÔNUS PARA ALIMENTO "INTEIRO" (Evita gema, clara, pó quando o usuário quer o básico)
+    if 'inteiro' in item_nome_lower or 'inteira' in item_nome_lower:
+        score += 120.0
+
+    # 9. PENALIDADE PARA PARTES/EXTRATOS (Gema, Clara, Pó, Seco)
+    # Se o usuário busca "Ovo", ele provavelmente não quer apenas a "Gema".
+    partes_alimentos = {
+        'gema': 400.0,
+        'clara': 400.0,
+        'po': 300.0,
+        'pó': 300.0,
+        'extrato': 300.0,
+        'isolado': 300.0,
+        'concentrado': 200.0,
+        'seco': 200.0,
+        'seca': 200.0,
+        'desidratado': 300.0,
+        'desidratada': 300.0,
+    }
+    for parte, penalidade in partes_alimentos.items():
+        if parte in item_nome_lower and parte not in q_tokens:
+            score -= penalidade
+
+    # 10. LEI DA BREVIDADE EXTREMA
     # Penaliza descrições gigantescas que geralmente indicam produtos ultraprocessados.
     num_palavras = len(item_palavras)
     score -= (num_palavras * 15.0)
